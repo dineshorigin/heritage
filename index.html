@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1b0d06">
-<title>Pallanguzhi • Heritage Edition (v3.15.0 • Reference Board Edition)</title>
+<title>Pallanguzhi • Heritage Edition (v3.16.0 • Reference Board Edition)</title>
 <!-- PeerJS is bundled locally; online play still uses external signaling. -->
-<link rel="preload" as="image" href="royal-board.webp?v=3.15.0">
-<link rel="preload" as="image" href="reference-board.webp?v=3.15.0">
+<link rel="preload" as="image" href="royal-board.webp?v=3.16.0">
+<link rel="preload" as="image" href="reference-board.webp?v=3.16.0">
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#173e35">
-<link rel="stylesheet" href="game.css?v=3.15.0">
-<script id="peerjs-loader" defer src="native-bridge.js?v=3.15.0"></script>
+<link rel="stylesheet" href="game.css?v=3.16.0">
+<script id="peerjs-loader" defer src="native-bridge.js?v=3.16.0"></script>
 </head>
 <body>
 <!-- Board artwork is reconstructed from the supplied photograph; cups are interactive overlays. -->
@@ -25,15 +25,15 @@
     </div>
   </header>
   <div class="arena-stage">
-    <div class="play-arena" id="arena">
+    <div class="play-arena" id="arena"><span class="painted-pupil pupil-left" aria-hidden="true"></span><span class="painted-pupil pupil-right" aria-hidden="true"></span>
       <svg class="ivory-edge" viewBox="0 0 1600 600" aria-hidden="true"><defs><linearGradient id="ivory-edge-light"><stop stop-color="#fdf3dc"/><stop offset=".55" stop-color="#ead6b1"/><stop offset="1" stop-color="#b89b71"/></linearGradient></defs><path d="M1410 132 Q1521 202 1554 310" fill="none" stroke="#644126" stroke-width="27" stroke-linecap="round"/><path d="M1410 132 Q1521 202 1554 310" fill="none" stroke="url(#ivory-edge-light)" stroke-width="22" stroke-linecap="round"/></svg>
       
       <div class="side-highlight" id="side-highlight-2" aria-hidden="true"></div><div class="side-highlight" id="side-highlight-1" aria-hidden="true"></div>
       <section class="player-dock dock-2" aria-label="Player 2 score and turn">
-        <span class="dock-name" id="dock-name-2" data-no-i18n></span><span class="dock-score" id="dock-score-2">0</span><span class="dock-turn" id="dock-turn-2"></span>
+        <button type="button" class="wish-lamp" id="wish-lamp-2" aria-label="Hint" title="Hint"></button><span class="dock-name" id="dock-name-2" data-no-i18n></span><span class="dock-score" id="dock-score-2">0</span><span class="dock-turn" id="dock-turn-2"></span>
       </section>
       <section class="player-dock dock-1" aria-label="Player 1 score and turn">
-        <span class="dock-name" id="dock-name-1" data-no-i18n></span><span class="dock-score" id="dock-score-1">0</span><span class="dock-turn" id="dock-turn-1"></span>
+        <button type="button" class="wish-lamp" id="wish-lamp-1" aria-label="Hint" title="Hint"></button><span class="dock-name" id="dock-name-1" data-no-i18n></span><span class="dock-score" id="dock-score-1">0</span><span class="dock-turn" id="dock-turn-1"></span>
       </section>
 
       <aside class="outer-mother-cup" id="mc-2" aria-label="Player 2 captured seeds">
@@ -162,12 +162,10 @@
 </div>
 
 <div class="overlay" id="setup-modal" role="dialog" aria-modal="true" aria-label="Set up game">
-  <div class="modal-card home-card">
-    <button type="button" class="action-btn language-inline" id="language-setup-btn" data-no-i18n data-language-toggle>Language</button>
-    <div class="home-eyebrow">PALLANGUZHI · HERITAGE</div>
-    <h1>Pallanguzhi</h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
-    <p class="home-intro">Play a timeless Tamil board game.</p>
-    <section class="resume-panel" id="resume-panel" hidden aria-label="Continue saved match">
+<div class="modal-card home-card lobby-home">
+<div class="home-top-actions"><button type="button" class="action-btn" id="setup-back" hidden>← Back</button><span id="setup-progress">Step 1 of 3</span><button type="button" class="action-btn" id="appearance-setup-btn">Dark mode</button><button type="button" class="action-btn" id="language-setup-btn" data-no-i18n data-language-toggle>Language</button></div>
+<div class="home-eyebrow">HERITAGE · STRATEGY · TRADITION</div><h1>Pallanguzhi</h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
+<section data-setup-step="1">    <section class="resume-panel" id="resume-panel" hidden aria-label="Continue saved match">
       <div class="resume-heading">💾 Continue your match?</div>
       <div class="resume-summary" id="resume-summary"></div>
       <div class="resume-controls">
@@ -175,14 +173,28 @@
         <button type="button" class="resume-discard" id="discard-save-btn">✕ Discard save</button>
       </div>
     </section>
-    <span class="field-label">Game mode</span>
-    <div class="mode-cards" role="group" aria-label="Game mode">
-      <button type="button" class="option active" data-mode="ai"><span class="mode-icon" aria-hidden="true">✦</span><strong>Play computer</strong><small>Practice at your own pace</small></button>
-      <button type="button" class="option" data-mode="two"><span class="mode-icon" aria-hidden="true">♟</span><strong>Play together</strong><small>Two players · one phone</small></button>
-      <button type="button" class="option" data-mode="online"><span class="mode-icon" aria-hidden="true">◎</span><strong>Play a friend</strong><small>Connect with a room code</small></button>
-    </div>
 
-    <!-- Online P2P Card -->
+<div class="menu-emblem" aria-hidden="true"><span>🐚</span></div><h2>Choose your way to play</h2>
+<div class="mode-cards" role="group" aria-label="Game mode">
+<button type="button" class="option" data-mode="ai"><span class="mode-icon"></span><strong>Play computer</strong><small>Meet Azhagi</small></button>
+<button type="button" class="option" data-mode="two"><span class="mode-icon"></span><strong>Pass N Play</strong><small>Two players · one device</small></button>
+<button type="button" class="option" data-mode="online"><span class="mode-icon"></span><strong>Connect</strong><small>Play with a room code</small></button>
+</div><button type="button" class="secondary-btn" id="tutorial-setup-btn">Learn to play</button>
+<button type="button" id="quick-play-btn" hidden>Quick play</button>
+</section>
+<section data-setup-step="2" hidden><h2>Your seat at the board</h2>
+<div class="input-group"><label for="p1-input">Your name</label><input id="p1-input" maxlength="18" value="Player 1" autocomplete="nickname"></div><input type="hidden" id="p2-input" value="Azhagi (AI)" disabled aria-hidden="true">
+<div class="opponent-preview"><span>Opponent</span><strong id="setup-opponent-name" data-no-i18n>Azhagi (AI)</strong></div>
+    <div class="difficulty-chooser" id="difficulty-picker">
+      <span class="field-label">Computer difficulty</span>
+      <div class="button-grid">
+        <button type="button" class="option" data-difficulty="easy" aria-pressed="false">🌱 Easy</button>
+        <button type="button" class="option active" data-difficulty="medium" aria-pressed="true">🪴 Medium</button>
+        <button type="button" class="option" data-difficulty="hard" aria-pressed="false">🔥 Hard</button>
+        <button type="button" class="option" data-difficulty="expert" aria-pressed="false">👑 Expert</button>
+      </div>
+      <p class="difficulty-note" id="difficulty-description">Medium considers each move's immediate outcome.</p>
+    </div>
     <div id="online-panel" class="online-box" hidden>
       <div style="font-size:13px; font-weight:850; color:#ffd700; margin-bottom:8px;">🌐 Online two-device link</div>
       <div id="online-host-section">
@@ -200,7 +212,7 @@
         <button type="button" class="action-btn" id="join-room-btn" style="background:#78491c; font-weight:850;">Connect</button>
       </div>
       <div class="online-badge waiting" id="online-status-badge" role="status" aria-live="polite">📡 Ready to connect</div>
-      <p id="online-help" style="font-size:11px;line-height:1.45;color:#d7bb92;margin:9px 0 0">For two phones, both players must open the hosted HTTPS game. Room codes use PeerJS signaling and WebRTC, which may not connect on every network. To resume online, the host and guest must reconnect to the same room. Same-browser tabs can connect locally.</p>
+      <div class="room-presence" aria-live="polite"><strong id="room-peer-name" data-no-i18n></strong><span id="room-ready-status"></span><button type="button" class="primary-btn" id="room-ready-btn" disabled>I’m ready</button></div><p id="online-help" style="font-size:11px;line-height:1.45;color:#d7bb92;margin:9px 0 0">For two phones, both players must open the hosted HTTPS game. Room codes use PeerJS signaling and WebRTC, which may not connect on every network. To resume online, the host and guest must reconnect to the same room. Same-browser tabs can connect locally.</p>
       <div id="online-reactions" style="display:flex;gap:6px;justify-content:center;margin-top:10px" hidden aria-label="Send a reaction">
         <button type="button" class="action-btn" data-emote="👏" aria-label="Send applause">👏</button>
         <button type="button" class="action-btn" data-emote="😄" aria-label="Send smile">😄</button>
@@ -209,6 +221,9 @@
       </div>
     </div>
     
+
+</section>
+<section data-setup-step="3" hidden><h2>Make it your match</h2>
     <details class="home-settings">
       <summary>Match rules <span>Single Match recommended · Kasie is a longer tournament</span></summary>
     <span class="field-label">First move</span>
@@ -238,46 +253,14 @@
     </div>
 
     </details>
-    <div class="difficulty-chooser" id="difficulty-picker">
-      <span class="field-label">Computer difficulty</span>
-      <div class="button-grid">
-        <button type="button" class="option" data-difficulty="easy" aria-pressed="false">🌱 Easy</button>
-        <button type="button" class="option active" data-difficulty="medium" aria-pressed="true">🪴 Medium</button>
-        <button type="button" class="option" data-difficulty="hard" aria-pressed="false">🔥 Hard</button>
-        <button type="button" class="option" data-difficulty="expert" aria-pressed="false">👑 Expert</button>
-      </div>
-      <p class="difficulty-note" id="difficulty-description">Medium considers each move's immediate outcome.</p>
-    </div>
-    <details class="home-settings">
-      <summary>Make it yours <span>Board, names &amp; sound</span></summary>
-    <span class="field-label">Board design</span>
-    <div class="button-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
-      <button type="button" class="option active" data-theme="bright">☀️ Warm Teak</button>
-      <button type="button" class="option" data-theme="dark">🌙 Rosewood</button>
-      <button type="button" class="option" data-theme="chettinad">👑 Chettinad</button>
-      <button type="button" class="option" data-theme="granite">🛕 Granite</button>
-      <button type="button" class="option" data-theme="sandalwood">🌿 Sandalwood</button>
-    </div>
-    <span class="field-label">Counter style</span>
-    <div class="button-grid" style="grid-template-columns: repeat(3, 1fr);">
-      <button type="button" class="option active" data-seeds="natural">🌰 Tamarind</button>
-      <button type="button" class="option" data-seeds="cowrie">🐚 Cowrie</button>
-      <button type="button" class="option" data-seeds="colored">🎨 Beads</button>
-    </div>
-    <div class="input-group"><label for="p1-input">Player 1 · bottom</label><input id="p1-input" maxlength="18" value="Player 1" autocomplete="off"></div>
-    <div class="input-group"><label for="p2-input">Player 2 · top</label><input id="p2-input" maxlength="18" value="Azhagi (AI)" autocomplete="off"></div>
-    <span class="field-label">Sound volume</span>
-    <label class="slider-line" for="volume-input">🔊 <input type="range" id="volume-input" min="0" max="100" value="65" step="5"><output id="volume-display">65%</output></label>
-    </details>
 
-    <button type="button" class="secondary-btn tutorial-launch" id="tutorial-setup-btn">🎓 Learn to play</button>
-
-    <div class="home-play"><button type="button" class="primary-btn quick-play" id="quick-play-btn">QUICK PLAY · vs computer</button>
-    <p class="quick-note">One round · Easy AI · 5 seeds · You start</p>
-    <button type="button" class="primary-btn" id="start-btn">PLAY SELECTED SETTINGS</button>
-    <p id="start-online-help" style="font-size:11px;color:#f2cf9c;text-align:center;line-height:1.4" hidden>Share the room code, then wait for your opponent to connect.</p></div>
-  </div>
-</div>
+<details class="home-settings"><summary>Pieces &amp; sound</summary>
+<span class="field-label">Counter style</span><div class="button-grid"><button type="button" class="option" data-seeds="cowrie">🐚 Cowrie</button><button type="button" class="option" data-seeds="natural">🌰 Tamarind</button><button type="button" class="option" data-seeds="colored">🎨 Beads</button></div>
+<span class="field-label">Sound volume</span><label class="slider-line" for="volume-input">🔊 <input type="range" id="volume-input" min="0" max="100" step="1" value="65"><output id="volume-display">65%</output></label>
+</details><p id="room-final-status" aria-live="polite"></p><button type="button" class="secondary-btn" id="room-final-ready-btn" hidden disabled>I’m ready</button><button type="button" class="primary-btn" id="start-btn">Start match</button><p id="start-online-help" hidden>Both players must tap Ready. The host then starts the match.</p>
+</section>
+<button type="button" class="primary-btn" id="setup-next" hidden>Continue →</button>
+</div></div>
 
 <div class="overlay hidden" id="rules-modal" role="dialog" aria-modal="true" aria-label="Rules">
   <div class="modal-card">
@@ -365,6 +348,6 @@
   </div>
 </div>
 
-<script type="module" src="app.js?v=3.15.0"></script>
+<script type="module" src="app.js?v=3.16.0"></script>
 </body>
 </html>

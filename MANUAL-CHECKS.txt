@@ -1,11 +1,11 @@
-v3.15 manual acceptance checklist
-1. Start local two-player game in portrait/landscape and Fit. Confirm wood stores, natural carved eyes, spherical RGB beads, rim feedback and stable compact comments.
-2. Tools > Mat: try all fourteen. Reload to check selection retention.
-3. Learn to play: complete sowing, Pasu, capture and Kasie lessons; try Previous; close/reopen to check progress. Switch English/Tamil.
-4. Tools > Play & learn > Daily puzzle: choose a poor move then best move. Reload to check today's completion. Main match must remain unchanged.
-5. Play local/AI moves. Open Match replays; step/play/pause; close/reopen. Undo a turn and verify replay follows corrected path. No pre-update matches have recordings.
-6. Enable Explain AI moves; compare Easy/Medium/Hard/Expert. Confirm legal moves and responsive controls.
-7. Use TWO actual devices and the same version. Host/join room, alternate moves, disconnect/reconnect, resume. Tap twice rapidly; no duplicate turn should occur. Test online Undo/rematch.
-8. In Room chat, send each direction; check name, badge, message order, mute/unmute, disconnect/send failure and room leave clearing. Messages do not persist after reload.
-9. On Android Chrome open online, wait for caching, install from browser menu if supported, close/reopen in airplane mode. Test local AI, tutorial and puzzle. Online room/chat must not pretend connected offline.
-10. After updating installed game, close old tabs then reopen online; confirm latest version. Check actual touch layout, sound and motion on your phone.
+v3.16 device acceptance checklist
+1. Open updated game: mode cards and shaded icons, no settings form on first step. Check portrait/landscape and Back/Continue.
+2. Play computer: enter only your own name; opponent must be Azhagi (AI), never editable. Test all four AI levels. New mode should begin with cowries. Existing material choices remain selectable in step 3.
+3. Pass N Play: only your name input, fixed other-player name; both hint lamps visible and facing their respective players. Only active player's lamp enabled.
+4. Connect from TWO devices on v3.16. Enter different own names before/after joining. Check automatic opponent display. Neither may edit the other's name.
+5. Ready: host cannot start with zero/one ready player. Both Ready enables host only. Cancel readiness disables Start. Changing shared rules clears readiness on both sides. Guest rule controls disabled. Disconnect/reconnect and re-ready. Test rematch separately after game end.
+6. Move in online game: only the active local device should play the turn notice. The waiting device should not. Test sound mute and 1% slider increments; enabled buttons should give a tiny click when sound is enabled.
+7. Test light/dark switch on home and Tools, persistence after refresh, and Tamil/English UI including default player names. Custom names should remain unchanged.
+8. Inspect outer-edge pit counts, store side counts, painted black pupils and lamps at Fit and normal sizes. Comments should not resize the board.
+9. Recheck old features: rules, all six tutorial lessons, daily puzzle, replay, Undo, room chat, fourteen mats, seed materials, result fireworks and saved match recovery.
+10. Install/offline: first load online, let cache finish, close/reopen offline. Tutorial/AI/puzzle should work; online room/chat require internet. Close all old tabs and reopen online after each update.

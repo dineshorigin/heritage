@@ -1,6 +1,6 @@
-PALLANGUZHI v3.15.0
+PALLANGUZHI v3.16.0
 
-Extract the ZIP. Upload/replace ALL NINETEEN files below in your heritage repository ROOT. Upload the extracted files, not the ZIP. Keep names exactly.
+Extract this archive and upload/replace all TWENTY game files below in the heritage repository ROOT. Keep names exactly; no js/css folders. Upload extracted files, not the ZIP.
 
 index.html
 game.css
@@ -11,6 +11,7 @@ locale.js
 physics.js
 presentation.js
 features.js
+menu.js
 native-bridge.js
 reference-board.webp
 royal-board.webp
@@ -22,6 +23,8 @@ manifest.webmanifest
 icon-192.png
 icon-512.png
 
-Commit and wait for GitHub Pages deployment. Reopen the game. The title/source should say v3.15.0. No js/css folders are needed.
+Commit and wait for Pages deployment. Close old game tabs, then reopen online. Both room players must refresh to v3.16; older clients have no Ready button and cannot start through the new lobby. Installed offline copies may require closing all tabs so the updated service worker activates.
 
-For installed/offline copies: close all game tabs and reopen after deployment so a waiting worker can activate. Initial offline caching needs a complete online load. Android source archive is optional and is not an APK.
+Room flow: Connect -> enter your own name -> share/join room -> each player taps I’m ready -> Continue -> host taps START ONLINE MATCH. Only the host chooses shared rules. Changing rules requires both to ready again.
+
+Android source is optional, not an APK. Read BOARD-UPDATE.txt and MANUAL-CHECKS.txt for validation limits.

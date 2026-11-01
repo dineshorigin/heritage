@@ -1,20 +1,33 @@
-PALLANGUZHI v3.15.0 — PLAY & LEARN
+PALLANGUZHI v3.16.0 — MODE-FIRST MENU
 
-BOARD REFINEMENTS
-Wooden thaaikuli again uses the existing board cavity texture; engraved player names retained. Pit feedback uses the calibrated pit's exact ellipse without a separate expanding oval. Saturated RGB beads now use shaded round, undrilled surfaces rather than the button-hole sprite. Added photographic eye overlays removed; original carved eyes retained. Fixed comment area reduced to 38px (29px on short landscape screens) with overflow scrolling so messages do not shrink the board. Fourteen persistent mat choices, including eight new colours.
+REQUESTS IMPLEMENTED
+1. Computer opponent is fixed to Azhagi (AI), including loaded computer-match names. It is not user-editable.
+2. Play together is now Pass N Play, with localized Tamil wording.
+3. Only your own name is editable. The other seat is fixed Player 2 locally or supplied by the peer online.
+4. Warm Teak/Rosewood/Chettinad/Granite/Sandalwood selectors were removed. Retired saved board themes migrate to the one natural board. The Tools appearance button now switches UI light/dark, not board artwork.
+5. Cowrie is the initial material and resets to default when choosing any fresh game mode. A continued saved match keeps its pieces. Players can still explicitly select another material in step 3.
+6. Volume slider supports every integer percent, step=1 (0..100), respecting master mute.
+7. Simple Learn to play button, without the previous large decorated launcher.
+8. Each device enters its own name; host/guest names are exchanged automatically and displayed in the opponent preview and room panel. No opponent-name entry is exposed. Names are bounded to 18 characters.
+9. Explicit Ready/Cancel readiness per player. Opponent status is shown live. The host's Start button is guarded by connection, both ready flags and the same rules signature. Guest cannot change shared rules. Changing rules clears readiness; loss of connection clears readiness. Existing in-match reconnect and bilateral rematch flows are retained. Both devices must use v3.16 for this readiness protocol.
+10. Tiny, throttled synthesized click sound on actual enabled-button interactions; ordinary cup taps retain seed pickup sound. Click feedback respects mute, volume and browser gesture requirements. No ambient idle loop.
+11. Three small custom shaded vector icons: computer companion, shared-device players and connected globe. Inspired by the reference's game-menu feel; no Ludo artwork copied, no 3D engine or new raster download.
+12. Mode-first three-step setup: Choose mode -> Your name / difficulty or room connection -> Match rules / pieces / sound / Start. Back/Continue navigation and direct room links are supported. Resume saved match remains available on the home step.
+13. Small matte black painted pupil dots on the original carved eyes, without photographic eye inserts.
+14. Persistent light/dark UI appearance from the home toolbar or Tools. This does not recolour the actual board or override the selected mat.
+15. Uniform pit count badges moved to the outer wooden edge of each row. Thaaikuli counters moved between each store and its adjacent elephant. Player strips were tightened to leave room for the badges.
+16. Online turn sound is guarded to the active local player only; AI turn produces no human turn alert. Pass N Play names the active player with a shared-device sound; one device cannot make an audible sound physically private to just one listener. Existing mute controls apply.
+17. Small gold Aladdin-style hint lamp in the player strip. AI: only human lamp. Connect: only local player's lamp. Pass N Play: one per side, facing its owner. Only the active human's lamp is enabled and it invokes the existing hint/explanation feature. It is a hint shortcut, not a new game currency/power.
+18. Built-in Player 1/Player 2/Azhagi names and new UI captions use Tamil when selected. Custom personal names are preserved as entered rather than guessed/transliterated.
+19. Original Pallanguzhi menu with shaded SVG icons and gold/jade styling, responsive portrait/landscape arrangements. No fake balances, advertisements or shop buttons added.
 
-FEATURES
-1. Guided first game: existing six interactive bilingual sowing/relay/Pasu/capture/Kasie lessons now remember lesson progress and include Previous lesson navigation. Available via setup Learn to play or Tools > Play & learn.
-2. Online reliability: existing room code, reconnect/backoff, state synchronization, revision and duplicate-move protection retained. New pre-move board fingerprint detects divergent state and requests authoritative synchronization. Mixed older room clients remain compatible when they omit this field. This improves recovery, but is not a server-authoritative anti-cheat system. Some networks need a TURN relay; none was newly provisioned.
-3. AI: four difficulty levels retained. Iterative deepening compares every root candidate before accepting a deeper search result, within existing 35/55ms and node budgets. Optional AI immediate-gain explanations in Play & learn; no claim of optimal play.
-4. Replays: local latest eight matches, at most 160 moves per match. Recorded while playing, with play/pause, forward/back event stepping and history deletion confirmation. Rules reconstruct move events, including Kasie/Pasu settings. Only one move is expanded at a time to bound memory. Undo truncates the recording. Existing matches played before this release do not have move recordings. Replays show move-by-move seed counts on a compact review board; final round settlement is shown in the main match/statistics, not as a sowing replay event. Recovery after remote state synchronization may leave a gap in the local recording.
-5. Daily capture puzzle: deterministic local-calendar board, independently simulated legal answers, best one-move score target and saved daily completion. Practice is separate from the live match and statistics.
-6. Install/offline: manifest, two small icons and a scoped service worker cache the local game files. On supported Android Chrome use browser menu Install app / Add to Home screen. Open online first and let initial caching finish. Close existing game tabs when updating an installed version; an active match is not forcibly reloaded. Local play, puzzles and tutorial can work offline; online rooms/chat still need internet. Native source retains the Capacitor path; no APK was built.
-7. Room chat: Tools > Play & learn > Room chat. Bounded 240-character messages, up to 80 visible messages, send/receive throttling, match/player validation, duplicate suppression, unread badge and opponent mute. Messages use the existing room transport, remain only in memory and clear when leaving the room. No public lobby, server message archive or persistent chat account system.
-
-PERFORMANCE AND REMOVALS
-No additional runtime dependencies, 3D engine or image-generation dependency. New menu features run on demand; replays and chat have bounded histories. Existing game modes, sound styles, settings and controls were preserved. No optional feature was removed without confirmation. The removed eye overlays and steel bowl styling were explicitly requested. Small old sprite files remain for compatibility; they are not used by the new bead/eye presentation.
+OTHER FEATURES RETAINED
+Daily puzzles, replays, chat, offline support, fourteen mats, seed sounds, tutorials, recovery and the prior rules remain. Chat: Tools > Play & learn > Room chat. No existing functionality was removed beyond the requested board-design selectors and opponent-name editor.
 
 VALIDATION
-40 automated tests passed, including chat validation, 31 deterministic daily puzzles, replay end-state equivalence and Kasie/Pasu variants. 800 engine simulations, 50131 moves, zero errors/unfinished matches. Unique HTML IDs, local assets, module imports, syntax and Android source synchronization passed. Archive integrity passed.
-Browser/device testing remains outstanding. Automatic approval review previously rejected browser inspection due to the session usage limit; no alternate browser was used to bypass it. New visual layout, live two-device room/chat/reconnect behaviour, subjective sound, actual frame rate, fullscreen and offline installation are NOT certified by these unit tests. Use MANUAL-CHECKS.txt. No GitHub commit/deployment occurred.
+45 automated tests passed. New tests cover fixed AI identity, host/guest seat mapping, readiness/connection/rule guards, invalid/stale readiness packets and unique icon gradient IDs. Existing rule/replay/puzzle/chat/recovery tests pass. 800 engine simulations, 50131 moves, zero errors/unfinished matches. JavaScript syntax, unique HTML IDs, literal element references, assets/module imports and balanced HTML passed. Android source sync passed; no APK built. Archive integrity passed.
+
+LIMITATIONS
+New browser layout, two-device readiness/name exchange, real audio and physical touch layouts have not been browser/device-verified. Automatic approval review previously rejected browser inspection because the session usage limit was reached; no alternate browser was used to bypass it. Unit checks are not full release certification. Use MANUAL-CHECKS.txt. Some networks may still require a TURN relay for WebRTC; none was newly provisioned.
+
+No GitHub commit or live deployment was performed. Upload the extracted game files to publish.
