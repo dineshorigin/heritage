@@ -1,0 +1,14 @@
+Upload these five files together to the ROOT of your GitHub repository:
+index.html
+game.css
+app.js
+rules.js
+guidance.js
+
+Replace the existing index.html. Do not upload the ZIP itself. No css, js or www folders are needed. Keep file names unchanged.
+
+GitHub Pages: main branch, / (root). Wait for the Pages deployment to succeed, then refresh the game.
+
+To test locally, serve the folder over HTTP. Opening index.html directly may block JavaScript modules.
+
+Quick Play starts a Single Match against Easy AI. Kasie remains optional in Match Rules.

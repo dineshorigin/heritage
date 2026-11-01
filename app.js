@@ -1,0 +1,2453 @@
+import { turnGuidance, captureGuidance } from './guidance.js';
+import { simulateMove as simulateRules } from './rules.js';
+
+(() => {
+  'use strict';
+  const N = 14, START_SEEDS = 5, TOTAL_SEEDS = 70, MAX_DROPS = 1600;
+  const $ = id => document.getElementById(id);
+  const other = p => p === 1 ? 2 : 1;
+  const owner = pit => pit < 7 ? 1 : 2;
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const row = p => p === 1 ? [0,1,2,3,4,5,6] : [7,8,9,10,11,12,13];
+  const getTotalSeeds = () => (options.seedsPerPit || START_SEEDS) * N;
+  const SETTINGS_KEY = 'pallanguzhi.heritage.v364.settings';
+
+  let options = {
+    ai: true,
+    online: false,
+    difficulty: 'medium',
+    theme: 'bright',
+    seedStyle: 'natural',
+    fast: false,
+    pace: 'natural',
+    sound: true,
+    volume: 0.65,
+    firstMove: 'coin',
+    format: 'single',
+    seedsPerPit: 5,
+    pasu: 'on'
+  };
+  let names = {1:'Player 1',2:'Azhagi (AI)'};
+  let state = {
+    pits: Array(N).fill(START_SEEDS),
+    banks: [0,0,0],
+    turn: 1,
+    busy: false,
+    over: false,
+    epoch: 0,
+    aiTicket: 0,
+    started: false,
+    activeMove: null,
+    hintPit: null,
+    history: [],
+    metrics: {moves:0, p1Pasu:0, p1Captured:0, biggestCapture:0},
+    matchId: null,
+    matchStartedAt: 0,
+    recordedStatsBefore: null,
+    resultRecorded: false,
+    round: 1,
+    kasiePits: Array(N).fill(false),
+    treasury: [0, 0, 0],
+    lastWinner: null,
+    currentRoundStarter: 1,
+    lastStarter: 1,
+    roundPending: false,
+    paused: false,
+    awaitingToss: false
+  };
+  /* Online PeerJS + BroadcastChannel state */
+  let onlineState = {
+    peer: null,
+    conn: null,
+    bc: null,
+    isHost: true,
+    myPlayerIndex: 1,
+    roomCode: '',
+    connected: false,
+    generation: 0,
+    pendingRemoteMoves: [],
+    pendingNextRound: null,
+    acknowledgedMatch: null,
+    awaitingSync: false,
+    syncPending: false,
+    remoteUndoAvailable: false,
+    undoPending: false,
+    pendingUndoRequest: null,
+    revision: 0
+  };
+  let resetStatsConfirmTimer = null;
+
+  const PROGRESS_KEY='pallanguzhi.heritage.v363.progress';
+  const STATS_KEY='pallanguzhi.heritage.v363.stats';
+  let stats={matches:0,wins:0,losses:0,draws:0,streak:0,bestStreak:0,bestScore:0,pasu:0,captured:0,expertWins:0,history:[]};
+  const emptyMetrics=()=>({moves:0,p1Pasu:0,p1Captured:0,biggestCapture:0});
+  let audio = null, toastTimer = null;
+  const activeAnims = new Set();
+  const feedbackTimers = new Set();
+  const pitTimers = new Map();
+  const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let lastHandPos = null;
+  let lastDropSoundAt = 0;
+  const paceMultiplier = () => options.pace==='fast' ? 0.58 : options.pace==='relaxed' ? 1.38 : 1;
+  const layoutCenters = new Map();
+  let layoutDirty = true;
+  const portraitBoard = () => matchMedia('(orientation: portrait) and (max-width:700px)').matches;
+
+  function isModalOpen(id) {
+    const el = $(id);
+    return el && !el.classList.contains('hidden') && !el.hidden;
+  }
+  function openQuitModal() {
+    if(state.activeMove)skipCurrentMove();
+    if(state.over)return;
+    state.paused=true;
+    state.aiTicket++;
+    if(state.busy && options.ai && state.turn===2){state.busy=false;render();}
+    saveStableMatch();
+    $('quit-modal').classList.remove('hidden');
+  }
+  function closeQuitModal(resume=true) {
+    $('quit-modal').classList.add('hidden');
+    state.paused=false;
+    if(resume&&state.started&&!state.over){
+      if(options.ai&&state.turn===2&&!state.busy)scheduleAiTurn(()=>state.started&&!state.over&&!state.paused);
+      if(options.online)processRemoteQueue();
+    }
+  }
+
+  function handleSystemBack() {
+    if (isModalOpen('coin-toss-modal')) {
+      $('coin-toss-modal').classList.add('hidden');
+      showSetup();
+      return true;
+    }
+    if(isModalOpen('round-modal')){
+      if(!options.online||onlineState.isHost)$('next-round-btn').click();
+      else toast('Waiting for host to begin the next round.',1400);
+      return true;
+    }
+    if (isModalOpen('quit-modal')) {
+      closeQuitModal();
+      return true;
+    }
+    if (isModalOpen('tutorial-modal')) {
+      tutorialClose();
+      return true;
+    }
+    if (isModalOpen('rules-modal')) {
+      $('rules-modal').classList.add('hidden');
+      return true;
+    }
+    if (isModalOpen('stats-modal')) {
+      closeStats();
+      return true;
+    }
+    if (isModalOpen('setup-modal')) {
+      if (state.started && !state.over) {
+        $('setup-modal').classList.add('hidden');
+        return true;
+      }
+      return false;
+    }
+    if (isModalOpen('end-modal')) {
+      showSetup();
+      return true;
+    }
+    if (!$('hint-explanation').hidden) {
+      hideHintExplanation();
+      state.hintPit = null;
+      render();
+      return true;
+    }
+    if (state.started && !state.over) {
+      openQuitModal();
+      return true;
+    }
+    return false;
+  }
+
+  function initBackButtonHandler() {
+    try {
+      history.replaceState({ screen: 'root' }, '');
+      history.pushState({ trap: true }, '');
+    } catch {}
+
+    window.addEventListener('popstate', () => {
+      const handled = handleSystemBack();
+      if (handled) {
+        try { history.pushState({ trap: true }, ''); } catch {}
+      } else {
+        if (window.Capacitor?.Plugins?.App?.exitApp) {
+          window.Capacitor.Plugins.App.exitApp();
+        }
+      }
+    });
+
+    if (window.Capacitor?.Plugins?.App?.addListener) {
+      try {
+        window.Capacitor.Plugins.App.addListener('backButton', () => {
+          const handled = handleSystemBack();
+          if (!handled) {
+            window.Capacitor.Plugins.App.exitApp();
+          }
+        });
+      } catch {}
+    }
+  }
+
+  function storedGet(key){try{return localStorage.getItem(key);}catch{return null;}}
+  function storedSet(key,data){try{localStorage.setItem(key,JSON.stringify(data));return true;}catch{return false;}}
+  function storedRemove(key){try{localStorage.removeItem(key);}catch{}}
+  const isWhole=(v,max=TOTAL_SEEDS)=>Number.isInteger(v)&&v>=0&&v<=max;
+  function validPosition(pos){
+    const expected = (pos?.options?.seedsPerPit || START_SEEDS) * N;
+    return pos && Array.isArray(pos.pits) && pos.pits.length===N &&
+      pos.pits.every(v=>isWhole(v, expected)) && Array.isArray(pos.banks) && pos.banks.length===3 &&
+      isWhole(pos.banks[1], expected) && isWhole(pos.banks[2], expected) && [1,2].includes(pos.turn) &&
+      pos.pits.reduce((a,b)=>a+b,0)+pos.banks[1]+pos.banks[2]===expected &&
+      (pos.pendingRound === true || validMoves(pos.turn,pos.pits,normalizeKasie(pos.kasiePits)).length>0);
+  }
+  function normalizeKasie(values) {
+    return Array.isArray(values)&&values.length===N&&values.every(v=>typeof v==='boolean') ? values.slice() : Array(N).fill(false);
+  }
+  function normalizeRound(value) { return Number.isInteger(value) && value>0 && value<1000 ? value : 1; }
+
+  function cleanMetrics(data){
+    const m=emptyMetrics();
+    if(!data || typeof data!=='object')return m;
+    for(const key of Object.keys(m))if(isWhole(data[key],1_000_000))m[key]=data[key];
+    return m;
+  }
+
+  function saveSettings(){
+    storedSet(SETTINGS_KEY, {
+      ai: options.ai,
+      online: options.online,
+      difficulty: options.difficulty,
+      theme: options.theme,
+      seedStyle: options.seedStyle,
+      pace: options.pace,
+      sound: options.sound,
+      volume: options.volume,
+      firstMove: options.firstMove,
+      format: options.format,
+      seedsPerPit: options.seedsPerPit,
+      pasu: options.pasu,
+      names: { 1: $('p1-input') ? $('p1-input').value.trim() : names[1], 2: $('p2-input') ? $('p2-input').value.trim() : names[2] }
+    });
+  }
+
+  function loadSettings(){
+    const raw = storedGet(SETTINGS_KEY);
+    if (!raw) return;
+    try {
+      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (!data || typeof data !== 'object') return;
+      if (typeof data.ai === 'boolean') options.ai = data.ai;
+      if (typeof data.online === 'boolean') options.online = data.online;
+      if (['easy','medium','hard','expert'].includes(data.difficulty)) options.difficulty = data.difficulty;
+      if (['bright','dark','chettinad','granite','sandalwood'].includes(data.theme)) options.theme = data.theme;
+      if (['natural','colored','cowrie'].includes(data.seedStyle)) options.seedStyle = data.seedStyle;
+      if (['natural','relaxed','fast'].includes(data.pace)) {
+        options.pace = data.pace;
+        options.fast = options.pace === 'fast';
+      }
+      if (typeof data.sound === 'boolean') options.sound = data.sound;
+      if (typeof data.volume === 'number') options.volume = Math.max(0, Math.min(1, data.volume));
+      if (['coin','p1','p2','alt'].includes(data.firstMove)) options.firstMove = data.firstMove;
+      if (['kasie','single'].includes(data.format)) options.format = data.format;
+      if ([4,5].includes(data.seedsPerPit)) options.seedsPerPit = data.seedsPerPit;
+      if (['on','off'].includes(data.pasu)) options.pasu = data.pasu;
+      if (data.names) {
+        if (data.names[1]) names[1] = String(data.names[1]).slice(0, 18);
+        if (data.names[2]) names[2] = String(data.names[2]).slice(0, 18);
+      }
+    } catch {}
+  }
+
+  function updatePaceUI(){
+    const compact=matchMedia('(max-width:420px)').matches;
+    const labels=compact
+      ? {natural:'🎞 Natural',relaxed:'🌿 Relaxed',fast:'⚡ Fast'}
+      : {natural:'🎞 Pace: Natural',relaxed:'🌿 Pace: Relaxed',fast:'⏩ Pace: Fast'};
+    const button=$('speed-btn');
+    button.textContent=labels[options.pace]||labels.natural;
+    button.setAttribute('aria-label',`Gameplay pace: ${options.pace}. Tap to change.`);
+    button.setAttribute('aria-pressed',String(options.pace==='fast'));
+  }
+  function syncSetupModalUI(){
+    const currentMode=options.online?'online':(options.ai?'ai':'two');
+    document.querySelectorAll('[data-mode]').forEach(b=>{const active=b.dataset.mode===currentMode;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
+    document.querySelectorAll('[data-toss]').forEach(b=>b.classList.toggle('active',b.dataset.toss===options.firstMove));
+    document.querySelectorAll('[data-format]').forEach(b=>b.classList.toggle('active',b.dataset.format===options.format));
+    document.querySelectorAll('[data-seedscount]').forEach(b=>b.classList.toggle('active',Number(b.dataset.seedscount)===options.seedsPerPit));
+    document.querySelectorAll('[data-pasu]').forEach(b=>b.classList.toggle('active',b.dataset.pasu===options.pasu));
+    document.querySelectorAll('[data-difficulty]').forEach(b=>{const active=b.dataset.difficulty===options.difficulty;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
+    document.querySelectorAll('[data-theme]').forEach(b=>b.classList.toggle('active',b.dataset.theme===options.theme));
+    document.querySelectorAll('[data-seeds]').forEach(b=>b.classList.toggle('active',b.dataset.seeds===options.seedStyle));
+    $('difficulty-picker').hidden=!options.ai||options.online;
+    $('online-panel').hidden=!options.online;
+    if(options.online&&onlineState.isHost&&!onlineState.peer&&!onlineState.bc&&!onlineState.connected)initOnlineHost();
+    $('difficulty-description').textContent=difficultyDescriptions[options.difficulty]||'';
+    $('p1-input').value=names[1];$('p2-input').value=names[2];
+    $('volume-input').value=Math.round(options.volume*100);
+    $('volume-display').textContent=Math.round(options.volume*100)+'%';
+    document.body.className=options.theme==='bright'?'':options.theme;
+    const labels={bright:'☀️ Teak',dark:'🌙 Rosewood',chettinad:'👑 Chettinad',granite:'🛕 Granite',sandalwood:'🌿 Sandalwood'};
+    $('theme-btn').textContent=labels[options.theme]||'☀️ Theme';
+    updatePaceUI();
+    $('sound-btn').textContent=options.sound?'🔊 Sound':'🔇 Muted';
+    $('sound-btn').classList.toggle('sound-off',!options.sound);
+    $('sound-btn').setAttribute('aria-pressed',String(options.sound));
+    updateOnlineControls();
+  }
+
+  function showSetup(){
+    $('capture-guide').textContent='';
+    invalidateMatch();
+    state.started = false;
+    state.over = false;
+    state.history = [];
+    state.pits = Array(N).fill(options.seedsPerPit);
+    render();
+    $('end-modal').classList.add('hidden');
+    $('rules-modal').classList.add('hidden');
+    $('stats-modal').classList.add('hidden');
+    $('coin-toss-modal').classList.add('hidden');
+    $('round-modal').classList.add('hidden');
+    $('quit-modal').classList.add('hidden');
+    $('setup-modal').classList.remove('hidden');
+    syncSetupModalUI();
+    setStatus('Choose your match settings and start.');
+    refreshResumePanel();
+  }
+
+  function selectOption(group,value){
+    if(group==='mode'){
+      const wasOnline=options.online;
+      options.online=value==='online';options.ai=value==='ai';
+      if(wasOnline&&!options.online)resetOnlineConnection();
+      if(options.online&&!wasOnline){resetOnlineConnection();onlineState.isHost=true;onlineState.myPlayerIndex=1;}
+      const input=$('p2-input');
+      if(options.ai&&(input.value==='Player 2'||input.value==='Azhagi (AI)'))input.value='Azhagi (AI)';
+      if(!options.ai&&input.value==='Azhagi (AI)')input.value='Player 2';
+      names[2]=input.value;
+    }else if(group==='toss')options.firstMove=value;
+    else if(group==='format')options.format=value;
+    else if(group==='seedscount'){
+      options.seedsPerPit=Number(value);
+      if(!state.started){state.pits=Array(N).fill(options.seedsPerPit);render();}
+    }else if(group==='pasu')options.pasu=value;
+    else if(group==='difficulty')options.difficulty=value;
+    else if(group==='theme')options.theme=value;
+    else if(group==='seeds'){options.seedStyle=value;render();beadImpact('drop',.85);}
+    saveSettings();syncSetupModalUI();
+  }
+
+  /* ========================================================
+     ONLINE P2P WEBRTC (PeerJS) + LOCAL CHANNEL ENGINE
+     ======================================================== */
+  function onlineStatus(message, connected=false) {
+    onlineState.connected=connected;
+    const badge=$('online-status-badge');
+    if(badge){badge.className='online-badge '+(connected?'connected':'waiting');badge.textContent=message;}
+    updateOnlineControls();
+    if(state.started)render();
+  }
+  function updateOnlineControls() {
+    const start=$('start-btn');
+    if(!start)return;
+    if(!options.online){start.disabled=false;start.textContent='PLAY SELECTED SETTINGS · ஆடுவோம்';}
+    else {
+      start.disabled=!onlineState.isHost||!onlineState.connected;
+      start.textContent=onlineState.isHost?'START ONLINE MATCH · ஆடுவோம்':'Waiting for host to start…';
+    }
+    if($('start-online-help'))$('start-online-help').hidden=!options.online;
+    if($('online-reactions'))$('online-reactions').hidden=!options.online||!onlineState.connected;
+    if($('join-room-btn'))$('join-room-btn').disabled=options.online&&onlineState.connected;
+  }
+  function resetOnlineConnection({keepRoom=false}={}) {
+    onlineState.generation++;
+    onlineState.pendingRemoteMoves=[];
+    onlineState.pendingNextRound=null;
+    onlineState.acknowledgedMatch=null;
+    onlineState.awaitingSync=false;onlineState.syncPending=false;
+    onlineState.remoteUndoAvailable=false;onlineState.undoPending=false;
+    onlineState.pendingUndoRequest=null;onlineState.revision=0;
+    try{onlineState.conn?.close();}catch{}
+    try{onlineState.peer?.destroy();}catch{}
+    try{onlineState.bc?.close();}catch{}
+    onlineState.conn=null;onlineState.peer=null;onlineState.bc=null;
+    onlineState.connected=false;
+    if(!keepRoom)onlineState.roomCode='';
+    updateOnlineControls();
+  }
+  function safeRemoteName(value, fallback) {
+    return typeof value==='string' ? (value.trim().slice(0,18)||fallback) : fallback;
+  }
+  function applyRemoteRules(remote) {
+    if(!remote||typeof remote!=='object')return;
+    // Only shared rules are synchronized; device sound, pace and theme remain personal.
+    if(['coin','p1','p2','alt'].includes(remote.firstMove))options.firstMove=remote.firstMove;
+    if(['single','kasie'].includes(remote.format))options.format=remote.format;
+    if([4,5].includes(remote.seedsPerPit))options.seedsPerPit=remote.seedsPerPit;
+    if(['on','off'].includes(remote.pasu))options.pasu=remote.pasu;
+    options.ai=false;options.online=true;
+    options.fast=options.pace==='fast';
+  }
+  function onlinePacket(payload) {
+    const packet={...payload};
+    // Prefer WebRTC if open; a local BroadcastChannel is an alternative transport.
+    if(onlineState.conn?.open){
+      try{onlineState.conn.send(packet);return true;}catch{}
+    }
+    if(onlineState.bc){
+      try{onlineState.bc.postMessage(packet);return true;}catch{}
+    }
+    return false;
+  }
+  function sendAuthoritativeState(){
+    if(!options.online||!onlineState.isHost||!onlineState.connected||!state.started){onlineState.syncPending=false;return;}
+    if(state.activeMove||state.busy||state.awaitingToss){onlineState.syncPending=true;return;}
+    const position={pits:state.pits.slice(),banks:state.banks.slice(),turn:state.turn,
+      kasiePits:state.kasiePits.slice(),round:state.round,roundPending:state.roundPending,
+      metrics:{...state.metrics},currentRoundStarter:state.currentRoundStarter,matchStartedAt:state.matchStartedAt};
+    sendOnlinePacket({type:'STATE_SYNC',matchId:state.matchId,rev:onlineState.revision,
+      undoAvailable:state.history.length>0,position,
+      options:{format:options.format,firstMove:options.firstMove,seedsPerPit:options.seedsPerPit,pasu:options.pasu},names:{...names}});
+    onlineState.syncPending=false;
+  }
+  function sendUndoAvailability(){
+    if(!options.online||!onlineState.isHost||!onlineState.connected)return;
+    sendOnlinePacket({type:'UNDO_AVAILABLE',matchId:state.matchId,rev:onlineState.revision,
+      seq:state.metrics.moves,available:state.history.length>0});
+  }
+  function processPendingUndo(){
+    if(!options.online||!onlineState.isHost||!onlineState.pendingUndoRequest)return;
+    if(state.busy||state.activeMove||state.awaitingToss)return;
+    const request=onlineState.pendingUndoRequest;
+    onlineState.pendingUndoRequest=null;
+    if(!onlineState.connected||request.matchId!==state.matchId||request.rev!==onlineState.revision||request.round!==state.round||request.seq!==state.metrics.moves||state.roundPending||!state.history.length){
+      sendOnlinePacket({type:'UNDO_REJECT',matchId:state.matchId,rev:onlineState.revision});
+      sendAuthoritativeState();return;
+    }
+    onlineState.revision++;
+    if(performLocalUndo()){
+      onlineState.pendingRemoteMoves=[];onlineState.pendingNextRound=null;
+      saveStableMatch();sendAuthoritativeState();sendUndoAvailability();
+    }else onlineState.revision--;
+  }
+  function processPendingNextRound() {
+    const packet=onlineState.pendingNextRound;
+    if(!packet||!options.online||onlineState.isHost||!state.roundPending)return;
+    if(packet.matchId!==state.matchId||packet.fromRound!==state.round)return;
+    onlineState.pendingNextRound=null;
+    $('round-modal').classList.add('hidden');
+    const S=options.seedsPerPit;
+    const f1=Math.min(7,Math.floor(state.banks[1]/S));
+    const f2=Math.min(7,Math.floor(state.banks[2]/S));
+    setupNextRound(f1,f2,S,false,packet.starter);
+  }
+  function processRemoteQueue() {
+    if(!options.online||!onlineState.connected||!state.started||state.busy||state.paused||state.over||state.awaitingToss||state.roundPending||isModalOpen('setup-modal')||isModalOpen('quit-modal')||isModalOpen('coin-toss-modal'))return;
+    onlineState.pendingRemoteMoves=onlineState.pendingRemoteMoves.filter(m=>m.matchId===state.matchId&&m.rev===onlineState.revision&&m.round>=state.round&&m.seq>=state.metrics.moves);
+    const ix=onlineState.pendingRemoteMoves.findIndex(m=>m.matchId===state.matchId&&m.round===state.round&&m.seq===state.metrics.moves&&m.player===state.turn&&owner(m.pit)===state.turn&&state.turn!==onlineState.myPlayerIndex);
+    if(ix<0)return;
+    const [m]=onlineState.pendingRemoteMoves.splice(ix,1);
+    void playPit(m.pit,false,true);
+  }
+
+  function generateRoomCode() {
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let code = '';
+    for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+  }
+
+  function ensureRoomCode() {
+    if (!onlineState.roomCode || onlineState.roomCode.length < 3) {
+      onlineState.roomCode = generateRoomCode();
+    }
+    const el = $('online-room-code');
+    if (el) el.textContent = onlineState.roomCode;
+    return onlineState.roomCode;
+  }
+
+  function getShareableGameUrl(roomCode) {
+    try {
+      const loc = window.location;
+      if (loc && (loc.protocol === 'http:' || loc.protocol === 'https:') && loc.origin && loc.origin !== 'null') {
+        const base = loc.origin + loc.pathname;
+        return roomCode ? `${base}?room=${encodeURIComponent(roomCode)}` : base;
+      }
+    } catch {}
+    return '';
+  }
+
+  async function copyTextSafe(text) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch {}
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return Boolean(ok);
+    } catch {
+      return false;
+    }
+  }
+
+  async function shareToWhatsApp(messageText) {
+    await copyTextSafe(messageText);
+    const encoded = encodeURIComponent(messageText);
+    const waWebUrl = `https://wa.me/?text=${encoded}`;
+    try {
+      const a = document.createElement('a');
+      a.href = waWebUrl;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      toast('📲 Opening WhatsApp (Invite also copied!)', 2200);
+    } catch {
+      toast('📋 Invite copied! Paste it in WhatsApp.', 2400);
+    }
+  }
+
+  function attachBroadcastChannel(code){
+    try{
+      if(onlineState.bc){onlineState.bc.close();onlineState.bc=null;}
+      if(typeof BroadcastChannel!=='function')return;
+      const generation=onlineState.generation;
+      const bc=new BroadcastChannel('pallanguzhi_room_'+code.toLowerCase());
+      onlineState.bc=bc;
+      bc.onmessage=ev=>{
+        if(generation!==onlineState.generation||!ev?.data||!options.online)return;
+        if(ev.data.type==='BC_JOIN_REQUEST'&&onlineState.isHost){
+          onlineStatus('🟢 Friend connected · Ready to play',true);
+          // Respond over the same channel, even if a previous WebRTC path is stale.
+          bc.postMessage({type:'CONFIG_SYNC',options:{...options},hostName:names[1]});
+          if(state.started){onlineState.syncPending=true;queueMicrotask(sendAuthoritativeState);}
+          toast('🎉 Opponent connected!',1800);
+        }else handleOnlineMessage(ev.data);
+      };
+    }catch{onlineState.bc=null;}
+  }
+
+  function sendOnlinePacket(payload){return onlinePacket(payload);}
+
+  function initOnlineHost(){
+    if(!options.online||!onlineState.isHost)return;
+    const code=ensureRoomCode();
+    onlineState.myPlayerIndex=1;
+    if(!onlineState.bc)attachBroadcastChannel(code);
+    const generation=onlineState.generation;
+    if(typeof window.Peer!=='function'){
+      onlineStatus('📡 Local tabs ready · Cross-phone requires PeerJS and internet',false);
+      return;
+    }
+    if(onlineState.peer&&!onlineState.peer.destroyed)return;
+    onlineStatus('📡 Opening room '+code+'…',false);
+    try{
+      const peer=new window.Peer('pallanguzhi-'+code.toLowerCase());
+      onlineState.peer=peer;
+      peer.on('open',()=>{
+        if(generation!==onlineState.generation||onlineState.peer!==peer)return;
+        onlineStatus('📡 Room '+code+' ready · Waiting for friend…',onlineState.connected);
+      });
+      peer.on('connection',conn=>{
+        if(generation!==onlineState.generation||onlineState.peer!==peer){try{conn.close();}catch{}return;}
+        if(onlineState.conn?.open){try{conn.close();}catch{}return;}
+        onlineState.conn=conn;setupOnlineConnection();
+      });
+      peer.on('error',err=>{
+        if(generation!==onlineState.generation||onlineState.peer!==peer)return;
+        if(err?.type==='unavailable-id'){
+          try{peer.destroy();}catch{}
+          onlineState.peer=null;onlineState.roomCode=generateRoomCode();ensureRoomCode();
+          attachBroadcastChannel(onlineState.roomCode);initOnlineHost();
+        }else onlineStatus('⚠️ Peer signaling unavailable · Local tabs only',onlineState.connected);
+      });
+    }catch{onlineStatus('⚠️ Peer signaling unavailable · Local tabs only',false);}
+  }
+
+  function joinOnlineRoom(code, resuming=false){
+    const cleanCode=String(code||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if(!/^[A-Z0-9]{5}$/.test(cleanCode)){toast('Enter a 5-character room code.',1900);return;}
+    if(!options.online){toast('Choose Online P2P mode first.',1900);return;}
+    resetOnlineConnection({keepRoom:true});
+    onlineState.isHost=false;onlineState.myPlayerIndex=2;onlineState.roomCode=cleanCode;
+    $('online-room-code').textContent=cleanCode;
+    const generation=onlineState.generation;
+    attachBroadcastChannel(cleanCode);
+    onlineState.awaitingSync=Boolean(resuming);
+    if(resuming){const saved=loadSavedMatch();if(saved)onlineState.revision=saved.onlineRevision||0;}
+    onlineStatus('🔄 Connecting to room '+cleanCode+'…',false);
+    if(onlineState.bc){try{onlineState.bc.postMessage({type:'BC_JOIN_REQUEST',guestName:names[2]});}catch{}}
+    if(typeof window.Peer!=='function'){
+      // BroadcastChannel works within the same origin; not across two phones.
+      if(!onlineState.bc)onlineStatus('⚠️ PeerJS unavailable. Host this game over HTTPS.',false);
+      return;
+    }
+    try{
+      const peer=new window.Peer();onlineState.peer=peer;
+      peer.on('open',()=>{
+        if(generation!==onlineState.generation||onlineState.peer!==peer)return;
+        const conn=peer.connect('pallanguzhi-'+cleanCode.toLowerCase(),{reliable:true});
+        onlineState.conn=conn;setupOnlineConnection();
+      });
+      peer.on('error',()=>{
+        if(generation!==onlineState.generation||onlineState.peer!==peer)return;
+        onlineStatus('⚠️ Room unavailable · Check room code or network',onlineState.connected);
+      });
+    }catch{onlineStatus('⚠️ Peer connection could not start',false);}
+  }
+
+  function setupOnlineConnection(){
+    const conn=onlineState.conn;
+    if(!conn)return;
+    const generation=onlineState.generation;
+    conn.on('open',()=>{
+      if(generation!==onlineState.generation||onlineState.conn!==conn)return;
+      onlineStatus('🟢 Connected · Ready to play',true);
+      toast('🎉 Opponent connected!',1500);
+      if(onlineState.isHost)sendOnlinePacket({type:'CONFIG_SYNC',options:{...options},hostName:names[1]});
+      else {sendOnlinePacket({type:'GUEST_HELLO',guestName:names[2]});sendOnlinePacket({type:'STATE_REQUEST'});}
+    });
+    conn.on('data',data=>{
+      if(generation===onlineState.generation&&onlineState.conn===conn)handleOnlineMessage(data);
+    });
+    conn.on('close',()=>{
+      if(generation!==onlineState.generation||onlineState.conn!==conn)return;
+      onlineState.conn=null;
+      // A local BroadcastChannel may still be active; otherwise no more moves.
+      onlineStatus('⚠️ Connection closed · Rejoin to continue',false);
+      toast('Opponent disconnected',2400);
+    });
+    conn.on('error',()=>{
+      if(generation===onlineState.generation&&onlineState.conn===conn)
+        onlineStatus('⚠️ Connection problem · Try reconnecting',false);
+    });
+  }
+
+  function handleOnlineMessage(data){
+    if(!options.online||!data||typeof data!=='object'||typeof data.type!=='string')return;
+    if(data.type==='ROOM_BUSY'){
+      onlineStatus('⚠️ Host is in a match. Ask for a new match.',false);
+    }else if(data.type==='CONFIG_SYNC'){
+      if(onlineState.isHost)return;
+      onlineStatus('🟢 Connected to '+safeRemoteName(data.hostName,'Host'),true);
+      applyRemoteRules(data.options);
+      names[1]=safeRemoteName(data.hostName,'Player 1');
+      syncSetupModalUI();applyPlayerLabels();
+      sendOnlinePacket({type:'GUEST_HELLO',guestName:names[2]});
+      if(onlineState.awaitingSync)sendOnlinePacket({type:'STATE_REQUEST'});
+    }else if(data.type==='GUEST_HELLO'){
+      if(!onlineState.isHost)return;
+      onlineStatus('🟢 Friend connected · Ready to play',true);
+      names[2]=safeRemoteName(data.guestName,'Player 2');
+      $('p2-input').value=names[2];applyPlayerLabels();render();
+      if(state.started){onlineState.syncPending=true;queueMicrotask(sendAuthoritativeState);}
+    }else if(data.type==='STATE_REQUEST'){
+      if(!onlineState.isHost||!onlineState.connected)return;
+      onlineState.syncPending=true;sendAuthoritativeState();
+    }else if(data.type==='UNDO_REQUEST'){
+      if(!onlineState.isHost||!onlineState.connected||typeof data.matchId!=='string')return;
+      if(!Number.isInteger(data.seq)||!Number.isInteger(data.rev)||!Number.isInteger(data.round))return;
+      onlineState.pendingUndoRequest=data;
+      processPendingUndo();
+    }else if(data.type==='UNDO_AVAILABLE'){
+      if(onlineState.isHost||!onlineState.connected||data.matchId!==state.matchId||data.rev!==onlineState.revision||!Number.isInteger(data.seq)||data.seq<state.metrics.moves)return;
+      onlineState.remoteUndoAvailable=Boolean(data.available);
+      updateAssistButtons();
+    }else if(data.type==='UNDO_REJECT'){
+      if(onlineState.isHost||data.matchId!==state.matchId)return;
+      onlineState.undoPending=false;updateAssistButtons();render();
+      toast('Undo no longer available. Board resynchronizing.',2200);
+    }else if(data.type==='STATE_SYNC'){
+      if(onlineState.isHost||!onlineState.connected||!data.position||!data.names)return;
+      const pos=data.position;
+      if(!Number.isInteger(data.rev)||data.rev<0||data.rev>10000)return;
+      if(typeof data.matchId!=='string'||data.matchId.length>90||!validPosition({...pos,options:{seedsPerPit:data.options?.seedsPerPit||options.seedsPerPit}})||!Array.isArray(pos.kasiePits)||!Array.isArray(pos.banks)||typeof pos.metrics!=='object'||!Number.isInteger(pos.round)||pos.round<1)return;
+      applyRemoteRules(data.options);
+      if(state.resultRecorded&&pos.metrics?.moves<state.metrics.moves)rollbackFinishedResult();
+      invalidateMatch();
+      state.pits=pos.pits.slice();state.banks=pos.banks.slice();state.turn=pos.turn;
+      state.kasiePits=normalizeKasie(pos.kasiePits);state.round=normalizeRound(pos.round);
+      state.roundPending=pos.roundPending===true;state.over=state.roundPending;
+      state.awaitingToss=false;state.paused=false;state.started=true;state.history=[];
+      state.metrics=cleanMetrics(pos.metrics);state.matchId=data.matchId;
+      state.currentRoundStarter=[1,2].includes(pos.currentRoundStarter)?pos.currentRoundStarter:1;
+      state.matchStartedAt=Number.isFinite(pos.matchStartedAt)?pos.matchStartedAt:Date.now();
+      state.recordedStatsBefore=null;state.resultRecorded=false;
+      names[1]=safeRemoteName(data.names[1],'Player 1');names[2]=safeRemoteName(data.names[2],'Player 2');
+      $('p1-input').value=names[1];$('p2-input').value=names[2];
+      onlineState.awaitingSync=false;onlineState.undoPending=false;
+      onlineState.revision=data.rev;
+      onlineState.remoteUndoAvailable=Boolean(data.undoAvailable);
+      onlineState.pendingRemoteMoves=[];
+      applyPlayerLabels();
+      $('round-brand-sub').textContent=options.format==='kasie'?`ROUND ${state.round} · KASIE TOURNAMENT`:'SINGLE MATCH';
+      ['setup-modal','end-modal','quit-modal','coin-toss-modal','round-modal'].forEach(id=>$(id).classList.add('hidden'));
+      render();saveStableMatch();
+      if(state.roundPending)showRoundSummary();
+      else setStatus(`🌐 Reconnected · ${names[state.turn]}'s turn.`);
+      processRemoteQueue();
+    }else if(data.type==='START_GAME'){
+      if(onlineState.isHost||!onlineState.connected||data.matchId===state.matchId||!Number.isInteger(data.starter)||![1,2].includes(data.starter)||typeof data.matchId!=='string'||data.matchId.length>90)return;
+      applyRemoteRules(data.options);
+      if(!data.names||typeof data.names!=='object')return;
+      names[1]=safeRemoteName(data.names[1],'Player 1');
+      names[2]=safeRemoteName(data.names[2],'Player 2');
+      $('p1-input').value=names[1];$('p2-input').value=names[2];
+      syncSetupModalUI();startGame(false,data.starter,data.matchId);
+    }else if(data.type==='MOVE'){
+      if(!onlineState.connected||!state.started||typeof data.matchId!=='string'||data.matchId!==state.matchId||data.rev!==onlineState.revision||!Number.isInteger(data.pit)||data.pit<0||data.pit>=N||!Number.isInteger(data.seq)||data.seq<0||data.seq>10000||!Number.isInteger(data.round)||data.round<state.round||data.round>state.round+1||![1,2].includes(data.player)||data.player===onlineState.myPlayerIndex||owner(data.pit)!==data.player)return;
+      if(data.round===state.round&&data.seq<state.metrics.moves)return;
+      if(onlineState.pendingRemoteMoves.some(m=>m.matchId===data.matchId&&m.seq===data.seq&&m.round===data.round))return;
+      if(onlineState.pendingRemoteMoves.length>=12)onlineState.pendingRemoteMoves.shift();
+      onlineState.pendingRemoteMoves.push({type:'MOVE',pit:data.pit,player:data.player,matchId:data.matchId,seq:data.seq,round:data.round,rev:data.rev});
+      processRemoteQueue();
+    }else if(data.type==='NEXT_ROUND'){
+      if(onlineState.isHost||!onlineState.connected||data.matchId!==state.matchId||data.rev!==onlineState.revision||!Number.isInteger(data.fromRound)||data.fromRound<state.round||data.fromRound>state.round+1||![1,2].includes(data.starter))return;
+      onlineState.pendingNextRound={matchId:data.matchId,fromRound:data.fromRound,starter:data.starter};
+      processPendingNextRound();
+    }else if(data.type==='REACTION'){
+      if(!onlineState.connected||typeof data.emoji!=='string'||!['👏','😄','🎉','🤝'].includes(data.emoji))return;
+      showEmoteReaction(data.emoji,other(onlineState.myPlayerIndex));
+    }
+  }
+
+  function sendOnlineMove(pit){
+    if(options.online&&onlineState.connected)
+      sendOnlinePacket({type:'MOVE',pit,player:state.turn,round:state.round,seq:state.metrics.moves,matchId:state.matchId,rev:onlineState.revision});
+  }
+
+  function showEmoteReaction(emoji, fromPlayer) {
+    const el = document.createElement('div');
+    el.className = 'emote-reaction';
+    el.textContent = emoji;
+    const pos = center(fromPlayer === 1 ? 'mc-1' : 'mc-2');
+    el.style.left = pos.x + 'px';
+    el.style.top = pos.y + 'px';
+    document.body.append(el);
+    beadImpact('pickup', 0.8);
+    setTimeout(() => el.remove(), 1250);
+  }
+
+  function loadSavedMatch(){
+    const raw=storedGet(PROGRESS_KEY);if(!raw)return null;
+    try{
+      const data=JSON.parse(raw);
+      if(data.version!==1 || typeof data.matchId!=='string' || !validPosition(data))throw new Error('invalid position');
+      if(!data.options || typeof data.options!=='object' || !data.names || typeof data.names!=='object')throw new Error('invalid metadata');
+      const history=Array.isArray(data.history)?data.history.slice(-40).filter(h=>validPosition({...h,options:data.options})).map(h=>({
+        ...h,metrics:cleanMetrics(h.metrics),
+        kasiePits:normalizeKasie(h.kasiePits),round:normalizeRound(h.round)
+      })):[];
+      const safeOptions={
+        ai:typeof data.options.ai==='boolean'?data.options.ai:true,
+        online:typeof data.options.online==='boolean'?data.options.online:false,
+        difficulty:['easy','medium','hard','expert'].includes(data.options.difficulty)?data.options.difficulty:'medium',
+        theme:['bright','dark','chettinad','granite','sandalwood'].includes(data.options.theme)?data.options.theme:'bright',
+        seedStyle:['natural','colored','cowrie'].includes(data.options.seedStyle)?data.options.seedStyle:'natural',
+        pace:['natural','relaxed','fast'].includes(data.options.pace)?data.options.pace:'natural',
+        sound:typeof data.options.sound==='boolean'?data.options.sound:true,
+        volume:typeof data.options.volume==='number'&&Number.isFinite(data.options.volume)?Math.max(0,Math.min(1,data.options.volume)):.65,
+        firstMove:['coin','p1','p2','alt'].includes(data.options.firstMove)?data.options.firstMove:'coin',
+        format:['kasie','single'].includes(data.options.format)?data.options.format:'kasie',
+        seedsPerPit:[4,5].includes(data.options.seedsPerPit)?data.options.seedsPerPit:5,
+        pasu:['on','off'].includes(data.options.pasu)?data.options.pasu:'on'
+      };
+      return {...data,history,options:safeOptions,
+        names:{1:String(data.names[1]||'Player 1').slice(0,18),2:String(data.names[2]||'Player 2').slice(0,18)},
+        metrics:cleanMetrics(data.metrics),kasiePits:normalizeKasie(data.kasiePits),
+        round:normalizeRound(data.round),currentRoundStarter:[1,2].includes(data.currentRoundStarter)?data.currentRoundStarter:1,
+        pendingRound:data.pendingRound===true,
+        onlineRoomCode:typeof data.onlineRoomCode==='string'&&/^[A-Z0-9]{5}$/.test(data.onlineRoomCode)?data.onlineRoomCode:null,
+        onlineIsHost:data.onlineIsHost===true,onlineRevision:Number.isInteger(data.onlineRevision)&&data.onlineRevision>=0?data.onlineRevision:0};
+    }catch{storedRemove(PROGRESS_KEY);return null;}
+  }
+
+  function refreshResumePanel(){
+    const saved=loadSavedMatch(),panel=$('resume-panel');if(!panel)return;
+    panel.hidden=!saved;
+    if(saved){
+      const when=new Date(saved.savedAt||0);
+      const date=Number.isNaN(when.getTime())?'Recently':when.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+      const playMode=saved.options.online?(saved.onlineRoomCode?'Online · reconnect room '+saved.onlineRoomCode:'Online · offline recovery'):(saved.options.ai?'Computer · '+saved.options.difficulty:'2 Players');
+      $('resume-summary').textContent=`${saved.names[1]} vs ${saved.names[2]} · ${playMode} · Turn: ${saved.names[saved.turn]} · ${date}.`;
+    }
+  }
+
+  function saveStableMatch(){
+    if(!state.started||state.activeMove||(state.over&&!state.roundPending))return;
+    const pos={version:1,matchId:state.matchId,savedAt:Date.now(),
+      pits:state.pits.slice(),banks:state.banks.slice(),turn:state.turn,
+      history:state.history.slice(-40).map(h=>({pits:h.pits.slice(),banks:h.banks.slice(),turn:h.turn,
+        kasiePits:normalizeKasie(h.kasiePits),round:normalizeRound(h.round),metrics:cleanMetrics(h.metrics)})),
+      metrics:{...state.metrics},matchStartedAt:state.matchStartedAt,
+      kasiePits:state.kasiePits.slice(),round:state.round,currentRoundStarter:state.currentRoundStarter,
+      pendingRound:state.roundPending===true,
+      onlineRoomCode:options.online?onlineState.roomCode:null,onlineIsHost:options.online?onlineState.isHost:null,onlineRevision:options.online?onlineState.revision:0,
+      options:{...options},
+      names:{...names}};
+    if(validPosition(pos))storedSet(PROGRESS_KEY,pos);
+  }
+  function removeSavedMatch(){storedRemove(PROGRESS_KEY);refreshResumePanel();}
+  function applySavedOptions(saved){
+    Object.assign(options,saved.options,{fast:saved.options.pace==='fast'});
+    syncSetupModalUI();
+    if(audio)audio.pallanguzhiMaster.gain.setTargetAtTime(options.sound?options.volume:0,audio.currentTime,.02);
+  }
+  function applyPlayerLabels(){
+    for(const p of [1,2]){
+      $('p'+p+'-label').textContent=names[p];
+      $('owner-'+p).textContent=names[p]+' • '+(p===1?'BOTTOM':'TOP');
+      $('mc-label-'+p).textContent=names[p].slice(0,6)+'\nSTORE';
+    }
+  }
+  function resumeMatch(){
+    const saved=loadSavedMatch();if(!saved){refreshResumePanel();toast('No valid saved match found.',1800);return;}
+    invalidateMatch();
+    resetOnlineConnection();
+    if(saved.options.online&&saved.onlineRoomCode){
+      onlineState.isHost=saved.onlineIsHost;
+      onlineState.myPlayerIndex=saved.onlineIsHost?1:2;
+      onlineState.roomCode=saved.onlineRoomCode;
+      onlineState.awaitingSync=!saved.onlineIsHost;onlineState.revision=saved.onlineRevision;
+    }else if(saved.options.online){
+      // Legacy online saves had no room metadata: recover gameplay locally.
+      saved.options.online=false;saved.options.ai=false;
+    }
+    applySavedOptions(saved);
+    names={...saved.names};$('p1-input').value=names[1];$('p2-input').value=names[2];
+    state.pits=saved.pits.slice();state.banks=saved.banks.slice();state.turn=saved.turn;
+    state.kasiePits=saved.kasiePits.slice();state.round=saved.round;
+    state.currentRoundStarter=saved.currentRoundStarter;
+    state.roundPending=saved.pendingRound;
+    state.history=saved.history;state.metrics=saved.metrics;
+    state.over=Boolean(saved.pendingRound);state.paused=false;state.started=true;state.matchId=saved.matchId;
+    $('round-brand-sub').textContent=options.format==='kasie'?`ROUND ${state.round} · KASIE TOURNAMENT`:'SINGLE MATCH';
+    state.matchStartedAt=isWhole(saved.matchStartedAt,9e15)?saved.matchStartedAt:Date.now();
+    state.recordedStatsBefore=null;state.resultRecorded=false;
+    applyPlayerLabels();
+    $('setup-modal').classList.add('hidden');$('end-modal').classList.add('hidden');$('stats-modal').classList.add('hidden');$('quit-modal').classList.add('hidden');
+    render();setStatus(`💾 Match resumed · ${names[state.turn]}'s turn.`);
+    ensureAudio();
+    if(options.online){
+      if(!onlineState.isHost&&onlineState.roomCode)joinOnlineRoom(onlineState.roomCode,true);
+      setStatus(onlineState.isHost?`💾 Match restored · Share room ${onlineState.roomCode} to reconnect.`:'💾 Match restored · Reconnecting to host…');
+    }
+    if(state.roundPending){showRoundSummary();return;}
+    if(options.ai&&state.turn===2)scheduleAiTurn(()=>state.started&&!state.over);
+  }
+  function discardSavedMatch(){removeSavedMatch();toast('Saved match discarded. Start a new game.',1600);}
+
+  function defaultStats(){return {matches:0,wins:0,losses:0,draws:0,streak:0,bestStreak:0,bestScore:0,pasu:0,captured:0,expertWins:0,history:[]};}
+  function loadStats(){
+    try{
+      const v=JSON.parse(storedGet(STATS_KEY)||'null');
+      if(!v||v.version!==1||typeof v!=='object')return defaultStats();
+      const clean=defaultStats();
+      for(const key of Object.keys(clean))if(key!=='history'&&isWhole(v[key],1_000_000))clean[key]=v[key];
+      if(Array.isArray(v.history))clean.history=v.history.slice(0,20).filter(r=>r&&typeof r==='object'&&[1,2].every(p=>isWhole(r['score'+p])) && ['win','loss','draw'].includes(r.result)).map(r=>({
+        at:isWhole(r.at,9e15)?r.at:0,result:r.result,score1:r.score1,score2:r.score2,
+        ai:Boolean(r.ai),difficulty:String(r.difficulty||'medium').slice(0,12),
+        name:String(r.name||'Player 1').slice(0,18)
+      }));
+      return clean;
+    }catch{return defaultStats();}
+  }
+  function saveStats(){storedSet(STATS_KEY,{version:1,...stats});}
+  const achievements=[
+    {id:'first',emoji:'🏆',name:'First Victory',desc:'Win your first match',value:()=>stats.wins,goal:1},
+    {id:'wins5',emoji:'⭐',name:'Five Victories',desc:'Win 5 matches',value:()=>stats.wins,goal:5},
+    {id:'pasu10',emoji:'🌰',name:'Pasu Master',desc:'Earn 10 Pasu bonuses as Player 1',value:()=>stats.pasu,goal:10},
+    {id:'expert',emoji:'👑',name:'Expert Challenger',desc:'Beat Expert AI',value:()=>stats.expertWins,goal:1},
+    {id:'ten',emoji:'🎯',name:'Heritage Regular',desc:'Complete 10 matches',value:()=>stats.matches,goal:10}
+  ];
+  function achieved(){return achievements.filter(a=>a.value()>=a.goal).map(a=>a.id);}
+  function recordFinishedMatch(){
+    if(state.resultRecorded)return;
+    const before=achieved();
+    state.recordedStatsBefore=JSON.parse(JSON.stringify(stats));
+    state.resultRecorded=true;
+    const s1=state.banks[1],s2=state.banks[2];
+    const result=s1===s2?'draw':s1>s2?'win':'loss';
+    stats.matches++;
+    if(result==='win'){
+      stats.wins++;stats.streak++;
+      if(options.ai&&options.difficulty==='expert')stats.expertWins++;
+    }else{
+      if(result==='loss')stats.losses++;else stats.draws++;
+      stats.streak=0;
+    }
+    stats.bestStreak=Math.max(stats.bestStreak,stats.streak);
+    stats.bestScore=Math.max(stats.bestScore,s1);
+    stats.pasu+=state.metrics.p1Pasu;
+    stats.captured+=state.metrics.p1Captured;
+    stats.history.unshift({at:Date.now(),result,score1:s1,score2:s2,ai:options.ai,difficulty:options.difficulty,name:names[1]});
+    stats.history=stats.history.slice(0,20);
+    saveStats();
+    const unlocked=achievements.filter(a=>!before.includes(a.id)&&a.value()>=a.goal);
+    $('new-unlocks').hidden=unlocked.length===0;
+    $('new-unlocks').textContent=unlocked.length?'🏅 Achievement unlocked: '+unlocked.map(a=>a.emoji+' '+a.name).join(' · '):'';
+  }
+  function rollbackFinishedResult(){
+    if(state.resultRecorded&&state.recordedStatsBefore){
+      stats=state.recordedStatsBefore;
+      saveStats();
+    }
+    state.resultRecorded=false;state.recordedStatsBefore=null;
+    $('new-unlocks').hidden=true;
+  }
+  function renderStats(){
+    const grid=$('stats-grid');grid.replaceChildren();
+    const rate=stats.matches?Math.round(stats.wins/stats.matches*100):0;
+    const values=[['Matches',stats.matches],['Wins',stats.wins],['Win rate',rate+'%'],
+      ['Best streak',stats.bestStreak],['Best score',stats.bestScore],['Pasu bonuses',stats.pasu]];
+    for(const [label,value] of values){
+      const tile=document.createElement('div');tile.className='stat-tile';
+      const strong=document.createElement('strong');strong.textContent=value;
+      const small=document.createElement('small');small.textContent=label;
+      tile.append(strong,small);grid.append(tile);
+    }
+    const ach=$('achievements');ach.replaceChildren();
+    for(const a of achievements){
+      const n=Math.min(a.goal,a.value());const done=n>=a.goal;
+      const item=document.createElement('div');item.className='achievement-row'+(done?' unlocked':'');
+      const emoji=document.createElement('span');emoji.className='achievement-icon';emoji.textContent=a.emoji;
+      const content=document.createElement('div');content.className='achievement-content';
+      const title=document.createElement('div');title.className='achievement-name';title.textContent=a.name+(done?' · Unlocked ✓':'');
+      const desc=document.createElement('div');desc.className='achievement-detail';desc.textContent=`${a.desc} · ${n}/${a.goal}`;
+      const bar=document.createElement('div');bar.className='achievement-progress';const fill=document.createElement('span');fill.style.width=n/a.goal*100+'%';bar.append(fill);
+      content.append(title,desc,bar);item.append(emoji,content);ach.append(item);
+    }
+    const hist=$('match-history');hist.replaceChildren();
+    if(!stats.history.length){const empty=document.createElement('p');empty.className='difficulty-note';empty.textContent='No completed matches yet. Finish a match to see your journey.';hist.append(empty);}
+    else for(const m of stats.history){
+      const item=document.createElement('div');item.className='match-record';
+      const left=document.createElement('span');
+      const d=new Date(m.at);const when=!Number.isNaN(d.getTime())?d.toLocaleDateString(undefined,{month:'short',day:'numeric'}):'—';
+      left.textContent=`${when} · ${m.ai?'AI '+m.difficulty:'2 Players'}`;
+      const right=document.createElement('strong');right.className=m.result;
+      right.textContent=`${m.result==='win'?'Win':m.result==='loss'?'Loss':'Draw'} · ${m.score1}–${m.score2}`;
+      item.append(left,right);hist.append(item);
+    }
+    $('stats-footnote').textContent=`Player 1 results: ${stats.wins} wins · ${stats.losses} losses · ${stats.draws} draws. Records show the latest 20 matches. Totals and achievements stay on this device only.`;
+  }
+  function openStats(){if(state.busy||state.activeMove){toast('Finish the current move before opening statistics.',1400);return;}renderStats();$('stats-modal').classList.remove('hidden');}
+  function closeStats(){$('stats-modal').classList.add('hidden');}
+  function resetStats(){
+    const btn = $('reset-stats-btn');
+    if (btn && btn.dataset.confirming !== 'true') {
+      btn.dataset.confirming = 'true';
+      btn.textContent = '⚠️ Tap again to confirm erase';
+      clearTimeout(resetStatsConfirmTimer);
+      resetStatsConfirmTimer = setTimeout(() => {
+        btn.dataset.confirming = 'false';
+        btn.textContent = '🗑 Clear match statistics';
+      }, 3500);
+      return;
+    }
+    if (btn) {
+      btn.dataset.confirming = 'false';
+      btn.textContent = '🗑 Clear match statistics';
+    }
+    clearTimeout(resetStatsConfirmTimer);
+    stats=defaultStats();state.recordedStatsBefore=null;saveStats();renderStats();toast('Statistics cleared.',1300);
+  }
+
+  function playCoinSound() {
+    const ctx = ensureAudio();
+    if (!ctx || !options.sound || options.volume === 0) return;
+    try {
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(2200, t);
+      osc.frequency.exponentialRampToValueAtTime(1400, t + 0.45);
+      gain.gain.setValueAtTime(0.06 * options.volume, t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+      osc.connect(gain);
+      gain.connect(ctx.pallanguzhiMaster);
+      osc.start(t);
+      osc.stop(t + 0.46);
+
+      [0.48, 0.54, 0.58].forEach((delay, i) => {
+        const o2 = ctx.createOscillator();
+        const g2 = ctx.createGain();
+        o2.type = 'triangle';
+        o2.frequency.setValueAtTime(2800 + i * 200, t + delay);
+        g2.gain.setValueAtTime((0.05 - i * 0.012) * options.volume, t + delay);
+        g2.gain.exponentialRampToValueAtTime(0.0001, t + delay + 0.04);
+        o2.connect(g2);
+        g2.connect(ctx.pallanguzhiMaster);
+        o2.start(t + delay);
+        o2.stop(t + delay + 0.045);
+      });
+    } catch {}
+  }
+
+  function launchCoinToss(onComplete, forcedWinner=null) {
+    const modal = $('coin-toss-modal');
+    const coin = $('toss-coin');
+    const resultText = $('toss-result-text');
+    const startBtn = $('toss-start-btn');
+
+    modal.classList.remove('hidden');
+    startBtn.disabled = true;
+    coin.style.transition = 'none';
+    coin.style.transform = 'rotateY(0deg)';
+    void coin.offsetWidth;
+
+    const winner = (forcedWinner === 1 || forcedWinner === 2) ? forcedWinner : (Math.random() < 0.5 ? 1 : 2);
+    const tossEpoch=state.epoch;
+    resultText.textContent = "Flipping brass coin…";
+
+    playCoinSound();
+    coin.style.transition = 'transform 2.2s cubic-bezier(0.18, 0.89, 0.32, 1.05)';
+    const finalRot = 1800 + (winner === 2 ? 180 : 0);
+    coin.style.transform = `rotateY(${finalRot}deg)`;
+
+    let finished = false;
+    const finalize = () => {
+      if (finished||tossEpoch!==state.epoch||modal.classList.contains('hidden')) return;
+      finished = true;
+      modal.classList.add('hidden');
+      onComplete(winner);
+    };
+
+    setTimeout(() => {
+      if(tossEpoch!==state.epoch||modal.classList.contains('hidden'))return;
+      const winnerName = names[winner];
+      resultText.textContent = `🎉 ${winnerName} won the toss! Sowing first.`;
+      startBtn.disabled = false;
+      startBtn.onclick = finalize;
+      setTimeout(() => {
+        if (!modal.classList.contains('hidden')) finalize();
+      }, 1600);
+    }, 2250);
+  }
+
+  function simulateMove(pits,banks,player,selected,config=null) {
+    return simulateRules(pits,banks,player,selected,{locked:state.kasiePits,pasu:options.pasu,...(config || {})});
+  }
+
+  /* Single, authoritative validMoves definition with Kasie pit filtering */
+  function validMoves(player, pits=state.pits, locked=state.kasiePits){
+    return row(player).filter(i => (!locked || !locked[i]) && pits[i] > 0);
+  }
+
+  function settleIfFinished(pits, banks) {
+    const p1Moves = row(1).filter(i => (!state.kasiePits || !state.kasiePits[i]) && pits[i] > 0);
+    const p2Moves = row(2).filter(i => (!state.kasiePits || !state.kasiePits[i]) && pits[i] > 0);
+    if (p1Moves.length > 0 && p2Moves.length > 0) return false;
+
+    for (let i = 0; i < N; i++) {
+      if (!state.kasiePits || !state.kasiePits[i]) {
+        banks[owner(i)] += pits[i];
+        pits[i] = 0;
+      }
+    }
+    return true;
+  }
+
+  function createBoard() {
+    for (const [target, indices] of [['row-top',[13,12,11,10,9,8,7]],['row-bottom',[0,1,2,3,4,5,6]]]) {
+      const fragment = document.createDocumentFragment();
+      for (const index of indices) {
+        const slot = document.createElement('div'); slot.className='pit-slot';
+        const pit = document.createElement('button');
+        pit.type='button'; pit.className='pit'; pit.id='pit-'+index;
+        pit.addEventListener('click', () => playPit(index));
+        slot.append(pit); fragment.append(slot);
+      }
+      $(target).append(fragment);
+    }
+    render();
+  }
+
+  function getSeedClass(index, serial) {
+    if(options.seedStyle === 'cowrie') return 'seed-cowrie';
+    if(options.seedStyle === 'colored') return 'seed-colored-' + ((index + serial) % 5);
+    return 'seed-natural';
+  }
+
+  function seedNode(index, serial, store=false) {
+    const el=document.createElement('span');
+    const color=getSeedClass(index, serial);
+    el.className='tamarind-seed '+color;
+    const golden=serial*2.39996323+index*.31;
+    const jitter=Math.sin((serial+1)*53.63+index*12.1);
+    if(store){
+      const radius=Math.sqrt((serial+.4)/28);
+      el.style.left=(50+Math.cos(golden)*34*radius)+'%';
+      el.style.bottom=(8+Math.floor(serial/3)*6)+'%';
+    }else{
+      const radius=Math.sqrt((serial+.7)/25)*34;
+      el.style.left=(50+Math.cos(golden)*radius+jitter*2.3)+'%';
+      el.style.top=(50+Math.sin(golden)*radius*.78+Math.cos(serial*3.1)*2)+'%';
+    }
+    const rotation=((serial*53+index*17)%105-50)+'deg';
+    el.style.setProperty('--rot',rotation);
+    el.style.transform='translate(-50%,-50%) rotate('+rotation+')';
+    el.dataset.serial=String(serial);
+    return el;
+  }
+
+  function nudgeNearbyBeads(pitIndex){
+    if(options.fast||reducedMotion()||matchMedia('(pointer:coarse)').matches)return;
+    const beads=Array.from($('pit-'+pitIndex).querySelectorAll('.seed-pit-cluster .tamarind-seed'));
+    for(const bead of beads.slice(-3,-1)){
+      const angle=Number(bead.dataset.serial||1)*2.4;
+      const tx=(Math.cos(angle)*2.3).toFixed(1),ty=(Math.sin(angle)*1.7).toFixed(1);
+      const rest=bead.style.transform;
+      try{bead.animate([
+        {transform:rest},{transform:rest+` translate(${tx}px,${ty}px)`,offset:.43},
+        {transform:rest,offset:1}
+      ],{duration:215,easing:'ease-out'});}catch{}
+    }
+  }
+
+  function paintPit(index,landed=false){
+    const el=$('pit-'+index);if(!el)return;
+    const isKasie = Boolean(state.kasiePits && state.kasiePits[index]);
+    el.classList.toggle('kasie', isKasie);
+
+    const count=state.pits[index];
+    let cluster=el.querySelector('.seed-pit-cluster');
+    let countNode=el.querySelector('.pit-count');
+    if(!cluster){cluster=document.createElement('span');cluster.className='seed-pit-cluster';el.append(cluster);}
+    if(!countNode){countNode=document.createElement('span');countNode.className='pit-count';el.append(countNode);}
+    const target=Math.min(count,20);
+    while(cluster.children.length>target)cluster.lastElementChild.remove();
+    const old=cluster.children.length;
+    for(let j=old;j<target;j++){
+      const bead=seedNode(index,j);
+      if(landed&&j===target-1){
+        bead.classList.add('seed-landed');
+        bead.addEventListener('animationend', () => bead.classList.remove('seed-landed'), { once: true });
+      }
+      cluster.append(bead);
+    }
+    Array.from(cluster.children).forEach((bead,j)=>{
+      const color=getSeedClass(index, j);
+      if(!bead.classList.contains(color)){
+        bead.className='tamarind-seed '+color;
+        if(landed&&j===target-1){
+          bead.classList.add('seed-landed');
+          bead.addEventListener('animationend', () => bead.classList.remove('seed-landed'), { once: true });
+        }
+      }
+    });
+    if(landed&&target>old)nudgeNearbyBeads(index);
+    countNode.textContent=count;
+    
+    // In online mode, you can only play your assigned player side!
+    const isMyTurnOnline = !options.online || (onlineState.connected && !onlineState.awaitingSync && !onlineState.undoPending && state.turn === onlineState.myPlayerIndex);
+    const playable=state.started&&!state.busy&&!state.over&&!state.paused&&!state.awaitingToss&&!isKasie&&count>0&&owner(index)===state.turn&&!(options.ai&&state.turn===2)&&isMyTurnOnline;
+    el.disabled=!playable;el.classList.toggle('playable',playable);
+    el.classList.toggle('hinted',state.hintPit===index && playable);
+    el.setAttribute('aria-label',`Player ${owner(index)} cup ${index<7?index+1:14-index}, ${count} ${options.seedStyle==='natural'?'seeds':'beads'}${isKasie?', locked as Kasie':''}${playable?', tap to play':''}`);
+  }
+
+  function paintBank(player,newlyAdded=0){
+    const total=state.banks[player];
+    const bank=$('mc-pile-'+player);
+    const visible=Math.min(total,30);
+    while(bank.children.length>visible)bank.lastElementChild.remove();
+    const old=bank.children.length;
+    for(let i=old;i<visible;i++){
+      const bead=seedNode(player,i,true);
+      if(newlyAdded){
+        bead.classList.add('seed-landed');
+        bead.addEventListener('animationend', () => bead.classList.remove('seed-landed'), { once: true });
+      }
+      bead.style.animationDelay=Math.min(140,(i-old)*17)+'ms';
+      bank.append(bead);
+    }
+    Array.from(bank.children).forEach((bead,j)=>{
+      const color=getSeedClass(player, j);
+      if(!bead.classList.contains(color))bead.className='tamarind-seed '+color;
+    });
+    $('mc-count-'+player).textContent=total;$('p'+player+'-score').textContent=total;
+  }
+
+  function render() {
+    for(let i=0;i<N;i++) paintPit(i);
+    for(let p=1;p<=2;p++) {
+      paintBank(p);
+      $('p'+p+'-pod').classList.toggle('active',state.turn===p&&!state.over);
+      $('mc-'+p).classList.toggle('active-owner',state.turn===p&&!state.over);
+      $(p===1?'plank-bottom':'plank-top').classList.toggle('active-side',state.turn===p&&!state.over);
+    }
+    $('ind-1').textContent=state.turn===1&&!state.over ? (state.busy?'SOWING…':'YOUR TURN') : '';
+    $('ind-2').textContent=state.turn===2&&!state.over ? (options.ai?'AI PLAYING…':state.busy?'SOWING…':'YOUR TURN') : '';
+    updateAssistButtons();
+    updateOnlineControls();
+    $('turn-guide').textContent=turnGuidance({started:state.started,over:state.over,busy:state.busy,paused:state.paused,awaitingToss:state.awaitingToss,roundPending:state.roundPending,turn:state.turn,name:names[state.turn],ai:options.ai,online:options.online,connected:onlineState.connected,myPlayer:onlineState.myPlayerIndex,awaitingSync:onlineState.awaitingSync,undoPending:onlineState.undoPending});
+  }
+
+  function setStatus(text) {$('status-text').textContent=text;}
+  function toast(text,ms=1350) {
+    clearTimeout(toastTimer); const el=$('toast'); el.textContent=text; el.classList.add('visible');
+    toastTimer=setTimeout(()=>el.classList.remove('visible'),ms);
+  }
+
+  function invalidateLayout(){ layoutDirty=true; }
+  function measureBoard(){
+    if(!layoutDirty)return;
+    layoutCenters.clear();
+    for(let i=0;i<N;i++){
+      const r=$('pit-'+i).getBoundingClientRect();
+      layoutCenters.set('pit-'+i,{x:r.left+r.width/2,y:r.top+r.height/2});
+    }
+    for(const player of [1,2]){
+      const r=$('mc-'+player).getBoundingClientRect();
+      layoutCenters.set('mc-'+player,{x:r.left+r.width/2,y:r.top+r.height/2});
+    }
+    layoutDirty=false;
+  }
+  function center(id) {
+    if(typeof id==='string' && (id.startsWith('pit-')||id.startsWith('mc-'))){
+      measureBoard();
+      return layoutCenters.get(id) || {x:innerWidth/2,y:innerHeight/2};
+    }
+    const el=typeof id==='string'?$(id):id;
+    if(!el)return {x:innerWidth/2,y:innerHeight/2};
+    const r=el.getBoundingClientRect();
+    return{x:r.left+r.width/2,y:r.top+r.height/2};
+  }
+  function hideHand(){
+    lastHandPos=null;
+    const el=$('player-hand');el.classList.remove('visible','grip','releasing');
+    $('hand-visual-count').textContent='';
+    $('hand-counter').style.display='none';
+  }
+  function handBadge(pos,count){
+    $('hand-visual-count').textContent=count>0?String(count):'';
+    $('hand-counter').style.display='none';
+  }
+  function handPose(pose='open'){
+    const el=$('player-hand');
+    el.classList.toggle('grip',pose==='grip');
+    el.classList.toggle('releasing',pose==='release');
+  }
+
+  function handPoint(pitPos, player=state.turn){
+    const outward = player===1 ? 1 : -1;
+    return portraitBoard()
+      ? {x:pitPos.x-outward*39,y:pitPos.y}
+      : {x:pitPos.x,y:pitPos.y+outward*45};
+  }
+  function releasePoint(pitPos, player=state.turn){
+    const outward = player===1 ? 1 : -1;
+    return portraitBoard()
+      ? {x:pitPos.x-outward*16,y:pitPos.y}
+      : {x:pitPos.x+2,y:pitPos.y+outward*16};
+  }
+
+  async function moveHand(pitPos,player=state.turn,pose='open'){
+    const el=$('player-hand');
+    const point=handPoint(pitPos,player);
+    el.dataset.facing=player===1?'bottom':'top';
+    el.classList.toggle('ai',player===2);
+    const position = p => `translate3d(calc(${p.x}px - 50%),calc(${p.y}px - 50%),0)`;
+    const target=position(point);
+    const previous=lastHandPos;
+    handPose(pose);
+    if(!el.classList.contains('visible')){
+      el.style.transform=target;
+      lastHandPos=point;
+      el.classList.add('visible');
+      if(!reducedMotion())await wait(Math.round(35*paceMultiplier()));
+      return;
+    }
+    const distance=previous?Math.hypot(point.x-previous.x,point.y-previous.y):0;
+    if(distance<2)return;
+    lastHandPos=point;
+    const duration=reducedMotion()?0:Math.round(
+      Math.min(318,215+Math.max(0,distance-65)*.16)*paceMultiplier()
+    );
+    if(!duration){el.style.transform=target;return;}
+    if(typeof el.animate!=='function'){
+      el.style.transform=target;
+      await wait(duration);
+      return;
+    }
+    const anim=el.animate([{transform:position(previous||point)}, {transform:target}],{
+      duration,easing:'cubic-bezier(.36,.07,.25,.98)',fill:'both'
+    });
+    activeAnims.add(anim);
+    try{
+      await anim.finished.catch(()=>{});
+      if(anim.playState==='finished')el.style.transform=target;
+    }finally{
+      activeAnims.delete(anim);
+      try{anim.cancel();}catch{}
+    }
+  }
+
+  function highlightPit(index,kind='pulse',ms=200) {
+    const p=$('pit-'+index);
+    const old=pitTimers.get(index+'|'+kind);
+    if(old)clearTimeout(old);
+    p.classList.add(kind);
+    pitTimers.set(index+'|'+kind,setTimeout(()=>{
+      p.classList.remove(kind);
+      pitTimers.delete(index+'|'+kind);
+    },ms));
+  }
+
+  function clearCaptureFeedback(){
+    for(const timer of feedbackTimers)clearTimeout(timer);
+    feedbackTimers.clear();
+    document.querySelectorAll('.gain-float').forEach(el=>el.remove());
+    document.querySelectorAll('.outer-mother-cup.store-celebrate').forEach(el=>el.classList.remove('store-celebrate'));
+    document.querySelectorAll('.score-bloom').forEach(el=>el.classList.remove('score-bloom'));
+  }
+  function celebrateCapture(player,amount,pasu=false){
+    const cup=$('mc-'+player),score=$('p'+player+'-score'),counter=$('mc-count-'+player);
+    if(!cup||amount<=0)return;
+    if(reducedMotion())return;
+    const pos=center('mc-'+player);
+    const badge=document.createElement('span');
+    badge.className='gain-float'+(pasu?' pasu':'');
+    badge.textContent=pasu?'🌰 பசு! +4':'+'+amount+' 🌰';
+    badge.style.left=Math.min(innerWidth-35,Math.max(35,pos.x))+'px';
+    badge.style.top=Math.max(55,Math.min(innerHeight-110,pos.y))+'px';
+    document.body.append(badge);
+    for(const el of [cup,score,counter]){
+      const name=el===cup?'store-celebrate':'score-bloom';
+      el.classList.remove(name);
+      void el.offsetWidth;
+      el.classList.add(name);
+    }
+    const timer=setTimeout(()=>{
+      badge.remove();
+      cup.classList.remove('store-celebrate');
+      score.classList.remove('score-bloom');counter.classList.remove('score-bloom');
+      feedbackTimers.delete(timer);
+    },810);
+    feedbackTimers.add(timer);
+  }
+  function closeAnimations() {
+    clearCaptureFeedback();
+    for(const anim of activeAnims){try{anim.cancel();}catch{}}
+    activeAnims.clear();
+    for(const timer of pitTimers.values())clearTimeout(timer);
+    pitTimers.clear();
+    document.querySelectorAll('.flying-seed').forEach(el=>el.remove());
+    document.querySelectorAll('.pit.pulse,.pit.capture-pulse,.pit.drop-impact').forEach(el=>el.classList.remove('pulse','capture-pulse','drop-impact'));
+    hideHand();
+  }
+
+  function motionTime(kind){
+    if(reducedMotion())return 0;
+    const base={drop:163,scoop:112,capture:222}[kind]||163;
+    return Math.round(base*paceMultiplier());
+  }
+  async function fly(from,to,{kind='drop',index=0,serial=0,delay=0}={}){
+    const duration=motionTime(kind);
+    if(duration<=0)return;
+    const el=document.createElement('span');
+    const color=getSeedClass(index, serial);
+    el.className='flying-seed tamarind-seed '+color+(kind==='scoop'?' scoop-seed':'');
+    const variance=kind==='scoop'?5:3;
+    const sx=from.x+(Math.random()-.5)*variance, sy=from.y+(Math.random()-.5)*variance;
+    const spread=kind==='capture'?15:kind==='drop'?6:5;
+    const tx=to.x+(Math.random()-.5)*spread,ty=to.y+(Math.random()-.5)*spread;
+    const dx=tx-sx,dy=ty-sy,dist=Math.hypot(dx,dy);
+    const spin=(Math.random()>.5?1:-1)*(15+Math.random()*67);
+    const arc=kind==='scoop'?Math.min(21,dist*.20):kind==='capture'?Math.min(27,dist*.14):Math.min(9,dist*.18);
+    const horizontalArc=portraitBoard();
+    const frame=(p,yArc,angle,scaleX=1,scaleY=1)=>{
+      const offset=-yArc;
+      const x=dx*p+(horizontalArc?offset:0);
+      const y=dy*p+(horizontalArc?0:offset);
+      return {offset:p,transform:`translate3d(calc(-50% + ${x.toFixed(1)}px),calc(-50% + ${y.toFixed(1)}px),0) rotate(${angle.toFixed(1)}deg) scale(${scaleX},${scaleY})`};
+    };
+    const frames=[frame(0,0,0,.95,.95),frame(.44,arc,spin*.47,1.06,1.06),frame(.8,arc*.24,spin*.8,1.1,.84),frame(1,0,spin,1,1)];
+    el.style.left=sx+'px';el.style.top=sy+'px';document.body.append(el);
+    let animation;
+    try{
+      animation=el.animate(frames,{duration,delay,easing:'ease-in-out',fill:'both'});
+      activeAnims.add(animation);
+      await animation.finished.catch(()=>{});
+    }finally{
+      if(animation)activeAnims.delete(animation);
+      el.remove();
+    }
+  }
+
+  function makeImpactBuffer(ctx, material, variation){
+    const sampleRate=ctx.sampleRate;
+    const isCowrie = material === 'cowrie';
+    const isGlass = material === 'colored';
+    const duration = isGlass ? .18 : isCowrie ? .13 : .105;
+    const length = Math.ceil(duration * sampleRate);
+    const buf = ctx.createBuffer(1, length, sampleRate);
+    const values = buf.getChannelData(0);
+
+    let random = (variation + 1) * 2345678 + (isGlass ? 1987 : isCowrie ? 4321 : 6543);
+    const nextNoise = () => {
+      random ^= random << 13; random ^= random >>> 17; random ^= random << 5;
+      return ((random >>> 0) / 2147483648) - 1;
+    };
+
+    const baseFreq = isGlass 
+      ? (1380 + variation * 115) 
+      : isCowrie 
+        ? (2850 + variation * 180) 
+        : (290 + variation * 32);
+
+    const harmonics = isGlass
+      ? [1, 2.14, 3.42, 4.88]
+      : isCowrie
+        ? [1, 1.48, 2.22, 3.65]
+        : [1, 1.72, 2.65];
+
+    const amplitudes = isGlass
+      ? [0.75, 0.45, 0.22, 0.12]
+      : isCowrie
+        ? [0.85, 0.40, 0.18, 0.08]
+        : [0.70, 0.28, 0.10];
+
+    const twoPi = Math.PI * 2;
+    let filteredNoise = 0;
+
+    for (let i = 0; i < length; i++) {
+      const t = i / sampleRate;
+      const raw = nextNoise();
+      filteredNoise = filteredNoise * 0.15 + raw * 0.85;
+      const decayRate = isGlass ? 140 : isCowrie ? 190 : 210;
+      const initialSnap = Math.exp(-t * decayRate) * filteredNoise * 0.8;
+
+      let resonance = 0;
+      for (let p = 0; p < harmonics.length; p++) {
+        const freq = baseFreq * harmonics[p];
+        const damping = isGlass ? (28 + p * 12) : isCowrie ? (45 + p * 20) : (68 + p * 28);
+        resonance += Math.sin(twoPi * freq * t + (variation + p) * 0.4) * Math.exp(-t * damping) * amplitudes[p];
+      }
+
+      const woodenCavity = Math.sin(twoPi * (180 + variation * 15) * t) * Math.exp(-t * 85) * 0.35;
+      const bounceTime = isGlass ? 0.034 : isCowrie ? 0.021 : 0.026;
+      const dt = t - bounceTime;
+      const bounce = dt >= 0 
+        ? Math.exp(-dt * 185) * (nextNoise() * 0.18 + Math.sin(twoPi * baseFreq * 0.92 * dt) * 0.2)
+        : 0;
+
+      values[i] = Math.tanh((initialSnap + resonance * 0.55 + woodenCavity + bounce) * 0.82);
+    }
+    return buf;
+  }
+
+  function ensureAudio(){
+    if(!options.sound)return null;
+    try{
+      const A=window.AudioContext||window.webkitAudioContext;
+      if(!A)return null;
+      if(!audio){
+        audio=new A({latencyHint:'interactive'});
+        const master=audio.createGain();master.gain.value=options.volume;
+        const limiter=audio.createDynamicsCompressor();
+        limiter.threshold.value=-14;limiter.knee.value=7;limiter.ratio.value=6;
+        limiter.attack.value=.002;limiter.release.value=.065;
+        master.connect(limiter);limiter.connect(audio.destination);
+        audio.pallanguzhiMaster=master;
+        audio.pallanguzhiSamples={};
+      }
+      const material=options.seedStyle||'natural';
+      if(!audio.pallanguzhiSamples[material])
+        audio.pallanguzhiSamples[material]=Array.from({length:4},(_,i)=>makeImpactBuffer(audio,material,i));
+      if(audio.state==='suspended')void audio.resume().catch(()=>{});
+      return audio;
+    }catch{return null;}
+  }
+
+  function beadImpact(kind='drop',strength=1,offset=0){
+    const ctx=ensureAudio();if(!ctx||!options.sound||options.volume===0)return;
+    try{
+      const style = options.seedStyle || 'natural';
+      const samples = ctx.pallanguzhiSamples[style] || ctx.pallanguzhiSamples.natural;
+      const source=ctx.createBufferSource();
+      source.buffer=samples[Math.floor(Math.random()*samples.length)];
+      source.playbackRate.value=0.92+Math.random()*.16;
+      const gain=ctx.createGain();
+      const typeFactor=kind==='pickup'?.28:kind==='bank'?.82:1;
+      const level=Math.min(1,Math.max(.005,.55*strength*typeFactor));
+      const t=ctx.currentTime+offset;
+      gain.gain.setValueAtTime(level,t);
+      source.connect(gain);gain.connect(ctx.pallanguzhiMaster);
+      source.start(t);
+      source.onended=()=>{try{source.disconnect();gain.disconnect();}catch{}};
+    }catch{}
+  }
+
+  function scoopSound(count){
+    const taps=Math.min(3,Math.max(1,Math.ceil(count/4)));
+    for(let i=0;i<taps;i++) beadImpact('pickup',.60-i*.12,i*.040);
+  }
+
+  function captureSound(){
+    beadImpact('bank',.95,0);
+    beadImpact('bank',.45,.061);
+    if(navigator.vibrate)navigator.vibrate(18);
+  }
+
+  function layeredLanding(count){
+    const now=performance.now();
+    if(now-lastDropSoundAt < (options.fast?55:27))return;
+    lastDropSoundAt=now;
+    beadImpact('drop',count>3?.89:1);
+    if(count>7 && Math.random()>.75)beadImpact('pickup',.24,.027);
+  }
+
+  async function animateScoop(pit,count,player=state.turn,live=()=>true){
+    const at=center('pit-'+pit);
+    await moveHand(at,player,'open');
+    if(!live())return;
+    handPose('grip');
+    scoopSound(count);
+    const hand=releasePoint(at,player);
+    const n=Math.min(count,options.fast?1:matchMedia('(pointer:coarse)').matches?2:3);
+    await Promise.all(Array.from({length:n},(_,i)=>fly(
+      {x:at.x+(i-(n-1)/2)*3.6,y:at.y+((i%2)*4)},
+      {x:hand.x+(i-(n-1)/2)*1.5,y:hand.y},
+      {kind:'scoop',index:pit,serial:i,delay:i*(options.fast?8:24)}
+    )));
+    if(!live())return;
+    handBadge(at,count);
+  }
+
+  async function animateCapture(pit,player,count,live){
+    const at=center('pit-'+pit),to=center('mc-'+player);
+    await moveHand(at,player,'open');if(!live())return;
+    handPose('grip');scoopSound(count);
+    const lift=releasePoint(at,player);
+    const n=Math.min(count,options.fast?2:matchMedia('(pointer:coarse)').matches?3:5);
+    await Promise.all(Array.from({length:Math.min(n,6)},(_,i)=>
+      fly({x:at.x+(i%3-1)*4,y:at.y+(Math.floor(i/3)*3)},lift,{kind:'scoop',index:pit,serial:i,delay:i*(options.fast?9:18)})
+    ));
+    if(!live())return;
+    handBadge(at,count);
+    await moveHand(to,player,'grip');if(!live())return;
+    handPose('release');
+    const seedStart=releasePoint(to,player);
+    await Promise.all(Array.from({length:n},(_,i)=>fly(
+      {x:seedStart.x+(i%3-1)*2,y:seedStart.y},to,
+      {kind:'capture',index:pit,serial:i,delay:i*(options.fast?12:28)}
+    ).then(()=>{if(live()&&i%3===0)beadImpact('bank',.32);})));
+    if(live())captureSound();
+  }
+
+  const difficultyDescriptions={
+    easy:'Easy chooses randomly among legal cups — ideal for beginners.',
+    medium:'Medium compares immediate captures, Pasu, and remaining seeds.',
+    hard:'Hard also considers the opponent’s best reply.',
+    expert:'Expert considers a further response using a bounded 3-ply search.'
+  };
+  function evaluatePosition(pits,banks,perspective,finished=false) {
+    const rival=other(perspective);
+    const difference=banks[perspective]-banks[rival];
+    if(finished) return difference*14+(difference>0?600:difference<0?-600:0);
+    const ours=row(perspective).reduce((sum,i)=>sum+pits[i],0);
+    const theirs=row(rival).reduce((sum,i)=>sum+pits[i],0);
+    const mobility=validMoves(perspective,pits).length-validMoves(rival,pits).length;
+    return difference*11+(ours-theirs)*.27+mobility*.45;
+  }
+  function applyCandidate(pits,banks,player,pit){
+    const result=simulateMove(pits,banks,player,pit);
+    const ps=result.pits.slice(), bs=result.banks.slice();
+    const over=settleIfFinished(ps,bs);
+    return {pits:ps,banks:bs,over};
+  }
+  function recommendMove(player,difficulty='hard',pits=state.pits,banks=state.banks){
+    const available=[];
+    for(const pit of validMoves(player,pits)){
+      try{ available.push({pit,next:applyCandidate(pits,banks,player,pit)}); }
+      catch{}
+    }
+    if(!available.length)return null;
+    if(difficulty==='easy')return available[Math.floor(Math.random()*available.length)].pit;
+    const depth={medium:1,hard:2,expert:3}[difficulty]||1;
+    const started=performance.now();
+    const deadline=started+(difficulty==='expert'?55:35);
+    let explored=0;
+    const maxNodes=difficulty==='expert'?200:85;
+    function search(ps,bs,turn,left,alpha,beta,over){
+      if(over||left===0||explored>=maxNodes||performance.now()>deadline)
+        return evaluatePosition(ps,bs,player,over);
+      const moves=validMoves(turn,ps);
+      if(!moves.length)return evaluatePosition(ps,bs,player,true);
+      const maximize=turn===player;
+      let best=maximize?-Infinity:Infinity,found=false;
+      for(const pit of moves){
+        if(explored>=maxNodes||performance.now()>deadline)break;
+        let next;
+        try{next=applyCandidate(ps,bs,turn,pit);}catch{continue;}
+        explored++;found=true;
+        const score=search(next.pits,next.banks,other(turn),left-1,alpha,beta,next.over);
+        best=maximize?Math.max(best,score):Math.min(best,score);
+        if(maximize)alpha=Math.max(alpha,best);else beta=Math.min(beta,best);
+        if(beta<=alpha)break;
+      }
+      return found?best:evaluatePosition(ps,bs,player,over);
+    }
+    const ordered=available.map(({pit,next})=>({pit,next,baseline:evaluatePosition(next.pits,next.banks,player,next.over)}))
+      .sort((a,b)=>b.baseline-a.baseline || a.pit-b.pit);
+    let choice=ordered[0].pit, best=-Infinity;
+    for(const item of ordered){
+      if(explored>=maxNodes||performance.now()>deadline)break;
+      const score=depth===1?item.baseline:
+        search(item.next.pits,item.next.banks,other(player),depth-1,-Infinity,Infinity,item.next.over);
+      if(score>best){best=score;choice=item.pit;}
+    }
+    return choice;
+  }
+  function chooseAI(){return recommendMove(2,options.difficulty);}
+
+  function escapeMarkup(value) {
+    return String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function assertConservation(where='match') {
+    const total=state.pits.reduce((n,v)=>n+v,0)+state.banks[1]+state.banks[2];
+    if(total!==getTotalSeeds())throw Error(`Seed conservation error at ${where}: ${total} instead of ${getTotalSeeds()}`);
+  }
+
+  function handleRoundSettlement() {
+    for (let i = 0; i < N; i++) {
+      if (state.kasiePits && state.kasiePits[i] && state.pits[i] > 0) {
+        const opp = other(owner(i));
+        state.banks[opp] += state.pits[i];
+        state.pits[i] = 0;
+      }
+    }
+    render();
+    assertConservation('round settlement');
+
+    if (options.format === 'single') {
+      finishMatch();
+      return;
+    }
+
+    state.roundPending=true;
+    saveStableMatch();
+    showRoundSummary();
+  }
+
+  function showRoundSummary(){
+    const S=options.seedsPerPit,s1=state.banks[1],s2=state.banks[2];
+    if(s1<S||s2<S){state.roundPending=false;finishMatch();return;}
+    const fill1=Math.min(7,Math.floor(s1/S)),fill2=Math.min(7,Math.floor(s2/S));
+    const rem1=s1-fill1*S,rem2=s2-fill2*S;
+    $('round-modal-title').textContent=`சுற்று ${state.round} முடிந்தது! (Round ${state.round} Complete)`;
+    $('round-details').innerHTML=`<div style="margin-bottom:8px;font-weight:850;color:#ffd700">Round ${state.round} score</div>
+       <div style="display:flex;justify-content:space-between;gap:8px"><span>${escapeMarkup(names[1])}: <b>${s1} seeds</b></span><span>${escapeMarkup(names[2])}: <b>${s2} seeds</b></span></div>
+       <div style="margin-top:9px;border-top:1px dashed #644525;padding-top:8px"><div>${escapeMarkup(names[1])}: ${fill1} filled, ${7-fill1} Kasie 🔒 (${rem1} surplus)</div><div>${escapeMarkup(names[2])}: ${fill2} filled, ${7-fill2} Kasie 🔒 (${rem2} surplus)</div></div>`;
+    const button=$('next-round-btn');
+    button.disabled=options.online&&!onlineState.isHost;
+    button.textContent=options.online&&!onlineState.isHost?'⏳ Waiting for host to begin next round…':'START NEXT ROUND • அடுத்த சுற்று';
+    button.onclick=()=>{
+      if(!state.roundPending||(options.online&&!onlineState.isHost))return;
+      $('round-modal').classList.add('hidden');setupNextRound(fill1,fill2,S,true);
+    };
+    $('round-modal').classList.remove('hidden');
+    processPendingNextRound();
+    if(state.roundPending)playVictoryChime();
+  }
+
+  function setupNextRound(fill1, fill2, S, broadcast=true, forcedStarter=null) {
+    const previousRound=state.round;
+    state.round++;
+    $('round-brand-sub').textContent=`ROUND ${state.round} · KASIE TOURNAMENT`;
+
+    for (let i = 0; i < 7; i++) {
+      if (i < fill1) {
+        state.pits[i] = S;
+        state.kasiePits[i] = false;
+      } else {
+        state.pits[i] = 0;
+        state.kasiePits[i] = true;
+      }
+    }
+    state.banks[1] -= fill1 * S;
+
+    for (let i = 7; i < 14; i++) {
+      if (i < 7 + fill2) {
+        state.pits[i] = S;
+        state.kasiePits[i] = false;
+      } else {
+        state.pits[i] = 0;
+        state.kasiePits[i] = true;
+      }
+    }
+    state.banks[2] -= fill2 * S;
+
+    state.over = false;
+    state.roundPending = false;
+    state.paused=false;
+    state.started = true;
+    state.history = [];
+    state.awaitingToss=options.firstMove==='coin';
+    assertConservation('new round refill');
+    invalidateLayout();
+
+    let nextStarter = forcedStarter;
+    if (!nextStarter) {
+      if (options.firstMove === 'coin') nextStarter = Math.random() < 0.5 ? 1 : 2;
+      else if (options.firstMove === 'alt') nextStarter = other(state.currentRoundStarter);
+      else nextStarter = options.firstMove === 'p2' ? 2 : 1;
+    }
+
+    if (options.online && broadcast) {
+      sendOnlinePacket({type:'NEXT_ROUND',starter:nextStarter,fromRound:previousRound,matchId:state.matchId,rev:onlineState.revision});
+    }
+
+    if (options.firstMove === 'coin') {
+      launchCoinToss((tossWinner) => {
+        state.turn = tossWinner;
+        state.currentRoundStarter = tossWinner;
+        state.awaitingToss=false;
+        render();
+        if(onlineState.syncPending)sendAuthoritativeState();
+        processRemoteQueue();
+        saveStableMatch();
+        toast(`சுற்று ${state.round} தொடங்கியது! ${names[state.turn]}'s turn.`, 1800);
+        if (options.ai && state.turn === 2) scheduleAiTurn(() => state.started && !state.over);
+      }, nextStarter);
+    } else {
+      state.currentRoundStarter = nextStarter;
+      state.turn = nextStarter;
+      state.awaitingToss=false;
+      render();
+      if(onlineState.syncPending)sendAuthoritativeState();
+      processRemoteQueue();
+      saveStableMatch();
+      toast(`சுற்று ${state.round} தொடங்கியது! ${names[state.turn]}'s turn.`, 1800);
+      if (options.ai && state.turn === 2) scheduleAiTurn(() => state.started && !state.over);
+    }
+  }
+
+  function snapshot(){
+    return {pits:state.pits.slice(),banks:state.banks.slice(),turn:state.turn,
+      kasiePits:state.kasiePits.slice(),round:state.round,metrics:{...state.metrics}};
+  }
+  function updateAssistButtons(){
+    const canHint=state.started&&!state.over&&!state.busy&&!state.paused&&!state.awaitingToss&&(!options.online||(onlineState.connected&&!onlineState.awaitingSync&&state.turn===onlineState.myPlayerIndex))&&!(options.ai&&state.turn===2)&&validMoves(state.turn).length>0;
+    $('hint-btn').disabled=!canHint;
+    $('hint-btn').setAttribute('aria-pressed',String(canHint&&state.hintPit!==null));
+    const canUndo=state.started&&(
+      options.online
+        ? onlineState.connected&&!onlineState.awaitingSync&&!onlineState.undoPending&&!state.busy&&!state.awaitingToss&&!state.paused&&!state.roundPending&&(onlineState.isHost?state.history.length>0:onlineState.remoteUndoAvailable)
+        : state.history.length>0);
+    $('undo-btn').disabled=!canUndo;
+    $('undo-end-btn').hidden=!canUndo;
+    $('undo-btn').title=options.online?'Request a synchronized undo from the host':'Undo your previous move';
+  }
+  function hideHintExplanation(){
+    $('hint-explanation').hidden=true;
+    $('hint-explanation-text').textContent='';
+  }
+  function showHint(){
+    if(!state.started||state.over||state.paused||state.busy||state.awaitingToss||(options.online&&(!onlineState.connected||state.turn!==onlineState.myPlayerIndex))||(options.ai&&state.turn===2))return;
+    if(state.hintPit!==null){state.hintPit=null;hideHintExplanation();render();return;}
+    const pit=recommendMove(state.turn,'hard');
+    if(pit===null){toast('No safe move found. Try a different cup.',1500);return;}
+    let simulated;
+    try{simulated=simulateMove(state.pits,state.banks,state.turn,pit);}catch{return;}
+    state.hintPit=pit;
+    const me=state.turn, rival=other(me);
+    const myGain=simulated.banks[me]-state.banks[me],theirGain=simulated.banks[rival]-state.banks[rival];
+    const caps=simulated.events.filter(e=>e.kind==='capture'&&e.player===me).reduce((n,e)=>n+e.count,0);
+    const pasu=simulated.events.filter(e=>e.kind==='pasu'&&e.player===me).length;
+    const local=pit<7?pit+1:14-pit;
+    const effects=[];
+    if(caps)effects.push(`captures ${caps}`);
+    if(pasu)effects.push(`${pasu} Pasu`);
+    if(!effects.length)effects.push('positions your seeds');
+    $('hint-explanation-text').textContent=`💡 Cup ${local}: ${effects.join(' and ')}. You gain ${myGain}, the opponent gains ${theirGain} immediately. The recommendation considers the next response.`;
+    $('hint-explanation').hidden=false;
+    setStatus(`💡 Suggested cup ${local}.`);
+    render();
+  }
+  function undoMove(){
+    if(!options.online){performLocalUndo();return;}
+    if(!state.started||!onlineState.connected||onlineState.awaitingSync||onlineState.undoPending||state.busy||state.activeMove||state.awaitingToss||state.roundPending)return;
+    if(onlineState.isHost){
+      onlineState.revision++;
+      if(performLocalUndo()){
+        onlineState.pendingRemoteMoves=[];onlineState.pendingNextRound=null;
+        saveStableMatch();sendAuthoritativeState();sendUndoAvailability();
+      }else onlineState.revision--;
+    }else{
+      if(!onlineState.remoteUndoAvailable)return;
+      onlineState.undoPending=true;
+      sendOnlinePacket({type:'UNDO_REQUEST',matchId:state.matchId,round:state.round,
+        seq:state.metrics.moves,rev:onlineState.revision});
+      updateAssistButtons();render();toast('↶ Undo requested from host…',1600);
+    }
+  }
+  function performLocalUndo(){
+    if(!state.started||!state.history.length)return false;
+    const previous=state.history.pop();
+    if(state.resultRecorded)rollbackFinishedResult();
+    invalidateMatch();
+    state.pits=previous.pits.slice();state.banks=previous.banks.slice();
+    state.kasiePits=normalizeKasie(previous.kasiePits);state.round=normalizeRound(previous.round);
+    state.metrics=cleanMetrics(previous.metrics);state.turn=previous.turn;
+    state.over=false;state.roundPending=false;state.paused=false;state.started=true;
+    $('round-brand-sub').textContent=options.format==='kasie'?`ROUND ${state.round} · KASIE TOURNAMENT`:'SINGLE MATCH';
+    ['end-modal','round-modal','quit-modal'].forEach(id=>$(id).classList.add('hidden'));
+    assertConservation('undo');
+    render();saveStableMatch();
+    setStatus(`↶ Turn restored. ${names[state.turn]}'s turn.`);
+    toast('↶ Previous turn restored',1000);
+    return true;
+  }
+  function scheduleAiTurn(live){
+    if(!live()||!state.started||state.over||state.paused||state.turn!==2||!options.ai||state.roundPending)return;
+    const ticket=++state.aiTicket, epoch=state.epoch;
+    state.busy=true;render();setStatus(`${names[2]} is thinking…`);
+    void(async()=>{
+      try{
+        await wait(options.fast?130:430);
+        if(!live()||epoch!==state.epoch||ticket!==state.aiTicket||state.paused||state.over||state.turn!==2)return;
+        const pit=chooseAI();
+        if(pit===null){
+          state.busy=false;render();
+          setStatus('No valid AI move. Open Match to change the rules.');
+          return;
+        }
+        state.busy=false;
+        await playPit(pit,true);
+      }catch(error){
+        console.error('AI turn interrupted',error);
+        if(epoch!==state.epoch||ticket!==state.aiTicket)return;
+        state.busy=false;render();setStatus('AI interrupted. Open Match to restart.');
+      }
+    })();
+  }
+  function updateSkipButton(){
+    const running=Boolean(state.activeMove);
+    $('skip-btn').hidden=!running;$('skip-btn').disabled=!running;
+  }
+  function skipCurrentMove(){
+    const move=state.activeMove;
+    if(!move||move.epoch!==state.epoch)return;
+    state.epoch++;state.aiTicket++;
+    closeAnimations();
+    state.pits=move.simulated.pits.slice();state.banks=move.simulated.banks.slice();
+    state.activeMove=null;updateSkipButton();
+    completeMove(move.mover,()=>true,false,move.simulated);
+    if(!state.over)toast('⏭ Move completed',750);
+  }
+
+  function completeMove(mover, live, recovered=false, simulated=null) {
+    if (!live()) return;
+    state.activeMove=null;
+    updateSkipButton();
+    hideHand();
+    if(simulated){
+      state.metrics.moves++;
+      for(const e of simulated.events){
+        if(e.kind==='pasu'&&e.player===1)state.metrics.p1Pasu++;
+        if(e.kind==='capture'&&e.player===1){
+          state.metrics.p1Captured+=e.count;
+          state.metrics.biggestCapture=Math.max(state.metrics.biggestCapture,e.count);
+        }
+      }
+    }
+    if (settleIfFinished(state.pits,state.banks)) {
+      state.over=true;state.busy=false;render();
+      handleRoundSettlement();
+      return;
+    }
+    state.turn=other(mover);
+    state.busy=false;
+    render();
+    saveStableMatch();
+    if(options.online){
+      if(onlineState.syncPending)queueMicrotask(sendAuthoritativeState);
+      if(onlineState.isHost){queueMicrotask(sendUndoAvailability);queueMicrotask(processPendingUndo);}
+      queueMicrotask(processRemoteQueue);
+    }
+    if (options.ai && state.turn===2) {
+      scheduleAiTurn(live);
+    } else {
+      setStatus(recovered
+        ? `Animation interrupted; move completed. ${names[state.turn]}'s turn.`
+        : `${names[state.turn]}'s turn. Choose a cup on your side.`);
+    }
+  }
+
+  async function playPit(index,fromAI=false,fromRemote=false) {
+    if(!state.started||state.busy||state.paused||state.over||state.awaitingToss||owner(index)!==state.turn||state.pits[index]<=0)return;
+    if(options.ai && state.turn===2 && !fromAI)return;
+    if(options.online && (!onlineState.connected || (fromRemote ? state.turn===onlineState.myPlayerIndex : state.turn!==onlineState.myPlayerIndex)))return;
+    if(state.kasiePits[index])return;
+
+    $('capture-guide').textContent='';
+    const current=state.turn;
+    const epoch=state.epoch;
+    let simulated;
+    try {simulated=simulateMove(state.pits,state.banks,current,index);}
+    catch(err) {setStatus(err.message);toast(err.message,2300);return;}
+    
+    // Broadcast move to remote peer if online
+    if (options.online && !fromRemote) {
+      sendOnlineMove(index);
+    }
+
+    if(!options.ai || current===1){
+      state.history.push(snapshot());
+      if(state.history.length>40)state.history.shift();
+    }
+    state.hintPit=null;
+    hideHintExplanation();
+    state.busy=true;
+    state.activeMove={simulated,mover:current,epoch};
+    updateSkipButton();
+    render();
+    let source=center('pit-'+index),hand=0;
+    const live=()=>epoch===state.epoch;
+    try {
+      for(const event of simulated.events){
+        if(!live())return;
+        if(event.kind==='pickup'){
+          hand=state.pits[event.pit];
+          source=center('pit-'+event.pit);
+          highlightPit(event.pit,'pulse',options.fast?130:340);
+          setStatus(`${names[current]} scoops ${hand} ${options.seedStyle==='natural'?'seeds':'beads'}…`);
+          await animateScoop(event.pit,hand,current,live);
+          if(!live())return;
+          state.pits[event.pit]=0;
+          paintPit(event.pit);
+          if(!reducedMotion()&&!options.fast)await wait(Math.round(12*paceMultiplier()));
+        }else if(event.kind==='drop'){
+          const dest=center('pit-'+event.pit);
+          await moveHand(dest,current,'grip');
+          if(!live())return;
+          handPose('release');
+          await fly(releasePoint(dest,current),dest,{kind:'drop',index:event.pit,serial:state.pits[event.pit]});
+          if(!live())return;
+          state.pits[event.pit]++;hand--;
+          paintPit(event.pit,true);
+          const pitEl=$('pit-'+event.pit);
+          pitEl.classList.remove('drop-impact');
+          requestAnimationFrame(()=>{if(live())highlightPit(event.pit,'drop-impact',options.fast?85:180);});
+          highlightPit(event.pit,'pulse',options.fast?110:230);
+          handBadge(dest,hand);
+          source=dest;
+          layeredLanding(state.pits[event.pit]);
+          handPose('grip');
+          if(!reducedMotion())await wait(Math.round((options.fast?4:10)*paceMultiplier()));
+        }else if(event.kind==='pasu'){
+          $('capture-guide').textContent=captureGuidance(names[event.player],4,true);
+          highlightPit(event.pit,'capture-pulse',500);
+          toast(`பசு! ${names[event.player]} +4 ${options.seedStyle==='natural'?'seeds':'beads'}`,options.fast?750:1600);
+          setStatus(`Pasu! ${names[event.player]} wins 4.`);
+          await animateCapture(event.pit,event.player,4,live);
+          if(!live())return;
+          state.pits[event.pit]=0;state.banks[event.player]+=4;
+          paintPit(event.pit);paintBank(event.player,4);
+          celebrateCapture(event.player,4,true);
+          handBadge(source,hand);
+          if(!options.fast&&!reducedMotion())await wait(Math.round(42*paceMultiplier()));
+        }else if(event.kind==='capture'){
+          $('capture-guide').textContent=captureGuidance(names[event.player],event.count,false);
+          highlightPit(event.pit,'capture-pulse',520);
+          toast(`${names[event.player]} captured ${event.count} ${options.seedStyle==='natural'?'seeds':'beads'}!`,options.fast?900:1800);
+          setStatus(`${names[event.player]} collects ${event.count} from the next cup.`);
+          await animateCapture(event.pit,event.player,event.count,live);
+          if(!live())return;
+          state.pits[event.pit]=0;state.banks[event.player]+=event.count;
+          paintPit(event.pit);paintBank(event.player,event.count);
+          celebrateCapture(event.player,event.count);
+          if(!options.fast&&!reducedMotion())await wait(Math.round(50*paceMultiplier()));
+        }else if(event.kind==='no-capture'){
+          setStatus('Empty cup followed by another empty cup. No capture.');
+          if(!options.fast)await wait(100);
+        }
+      }
+      if(!live())return;
+      if(state.pits.some((v,i)=>v!==simulated.pits[i]) ||
+          state.banks[1]!==simulated.banks[1] || state.banks[2]!==simulated.banks[2])
+        throw new Error('Game engine/playback mismatch.');
+      completeMove(current,live,false,simulated);
+    } catch(err) {
+      console.error('Recovered animation failure:',err);
+      if(!live())return;
+      closeAnimations();
+      state.pits=simulated.pits.slice();
+      state.banks=simulated.banks.slice();
+      completeMove(current,live,true,simulated);
+    }
+  }
+
+  function playVictoryChime(){
+    const ctx=ensureAudio();if(!ctx||!options.sound||options.volume===0)return;
+    try{
+      [523.25,659.25,783.99].forEach((freq,i)=>{
+        const osc=ctx.createOscillator(),gain=ctx.createGain();
+        const start=ctx.currentTime+i*.12;
+        osc.type='sine';osc.frequency.setValueAtTime(freq,start);
+        gain.gain.setValueAtTime(.0001,start);
+        gain.gain.linearRampToValueAtTime(.055,start+.016);
+        gain.gain.exponentialRampToValueAtTime(.0001,start+.32);
+        osc.connect(gain);gain.connect(ctx.pallanguzhiMaster);
+        osc.start(start);osc.stop(start+.34);
+      });
+    }catch{}
+  }
+  function finishMatch(){
+    closeAnimations();
+    hideHintExplanation();
+    assertConservation('final score');
+    recordFinishedMatch();
+    removeSavedMatch();
+    const total = getTotalSeeds();
+    const score1=state.banks[1],score2=state.banks[2];
+    const tied=score1===score2;
+    const winner=score1>score2?1:2;
+    const text=tied?'A beautiful draw! 🤝':`${names[winner]} wins!`;
+    $('winner-text').textContent=text;
+    $('result-heading').textContent=tied?'சமநிலை!':'வாழ்த்துகள்!';
+    $('result-subtitle').textContent=tied?'A MATCH WELL PLAYED':'HERITAGE CHAMPION';
+    $('result-message').textContent=tied
+      ? 'Both players collected the same number of seeds. Ready for a rematch?'
+      : `${names[winner]} gathered ${state.banks[winner]} out of ${total} seeds. Play again and try a different strategy!`;
+    $('final-scores').replaceChildren();
+    for(const p of [1,2]){
+      const box=document.createElement('div');box.className='result-player';
+      const playerName=document.createElement('span');playerName.textContent=names[p];
+      const score=document.createElement('strong');score.textContent=state.banks[p];
+      box.append(playerName,score);$('final-scores').append(box);
+    }
+    $('score-share-1').style.width=Math.min(100, Math.round(score1/total*100))+'%';
+    $('score-share-2').style.width=Math.min(100, Math.round(score2/total*100))+'%';
+    $('score-comparison').setAttribute('aria-label',`${names[1]} ${score1} seeds, ${names[2]} ${score2} seeds`);
+    setStatus(`Game over — ${text} (${score1} – ${score2})`);
+    $('end-modal').classList.remove('hidden');
+    playVictoryChime();
+    if(options.online&&onlineState.isHost)sendUndoAvailability();
+  }
+
+  function invalidateMatch(){hideHintExplanation();state.epoch++;state.aiTicket++;state.busy=false;state.activeMove=null;state.hintPit=null;updateSkipButton();closeAnimations();clearTimeout(toastTimer);$('toast').classList.remove('visible');}
+  
+  function startGame(broadcast=true,forcedStarter=null,remoteMatchId=null){
+    $('capture-guide').textContent='';
+    if(options.online&&broadcast&&(!onlineState.isHost||!onlineState.connected)){
+      toast(onlineState.isHost?'Wait for your friend to connect.':'Only the host can start the match.',2300);return;
+    }
+    invalidateMatch();
+    saveSettings();
+    const S=options.seedsPerPit||5;
+    state.pits=Array(N).fill(S);state.banks=[0,0,0];
+    state.over=false;state.roundPending=false;state.paused=false;state.started=true;
+    state.history=[];state.round=1;state.kasiePits=Array(N).fill(false);
+    state.metrics=emptyMetrics();state.matchId=remoteMatchId||`${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
+    state.matchStartedAt=Date.now();state.recordedStatsBefore=null;state.resultRecorded=false;
+    onlineState.pendingRemoteMoves=[];onlineState.pendingNextRound=null;
+    onlineState.revision=0;onlineState.remoteUndoAvailable=false;onlineState.undoPending=false;
+    onlineState.pendingUndoRequest=null;
+    names[1]=$('p1-input').value.trim()||'Player 1';
+    names[2]=$('p2-input').value.trim()||(options.ai?'Azhagi (AI)':'Player 2');
+    applyPlayerLabels();
+    $('round-brand-sub').textContent=options.format==='kasie'?'ROUND 1 · KASIE TOURNAMENT':'SINGLE MATCH';
+    for(const id of ['setup-modal','end-modal','stats-modal','quit-modal','round-modal'])$(id).classList.add('hidden');
+    removeSavedMatch();ensureAudio();
+    let starter=forcedStarter;
+    if(![1,2].includes(starter)){
+      if(options.firstMove==='coin')starter=Math.random()<.5?1:2;
+      else if(options.firstMove==='alt')starter=state.lastStarter?other(state.lastStarter):1;
+      else starter=options.firstMove==='p2'?2:1;
+    }
+    if(options.online&&broadcast){
+      sendOnlinePacket({type:'START_GAME',starter,matchId:state.matchId,options:{...options},names:{...names}});
+    }
+    onlineState.awaitingSync=false;
+    state.awaitingToss=options.firstMove==='coin';
+    const begin=who=>{
+      state.turn=who;state.currentRoundStarter=who;state.lastStarter=who;
+      state.awaitingToss=false;render();
+      if(onlineState.syncPending)sendAuthoritativeState();
+      setStatus(`${names[state.turn]}'s turn. Choose a cup on your side.`);
+      saveStableMatch();processRemoteQueue();
+      if(options.online&&onlineState.isHost)sendUndoAvailability();
+      if(options.ai&&state.turn===2)scheduleAiTurn(()=>state.started&&!state.over);
+    };
+    if(options.firstMove==='coin')launchCoinToss(begin,starter);
+    else begin(starter);
+  }
+  async function fullscreen(){
+    try {if(document.fullscreenElement)await document.exitFullscreen();
+    else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();}
+    catch{toast('Fullscreen is unavailable in this browser.');}
+  }
+
+  /* ========================================================
+     6 INTERACTIVE BILINGUAL TUTORIAL LESSONS
+     Includes Lessons 1-4 (Basics) & Lessons 5-6 (Kasie Tournament)
+     ======================================================== */
+  const tutorialLessons=[
+    {id:'sowing',selected:0,pits:[5,0,0,0,0,0,0,0,11,11,11,11,11,10],
+      en:{title:'1. Sow one at a time',copy:'Tap the glowing bottom cup with 5 seeds. Watch one seed go into each following cup.',ready:'Tap the glowing cup to begin!',done:'Excellent! Five seeds were planted, one in each following cup.'},
+      ta:{title:'1. விதைகளை விதைப்போம்',copy:'கீழே ஒளிரும் 5 விதைகள் உள்ள குழியைத் தொடுங்கள். அடுத்தடுத்த குழிகளில் ஒவ்வொரு விதையாகப் போகும்.',ready:'ஒளிரும் குழியைத் தொடுங்கள்!',done:'அருமை! ஐந்து குழிகளில் தலா ஒரு விதை விதைக்கப்பட்டது.'}},
+    {id:'chain',selected:0,pits:[2,0,0,2,0,0,0,0,11,11,11,11,11,11],
+      en:{title:'2. Keep sowing',copy:'After the first 2 seeds are placed, the next cup has seeds. The hand picks them up and continues.',ready:'Tap the highlighted cup with 2 seeds.',done:'Great! When the next cup contains seeds, sowing continues.'},
+      ta:{title:'2. தொடர் விதைத்தல்',copy:'முதல் 2 விதைகள் தீர்ந்ததும் அடுத்த குழியில் விதைகள் இருந்தால் அவற்றையும் எடுத்துத் தொடர வேண்டும்.',ready:'ஒளிரும் 2 விதைகள் உள்ள குழியைத் தொடுங்கள்.',done:'நன்று! அடுத்த குழியில் விதைகள் இருந்ததால் தொடர்ந்து விதைத்தோம்.'}},
+    {id:'pasu',selected:0,pits:[1,3,0,0,7,7,7,7,7,7,7,7,5,5],
+      en:{title:'3. Pasu · பசு',copy:'The next cup already has 3 seeds. Drop one more to make exactly 4: its owner wins all four!',ready:'Tap the highlighted cup to trigger Pasu.',done:'பசு! Four seeds moved into the owner’s store.'},
+      ta:{title:'3. பசு · நான்கு விதைகள்',copy:'அடுத்த குழியில் 3 விதைகள் உள்ளன. மேலும் 1 விதை விழுந்தால் 4 விதைகளும் அந்தக் குழியின் உரிமையாளருக்குச் சேரும்.',ready:'பசு பெற ஒளிரும் குழியைத் தொடுங்கள்.',done:'பசு! நான்கு விதைகளும் உரிமையாளரின் தாய்க்குழியில் சேர்ந்தன.'}},
+    {id:'capture',selected:0,pits:[1,0,0,6,7,7,7,7,7,7,7,7,4,3],
+      en:{title:'4. Capture · துடைத்தல்',copy:'After your last seed lands, if the next cup is empty, you collect seeds from the cup after that.',ready:'Tap the glowing cup to make a capture.',done:'You did it! Six seeds were captured. You’re ready for a real match!'},
+      ta:{title:'4. விதைகளைக் கைப்பற்றுதல்',copy:'கையில் விதைகள் முடிந்ததும் அடுத்த குழி காலியாக இருந்தால், அதற்கு அடுத்த குழியின் விதைகளை எடுத்துக்கொள்ளலாம்.',ready:'விதைகளைக் கைப்பற்ற ஒளிரும் குழியைத் தொடுங்கள்.',done:'சூப்பர்! ஆறு விதைகள் கைப்பற்றப்பட்டன. இப்போது ஆடத் தயாராகிவிட்டீர்கள்!'}},
+    {id:'kasie_lock',selected:0,pits:[5,5,5,5,5,0,0, 5,5,5,5,5,10,10],
+      kasie:[false,false,false,false,false,true,true, false,false,false,false,false,false,false],
+      en:{title:'5. Kasie Pit Lock · காசி அடைப்பு',copy:'When a player cannot fill all 7 cups after a round, unfilled cups are locked as Kasie (🔒 காசி). You cannot scoop from locked cups!',ready:'Tap the highlighted cup 1 to sow into the board.',done:'Notice that seeds can land into locked cups, but the owner cannot scoop them!'},
+      ta:{title:'5. காசி அடைப்பு · பூட்டிய குழிகள்',copy:'சுற்றின் முடிவில் போதிய விதைகள் இன்றி நிரப்ப முடியாத குழிகள் "காசி" என பூட்டப்படும் (🔒). பூட்டிய குழியிலிருந்து விதைகளை எடுக்க முடியாது!',ready:'ஒளிரும் குழி 1-ஐத் தொட்டு விதைத்துப் பாருங்கள்.',done:'விதைகள் காசி குழிக்குள் விழலாம், ஆனால் அதன் உரிமையாளர் அவற்றை எடுக்க முடியாது!'}},
+    {id:'kasie_roadblock',selected:0,pits:[1,0,2,6,7,7,7, 7,7,7,7,7,5,0],
+      kasie:[false,false,true,false,false,false,false, false,false,false,false,false,false,false],
+      en:{title:'6. Kasie Roadblock · காசி உத்தி',copy:'Locked Kasie cups cannot be picked up to continue sowing—they act as a stop, letting you capture the cup right after them!',ready:'Tap the glowing cup to capture 6 seeds across the Kasie roadblock.',done:'Brilliant! You are now a master of both Single Match and Traditional Kasie Tournaments!'},
+      ta:{title:'6. காசி உத்தி & அறுவடை',copy:'கையில் விதை முடிந்ததும் அடுத்த குழி காசியாக (🔒) இருந்தால் தொடர் விதைப்பு நின்று, அதற்கடுத்த குழியின் விதைகளைக் கைப்பற்றலாம்!',ready:'ஒளிரும் குழியைத் தொட்டு காசி ஆட்ட உத்தியைப் பாருங்கள்.',done:'அற்புதம்! ஒற்றைச் சுற்று மற்றும் பாரம்பரிய காசி ஆட்ட விதிகளை முழுமையாகக் கற்றுக்கொண்டீர்கள்!'}}
+  ];
+  const tutorial={open:false,step:0,lang:'en',pits:[],banks:[0,0,0],kasiePits:Array(N).fill(false),running:false,complete:false,ticket:0};
+  function tutorialText(){return tutorialLessons[tutorial.step][tutorial.lang];}
+  function tutorialFeedback(text){$('tutorial-feedback').textContent=text;}
+  function tutorialRebuild(){
+    const lesson=tutorialLessons[tutorial.step];
+    tutorial.ticket++;tutorial.running=false;tutorial.complete=false;
+    tutorial.pits=lesson.pits.slice();tutorial.banks=[0,0,0];
+    tutorial.kasiePits=lesson.kasie ? lesson.kasie.slice() : Array(N).fill(false);
+    if(tutorial.pits.reduce((a,b)=>a+b,0)!==TOTAL_SEEDS)throw new Error('Tutorial model must have exactly 70 seeds');
+    $('tut-hand').classList.remove('visible');
+    $('tutorial-next').disabled=true;
+    tutorialDraw();
+    tutorialFeedback(tutorialText().ready);
+  }
+  function tutorialDraw(activePit=null){
+    const lesson=tutorialLessons[tutorial.step];
+    $('tutorial-progress').textContent=tutorial.lang==='ta'?`பாடம் ${tutorial.step+1} / ${tutorialLessons.length}`:`LESSON ${tutorial.step+1} / ${tutorialLessons.length}`;
+    $('tutorial-replay').textContent=tutorial.lang==='ta'?'↻ மீண்டும் பார்க்க':'↻ Replay';
+    $('tutorial-exit').textContent=tutorial.lang==='ta'?'பயிற்சியை மூடு':'Close tutorial';
+    $('tutorial-title').textContent=tutorialText().title;
+    $('tutorial-copy').textContent=tutorialText().copy;
+    $('tutorial-next').textContent=tutorial.step===tutorialLessons.length-1
+      ? (state.started?(tutorial.lang==='ta'?'ஆட்டத்திற்குத் திரும்பு →':'Return to match →'):(tutorial.lang==='ta'?'ஆடத் தொடங்கலாம் →':'Play a match →'))
+      : (tutorial.lang==='ta'?'அடுத்த பாடம் →':'Next lesson →');
+    $('tut-bank1').textContent=tutorial.banks[1];$('tut-bank2').textContent=tutorial.banks[2];
+    for(let i=0;i<N;i++){
+      const btn=$('tut-pit-'+i),choice=!tutorial.running&&!tutorial.complete&&i===lesson.selected;
+      const isKasie = Boolean(tutorial.kasiePits[i]);
+      btn.textContent=tutorial.pits[i];
+      btn.disabled=!choice;
+      btn.classList.toggle('tut-choice',choice);
+      btn.classList.toggle('tut-current',i===activePit);
+      btn.classList.toggle('tut-kasie',isKasie);
+      btn.setAttribute('aria-label',`${owner(i)===1?'Bottom':'Top'} cup ${i<7?i+1:14-i}, ${tutorial.pits[i]} seeds${isKasie?', locked as Kasie':''}${choice?', select this cup':''}`);
+    }
+  }
+
+  function tutorialPoint(index){
+    const pit=$('tut-pit-'+index),area=$('tutorial-board');
+    const p=pit.getBoundingClientRect(),b=area.getBoundingClientRect();
+    const hand=$('tut-hand');
+    hand.style.left=p.left-b.left+p.width/2+'px';hand.style.top=p.top-b.top+p.height/2+'px';
+    hand.classList.add('visible');
+  }
+  function tutorialMessage(event){
+    const ta=tutorial.lang==='ta';
+    switch(event.kind){
+      case 'pickup':return ta?`${event.count} விதைகள் எடுக்கப்பட்டன`:`Picked up ${event.count} seeds`;
+      case 'drop':return ta?'ஒரு விதையை அடுத்த குழியில் போட்டோம்':'One seed lands in the next cup';
+      case 'pasu':return ta?'பசு! உரிமையாளருக்கு +4 விதைகள்':'Pasu! +4 seeds for the cup owner';
+      case 'capture':return ta?`${event.count} விதைகள் கைப்பற்றப்பட்டன`:`Captured ${event.count} seeds!`;
+      case 'no-capture':return ta?'அடுத்த குழிகள் காலி; விதைத்தல் முடிந்தது':'The next cup is empty. Sowing ends.';
+      default:return '';
+    }
+  }
+  async function tutorialPlay(index){
+    if(!tutorial.open||tutorial.running||tutorial.complete||index!==tutorialLessons[tutorial.step].selected)return;
+    let result;
+    try{result=simulateMove(tutorial.pits,tutorial.banks,1,index,{pasu:'on',locked:tutorial.kasiePits});}
+    catch(err){tutorialFeedback(err.message);return;}
+    tutorial.running=true;const ticket=++tutorial.ticket;
+    tutorialDraw();
+    const still=()=>tutorial.open&&ticket===tutorial.ticket;
+    for(const event of result.events){
+      if(!still())return;
+      if(event.kind==='pickup'){tutorial.pits[event.pit]=0;scoopSound(event.count);}
+      if(event.kind==='drop'){tutorial.pits[event.pit]++;beadImpact('drop',.35);}
+      if(event.kind==='pasu'){
+        tutorial.pits[event.pit]=0;tutorial.banks[event.player]+=4;
+        captureSound();
+      }
+      if(event.kind==='capture'){
+        tutorial.pits[event.pit]=0;tutorial.banks[event.player]+=event.count;
+        captureSound();
+      }
+      if(event.pit!==undefined)tutorialPoint(event.pit);
+      tutorialDraw(event.pit??null);tutorialFeedback(tutorialMessage(event));
+      if(!reducedMotion())await wait(event.kind==='pasu'||event.kind==='capture'?540:260);
+      else await wait(30);
+    }
+    if(!still())return;
+    if(tutorial.pits.some((v,i)=>v!==result.pits[i])||tutorial.banks[1]!==result.banks[1]||tutorial.banks[2]!==result.banks[2]){
+      tutorial.running=false;tutorialFeedback('Tutorial playback mismatch. Press Replay.');return;
+    }
+    tutorial.running=false;tutorial.complete=true;tutorialDraw();
+    $('tut-hand').classList.remove('visible');
+    $('tutorial-next').disabled=false;
+    tutorialFeedback(tutorialText().done);
+  }
+  function tutorialSetLanguage(lang){
+    if(lang!=='en'&&lang!=='ta')return;
+    tutorial.lang=lang;
+    document.querySelectorAll('[data-tut-lang]').forEach(btn=>{
+      const active=btn.dataset.tutLang===lang;btn.classList.toggle('active',active);btn.setAttribute('aria-pressed',String(active));
+    });
+    tutorialDraw();
+    if(!tutorial.running)tutorialFeedback(tutorialText()[tutorial.complete?'done':'ready']);
+  }
+  function tutorialOpen(){
+    if(state.busy||state.activeMove){$('rules-modal').classList.add('hidden');toast('Finish the current move before opening the tutorial.',2300);return;}
+    $('rules-modal').classList.add('hidden');
+    tutorial.open=true;tutorial.step=0;tutorialRebuild();
+    $('tutorial-modal').classList.remove('hidden');
+  }
+  function tutorialClose(){
+    tutorial.ticket++;tutorial.running=false;tutorial.open=false;
+    $('tutorial-modal').classList.add('hidden');$('tut-hand').classList.remove('visible');
+  }
+  function tutorialNext(){
+    if(!tutorial.open||tutorial.running||!tutorial.complete)return;
+    if(tutorial.step===tutorialLessons.length-1){
+      tutorialClose();
+      if(!state.started){
+        if(options.online){toast('Connect to a room, then the host starts the match.',2400);}
+        else startGame();
+      }
+    }else{tutorial.step++;tutorialRebuild();}
+  }
+  function tutorialInit(){
+    for(const [target,indices] of [['tut-top-row',[13,12,11,10,9,8,7]],['tut-bottom-row',[0,1,2,3,4,5,6]]]){
+      const fragment=document.createDocumentFragment();
+      for(const index of indices){
+        const btn=document.createElement('button');btn.type='button';btn.id='tut-pit-'+index;
+        btn.className='tutorial-pit';btn.addEventListener('click',()=>tutorialPlay(index));
+        fragment.append(btn);
+      }
+      $(target).append(fragment);
+    }
+    $('tutorial-setup-btn').addEventListener('click',tutorialOpen);
+    $('tutorial-rules-btn').addEventListener('click',tutorialOpen);
+    $('tutorial-exit').addEventListener('click',tutorialClose);
+    $('tutorial-replay').addEventListener('click',tutorialRebuild);
+    $('tutorial-next').addEventListener('click',tutorialNext);
+    document.querySelectorAll('[data-tut-lang]').forEach(btn=>btn.addEventListener('click',()=>tutorialSetLanguage(btn.dataset.tutLang)));
+    tutorialRebuild();
+  }
+
+  function init(){
+    loadSettings();
+    stats=loadStats();
+    state.pits = Array(N).fill(options.seedsPerPit);
+    createBoard();
+    tutorialInit();
+    refreshResumePanel();
+    initBackButtonHandler();
+    // Treat a direct room link as a guest, not a new host room.
+    const incomingRoom=new URLSearchParams(window.location.search).get('room');
+    if(incomingRoom&&/^[A-Z0-9]{5}$/i.test(incomingRoom)){
+      options.online=true;options.ai=false;onlineState.isHost=false;onlineState.myPlayerIndex=2;
+    }
+    syncSetupModalUI();
+    const peerLoader=$('peerjs-loader');
+    if(peerLoader)peerLoader.addEventListener('load',()=>{
+      if(!options.online||onlineState.connected)return;
+      if(onlineState.isHost&&!onlineState.peer)initOnlineHost();
+      if(!onlineState.isHost&&!onlineState.peer&&onlineState.roomCode)joinOnlineRoom(onlineState.roomCode);
+    });
+
+    // Check URL parameters for direct room join: e.g. index.html?room=7K9X2
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomParam = urlParams.get('room');
+    if(roomParam&&/^[A-Z0-9]{5}$/i.test(roomParam)){
+      $('join-room-input').value = roomParam.trim().toUpperCase();
+      setTimeout(() => joinOnlineRoom(roomParam), 400);
+    }
+
+    // Connect Pause/Quit Dialog Controls
+    $('quit-resume-btn').addEventListener('click', closeQuitModal);
+    $('quit-menu-btn').addEventListener('click', () => {
+      closeQuitModal(false);
+      saveStableMatch();
+      showSetup();
+    });
+
+    $('stats-btn').addEventListener('click',openStats);
+    $('result-stats-btn').addEventListener('click',()=>{openStats();});
+    $('close-stats-btn').addEventListener('click',closeStats);
+    $('reset-stats-btn').addEventListener('click',resetStats);
+    $('resume-btn').addEventListener('click',resumeMatch);
+    $('discard-save-btn').addEventListener('click',discardSavedMatch);
+    
+    document.querySelectorAll('[data-mode],[data-toss],[data-format],[data-seedscount],[data-pasu],[data-difficulty],[data-theme],[data-seeds]').forEach(btn=>{
+      const group=btn.dataset.mode!==undefined?'mode':btn.dataset.toss!==undefined?'toss':btn.dataset.format!==undefined?'format':btn.dataset.seedscount!==undefined?'seedscount':btn.dataset.pasu!==undefined?'pasu':btn.dataset.difficulty!==undefined?'difficulty':btn.dataset.theme!==undefined?'theme':'seeds';
+      btn.addEventListener('click',()=>selectOption(group,btn.dataset[group]));
+    });
+
+    // Online UI Event Listeners
+    document.querySelectorAll('[data-emote]').forEach(button=>button.addEventListener('click',()=>{
+      if(!options.online||!onlineState.connected)return;
+      const emoji=button.dataset.emote;
+      showEmoteReaction(emoji,onlineState.myPlayerIndex);
+      sendOnlinePacket({type:'REACTION',emoji});
+    }));
+    $('copy-code-btn').addEventListener('click', async () => {
+      const code = ensureRoomCode();
+      const ok = await copyTextSafe(code);
+      toast(ok ? `🔢 Room Code ${code} copied!` : `Room Code: ${code}`, 1800);
+    });
+
+    $('copy-room-btn').addEventListener('click', async () => {
+      const code = ensureRoomCode();
+      const shareUrl = getShareableGameUrl(code);
+      const payload = shareUrl ? `${shareUrl} (Room Code: ${code})` : `Pallanguzhi Room Code: ${code}`;
+      const ok = await copyTextSafe(payload);
+      toast(ok ? '📋 Room invite copied to clipboard!' : `Room Code: ${code}`, 1800);
+    });
+
+    $('wa-share-btn').addEventListener('click', () => {
+      const code = ensureRoomCode();
+      const shareUrl = getShareableGameUrl(code);
+      const text = shareUrl
+        ? `🎲 Play Tamil Pallanguzhi (பல்லாங்குழி) with me!\n🔑 Room Code: *${code}*\n👉 Tap to join: ${shareUrl}`
+        : `🎲 Play Tamil Pallanguzhi (பல்லாங்குழி) with me!\n🔑 Enter Room Code: *${code}* in Online P2P mode!`;
+      void shareToWhatsApp(text);
+    });
+
+    $('result-wa-btn').addEventListener('click', () => {
+      const s1 = state.banks[1], s2 = state.banks[2];
+      const total = getTotalSeeds();
+      const shareUrl = getShareableGameUrl('');
+      const summary = s1 === s2
+        ? `🤝 Draw match (${s1}–${s2})`
+        : `${s1 > s2 ? names[1] : names[2]} won with ${Math.max(s1, s2)}/${total} seeds!`;
+      const text = `🏆 பல்லாங்குழி • Pallanguzhi Heritage\n${summary}\n${names[1]}: ${s1} | ${names[2]}: ${s2}${shareUrl ? '\n👉 Play here: ' + shareUrl : ''}`;
+      void shareToWhatsApp(text);
+    });
+
+    $('join-room-btn').addEventListener('click', () => {
+      const code = $('join-room-input').value.trim();
+      joinOnlineRoom(code);
+    });
+
+    $('p1-input').addEventListener('input', e => {
+      names[1] = e.target.value.trim() || 'Player 1';
+      saveSettings();
+    });
+    $('p2-input').addEventListener('input', e => {
+      names[2] = e.target.value.trim() || (options.ai ? 'Azhagi (AI)' : 'Player 2');
+      saveSettings();
+    });
+
+    $('volume-input').addEventListener('input',e=>{
+      options.volume=Number(e.target.value)/100;
+      $('volume-display').textContent=e.target.value+'%';
+      saveSettings();
+      if(audio)audio.pallanguzhiMaster.gain.setTargetAtTime(options.sound?options.volume:0,audio.currentTime,.02);
+      if(options.sound&&options.volume>0)beadImpact('drop',.33);
+    });
+    $('speed-btn').setAttribute('aria-label','Gameplay pace: natural. Tap to change.');
+    $('skip-btn').addEventListener('click',skipCurrentMove);
+    $('hint-btn').addEventListener('click',showHint);
+    $('hint-dismiss').addEventListener('click',()=>{state.hintPit=null;hideHintExplanation();render();});
+    $('undo-btn').addEventListener('click',undoMove);
+    $('undo-end-btn').addEventListener('click',undoMove);
+    $('quick-play-btn').addEventListener('click',()=>{
+      selectOption('mode','ai');
+      selectOption('format','single');
+      selectOption('toss','p1');
+      selectOption('seedscount','5');
+      selectOption('pasu','on');
+      selectOption('difficulty','easy');
+      startGame(true);
+    });
+    $('start-btn').addEventListener('click',()=>startGame(true));
+    $('again-btn').addEventListener('click',()=>startGame(true));
+    $('match-btn').addEventListener('click',showSetup);
+    $('change-btn').addEventListener('click',showSetup);
+    $('rules-btn').addEventListener('click',()=>$('rules-modal').classList.remove('hidden'));
+    $('close-rules').addEventListener('click',()=>$('rules-modal').classList.add('hidden'));
+    $('fit-btn').addEventListener('click',fullscreen);
+
+    // 5-Theme Quick Switcher
+    const themesList = ['bright', 'dark', 'chettinad', 'granite', 'sandalwood'];
+    $('theme-btn').addEventListener('click', () => {
+      const currentIndex = themesList.indexOf(options.theme);
+      const nextTheme = themesList[(currentIndex + 1) % themesList.length];
+      selectOption('theme', nextTheme);
+    });
+
+    $('speed-btn').addEventListener('click',()=>{
+      options.pace=options.pace==='natural'?'relaxed':options.pace==='relaxed'?'fast':'natural';
+      options.fast=options.pace==='fast';
+      updatePaceUI();
+      saveSettings();
+    });
+    $('sound-btn').addEventListener('click',()=>{
+      options.sound=!options.sound;
+      $('sound-btn').textContent=options.sound?'🔊 Sound':'🔇 Muted';
+      $('sound-btn').setAttribute('aria-pressed',String(options.sound));
+      $('sound-btn').classList.toggle('sound-off',!options.sound);
+      saveSettings();
+      if(audio)audio.pallanguzhiMaster.gain.setTargetAtTime(options.sound?options.volume:0,audio.currentTime,.02);
+      if(options.sound)beadImpact('drop',1);
+    });
+
+    document.addEventListener('keydown',event=>{
+      if(event.key==='Escape'){
+        handleSystemBack();
+      }
+    });
+
+    window.addEventListener('pointerdown', () => ensureAudio(), { once: true });
+    window.addEventListener('resize',()=>{invalidateLayout();updatePaceUI();},{passive:true});
+    window.addEventListener('orientationchange', invalidateLayout, {passive:true});
+    if(typeof ResizeObserver==='function'){
+      const boardObserver=new ResizeObserver(invalidateLayout);
+      boardObserver.observe($('arena'));
+    }
+    window.PallanguzhiTest={simulateMove,settleIfFinished,validMoves,owner,skipCurrentMove,undoMove,showHint,recommendMove,getSnapshot:()=>({pits:state.pits.slice(),banks:state.banks.slice(),turn:state.turn,over:state.over,busy:state.busy,epoch:state.epoch,handVisible:$('player-hand').classList.contains('visible'),activeMove:Boolean(state.activeMove),pace:options.pace,difficulty:options.difficulty,history:state.history.length,hintPit:state.hintPit,handFacing:$('player-hand').dataset.facing}),startGame,chooseAI,
+      tutorialOpen,tutorialRebuild,tutorialNext,tutorialPlay,tutorialSetLanguage,
+      getTutorial:()=>({open:tutorial.open,step:tutorial.step,running:tutorial.running,complete:tutorial.complete,pits:tutorial.pits.slice(),banks:tutorial.banks.slice(),lang:tutorial.lang}),
+      getStats:()=>JSON.parse(JSON.stringify(stats)),getSaved:()=>loadSavedMatch(),resumeMatch,discardSavedMatch,openStats,
+      getMetrics:()=>({...state.metrics}),playPit,showSetup,
+      getRound:()=>({round:state.round,locked:state.kasiePits.slice(),pending:state.roundPending,options:{...options}}),
+      setTestPosition:(p)=>{if(!p||!Array.isArray(p.pits)||p.pits.length!==N||!Array.isArray(p.banks))throw Error('Invalid test input'); invalidateMatch();state.pits=p.pits.slice();state.banks=p.banks.slice();state.kasiePits=normalizeKasie(p.kasiePits);state.turn=p.turn||1;state.round=p.round||1;state.started=true;state.over=false;render();},
+      getMatch:()=>({matchId:state.matchId,started:state.started,over:state.over,resultRecorded:state.resultRecorded,round:state.round,awaitingToss:state.awaitingToss}),
+      getOnline:()=>({isHost:onlineState.isHost,player:onlineState.myPlayerIndex,connected:onlineState.connected,roomCode:onlineState.roomCode,queued:onlineState.pendingRemoteMoves.length}),
+      inspect:()=>({pits:state.pits.slice(),banks:state.banks.slice(),turn:state.turn,started:state.started,over:state.over,round:state.round,roundPending:state.roundPending,busy:state.busy,awaitingToss:state.awaitingToss,kasiePits:state.kasiePits.slice(),moves:state.metrics.moves,matchId:state.matchId}),
+      injectOnlinePacket:handleOnlineMessage,drainOnline:processRemoteQueue};
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
