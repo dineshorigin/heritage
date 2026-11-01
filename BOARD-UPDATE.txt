@@ -1,0 +1,10 @@
+HERITAGE BOARD v3.10.0
+Upload ALL eight files into the same GitHub repository root:
+index.html, game.css, app.js, rules.js, guidance.js, locale.js, native-bridge.js, heritage-board.webp
+
+New: realistic compressed teak/elephant artwork, central collection bowls, cowrie default for fresh preferences, expanded playing board, compact controls. Existing saved material choices are preserved.
+Artwork: 133870 bytes. No new rendering dependencies. At most 20 shells rendered per cup; counts show actual totals.
+
+Validation for this update: 26 unit/regression tests PASS; 800 deterministic engine matches (50131 moves) PASS; desktop and 393x851 portrait visual checks. Full prior UI matrix has not been rerun for this board update. Physical phone frame rate, touch ergonomics, internet multiplayer and Android APK remain unverified. No guaranteed FPS.
+
+Includes updated Android source as android-project.zip; no APK.

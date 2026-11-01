@@ -1,6 +1,6 @@
-import { installLanguage, getLanguage } from './locale.js?v=3.9.1';
-import { turnGuidance, captureGuidance, boardSize, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.9.1';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.9.1';
+import { installLanguage, getLanguage } from './locale.js?v=3.10.0';
+import { turnGuidance, captureGuidance, boardSize, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.10.0';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.10.0';
 
 (() => {
   'use strict';
@@ -22,7 +22,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     online: false,
     difficulty: 'medium',
     theme: 'bright',
-    seedStyle: 'natural',
+    seedStyle: 'cowrie',
     fast: false,
     pace: 'natural',
     sound: true,
@@ -1257,6 +1257,11 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       cluster.append(bead);
     }
     Array.from(cluster.children).forEach((bead,j)=>{
+      // Spread a small handful across the cup; bound drawing to 20 shells.
+      const angle=j*2.39996323+index*.31;
+      const radius=Math.sqrt((j+.5)/Math.max(1,target))*34;
+      bead.style.left=(50+Math.cos(angle)*radius)+'%';
+      bead.style.top=(50+Math.sin(angle)*radius*.85)+'%';
       const color=getSeedClass(index, j);
       if(!bead.classList.contains(color)){
         bead.className='tamarind-seed '+color;
