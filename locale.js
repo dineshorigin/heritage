@@ -1,5 +1,7 @@
 // English/Tamil UI translation; player names and input values remain unchanged.
 export const tamil = {
+  "☰ Tools": "☰ கருவிகள்",
+  "Match tools": "ஆட்டக் கருவிகள்",
   "HERITAGE · READY TO PLAY": "பாரம்பரியம் · விளையாடத் தயார்",
   "Ⅱ Pause": "Ⅱ இடைநிறுத்து",
   "📊 Stats": "📊 சாதனைகள்",

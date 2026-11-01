@@ -1,18 +1,28 @@
-BOARD POLISH v3.11.1
+ROYAL BOARD EDITION v3.12.0
 
-Changes requested:
-1. Names and turn/waiting status now live in the upright header. Redundant rotated TOP/BOTTOM and store-name labels are hidden. Store numbers and cup counts remain upright in portrait.
-2. Darker wood with a static, subtle epoxy-style reflection. This assumes “epoch” meant epoxy. The existing reference image is reused; no new texture download or graphics dependency.
-3. Cowrie sprites enlarged (cup shell width from 28% to 38% of cup width, with bounded sizes).
-4. Small handfuls now settle into compact piles near the low central region (50%,58%) instead of spreading to the rim. Larger piles remain bounded; store piles also settle centrally. Counts remain exact. This is a visual arrangement, not a physics engine.
-5. Board now fills both dimensions of its available stage. On 393x851 preview it measures 375x672, compared with 257x685 in the previous fixed-aspect layout. The artwork adapts to the stage proportions; it is no longer constrained to its original 8:3 ratio.
-6. Warm, dark textured background matches the wood. Removed persistent playable outlines, hint/sowing/capture rings, store outlines, and landing rings. Hint uses a small star; active player status stays in the header. Locked Kasie badges remain visible without an extra circular outline.
+REQUESTED CHANGES
+1. Fit/Fullscreen uses the same 8:3 board aspect ratio as normal view. Uniform scaling replaces independent width/height stretching. The mat frames remaining space instead of distorting the elephant carvings and cups.
+2. New polished rosewood artwork with clean creamy ivory elephant carvings, existing green/red details and central flower.
+3. Consistent overhead presentation and sharp edges; no intentional camera tilt or depth-of-field blur. This remains a reconstructed image asset, not an exact 3D model.
+4. Emerald woven mat with fine gold borders; contrasting burgundy/navy player cards and gold active-player accents create a restrained royal-table setting. Static CSS, no new mat image or graphics engine.
+5. The commentary region reserves 64px (40px on small landscape screens), with scrolling for longer feedback. Capture/reconnect comments no longer resize the board.
+6. One Tools button opens all eight existing actions. Selecting an action dismisses the panel, including Undo when it becomes disabled after execution. Escape returns focus to the toggle; outside clicks dismiss the panel. The drawer overlays the board without resizing it.
+7. Lightweight visual physics: gravity-based sampled ballistic flights, a small dissipative rebound, fixed-step gravity/friction bowl settling, elliptical shell contacts, rim constraints and projected stacks for larger piles. Cached per pile; no idle physics loop. This is a 2.5D visual approximation, not an exact physical model of cowrie meshes. Rules and counts are never changed by visual physics.
+8. All existing play modes, settings, Tamil/English and result logic retained. No multiplayer transport changes.
 
-Validation on this version:
-29 unit/regression tests passed, including bounded shell piles and board stage filling.
-Six browser viewports passed: 320x568, 360x640, 393x851, 412x915, 740x360, 1024x768.
-All 84 cup centers were unobstructed. Header, board, guidance and footer did not overlap; no horizontal overflow.
-At each viewport: artwork loads, upright turn status is inside player cards, inverted row labels are hidden, cup border width is zero and shadow absent, cowrie size check, legal sowing matches rules engine, seed conservation, Hint/Undo, Pause/Resume, language round trip and all five themes passed.
-Android source sync passed; no APK built.
+VALIDATION ON THIS VERSION
+32 unit/regression tests passed (rules, guidance, recovery, rematch, translations, aspect ratio, gravity settling, contacts, bounds/cache and ballistic endpoints/rebounds).
+800 deterministic engine matches, 50131 moves, zero failures.
+Six browser sizes passed: 320x568, 360x640, 393x851, 412x915, 740x360, 1024x768. All 84 cup centers unobstructed; no header/board/guide/footer overlap or horizontal overflow.
+Across those sizes: consistent board ratio; stable dimensions under long capture and reconnect comments; tool drawer initially hidden, exactly eight actions, dismissal after selections and Escape; Hint, Undo, Sound, Pace, Rules, Match, five themes, pause/resume, translation round trip, legal sowing/seed conservation and artwork loading passed.
+Eight complete local browser matches (4/5 seeds, Pasu on/off, Single/Kasie), 610 moves, result/conservation checks passed. These advance lengthy animations with Finish Move.
+Separate actual unskipped natural pickup/sow/four-shell capture, turn change and flight-sprite cleanup passed.
+Live iframe resizing through 851x393, 393x851, 1280x720 and 1920x1080 retained exact 8:3 aspect ratio and unchanged game state.
+Actual OS fullscreen entry was attempted through Tools > Fit, but this cloud browser reported Fullscreen unavailable. Fullscreen API entry itself remains a device check; aspect sizing at fullscreen-like resolutions passed.
+Unique HTML IDs, JS parsing, source asset consistency and Android source sync passed. No APK built.
 
-The earlier version's eight full local matches and 800 simulations were not rerun for this presentation-only update. Physical phone frame rate, touch ergonomics, real internet multiplayer and native installation remain unverified. No GitHub upload or deployment was performed.
+LIMITS
+Not a full release certification. Physical Android/iOS/tablet FPS, touch ergonomics, audio/haptics, real OS fullscreen and internet WebRTC still need device testing. No GitHub upload or deployment was performed.
+
+PERFORMANCE
+No third-party physics/graphics dependency. physics.js is about 3KB source, bounded memoization of up to 256 settled piles, max 20 cup sprites / 30 store sprites. Mat is static CSS. The old board image is used only as an alpha silhouette mask and was recompressed with exact alpha preserved; new polished texture is compressed WebP. No idle particle simulation or continuously animated ambience.

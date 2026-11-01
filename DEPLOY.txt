@@ -1,16 +1,18 @@
-BOARD POLISH v3.11.1
+ROYAL BOARD EDITION v3.12.0
 
-Upload these NINE files into your GitHub repository root, keeping their names:
+Replace/upload these ELEVEN files into your GitHub repository root:
 index.html
 game.css
 app.js
 rules.js
 guidance.js
 locale.js
+physics.js
 native-bridge.js
 reference-board.webp
+royal-board.webp
 cowrie-shell.webp
 
-Both WebP image files must be present. No js/css folders are needed for this web version. Commit, wait for GitHub Pages deployment, then refresh.
+Keep filenames exactly, including all three WebP images. reference-board.webp is now the cutout mask; royal-board.webp is the visible polished board; cowrie-shell.webp is the shared shell sprite. physics.js is required.
 
-android-project.zip is source, not an APK, and is not required for GitHub Pages. Documentation and verification files are optional.
+No js/css folders for this web version. Commit, wait for GitHub Pages deployment, then refresh. Android source is inside android-project.zip; this is not an APK and is not required for Pages. Documentation and verification files are optional.

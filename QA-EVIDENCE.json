@@ -1,123 +1,236 @@
 {
-  "version": "3.11.1",
-  "unitTestsPassed": 29,
+  "version": "3.12.0",
+  "unitTestsPassed": 32,
+  "engineSimulations": {
+    "matches": 800,
+    "moves": 50131,
+    "failures": 0
+  },
   "browser": {
-    "status": "PASS",
-    "checks": "6 layouts; all 84 cup centers unobstructed; artwork loaded; legal sowing matches engine; seed conservation; hint; undo; pause/resume; languages; 5 themes",
-    "results": [
-      {
-        "viewport": [
-          320,
-          568
-        ],
-        "board": {
-          "width": 302,
-          "height": 376
+    "layouts": {
+      "status": "PASS",
+      "checks": "6 layouts; all 84 cup centers unobstructed; artwork loaded; legal sowing matches engine; seed conservation; hint; undo; pause/resume; languages; 5 themes",
+      "results": [
+        {
+          "viewport": [
+            320,
+            568
+          ],
+          "board": {
+            "width": 139.875,
+            "height": 373
+          },
+          "cups": 14,
+          "result": "PASS"
         },
-        "cups": 14,
-        "result": "PASS"
-      },
-      {
-        "viewport": [
-          360,
-          640
-        ],
-        "board": {
-          "width": 342,
-          "height": 461
+        {
+          "viewport": [
+            360,
+            640
+          ],
+          "board": {
+            "width": 166.875,
+            "height": 445
+          },
+          "cups": 14,
+          "result": "PASS"
         },
-        "cups": 14,
-        "result": "PASS"
-      },
-      {
-        "viewport": [
-          393,
-          851
-        ],
-        "board": {
-          "width": 375,
-          "height": 672
+        {
+          "viewport": [
+            393,
+            851
+          ],
+          "board": {
+            "width": 246,
+            "height": 656
+          },
+          "cups": 14,
+          "result": "PASS"
         },
-        "cups": 14,
-        "result": "PASS"
-      },
-      {
-        "viewport": [
-          412,
-          915
-        ],
-        "board": {
-          "width": 394,
-          "height": 736
+        {
+          "viewport": [
+            412,
+            915
+          ],
+          "board": {
+            "width": 270,
+            "height": 720
+          },
+          "cups": 14,
+          "result": "PASS"
         },
-        "cups": 14,
-        "result": "PASS"
-      },
-      {
-        "viewport": [
-          740,
-          360
-        ],
-        "board": {
-          "width": 722,
-          "height": 240
+        {
+          "viewport": [
+            740,
+            360
+          ],
+          "board": {
+            "width": 589.328125,
+            "height": 221
+          },
+          "cups": 14,
+          "result": "PASS"
         },
-        "cups": 14,
-        "result": "PASS"
-      },
-      {
-        "viewport": [
-          1024,
-          768
-        ],
-        "board": {
-          "width": 1006,
-          "height": 640
+        {
+          "viewport": [
+            1024,
+            768
+          ],
+          "board": {
+            "width": 1006,
+            "height": 377.25
+          },
+          "cups": 14,
+          "result": "PASS"
+        }
+      ]
+    },
+    "matches": {
+      "status": "PASS",
+      "matches": [
+        {
+          "seeds": "4",
+          "pasu": "on",
+          "format": "single",
+          "moves": 3,
+          "result": "PASS"
         },
-        "cups": 14,
-        "result": "PASS"
-      }
-    ]
+        {
+          "seeds": "4",
+          "pasu": "on",
+          "format": "kasie",
+          "moves": 44,
+          "result": "PASS"
+        },
+        {
+          "seeds": "4",
+          "pasu": "off",
+          "format": "single",
+          "moves": 40,
+          "result": "PASS"
+        },
+        {
+          "seeds": "4",
+          "pasu": "off",
+          "format": "kasie",
+          "moves": 163,
+          "result": "PASS"
+        },
+        {
+          "seeds": "5",
+          "pasu": "on",
+          "format": "single",
+          "moves": 17,
+          "result": "PASS"
+        },
+        {
+          "seeds": "5",
+          "pasu": "on",
+          "format": "kasie",
+          "moves": 145,
+          "result": "PASS"
+        },
+        {
+          "seeds": "5",
+          "pasu": "off",
+          "format": "single",
+          "moves": 52,
+          "result": "PASS"
+        },
+        {
+          "seeds": "5",
+          "pasu": "off",
+          "format": "kasie",
+          "moves": 146,
+          "result": "PASS"
+        }
+      ]
+    },
+    "animation": {
+      "status": "PASS",
+      "checks": "Actual unskipped pickup, sowing, four-shell capture, turn change and flight sprite cleanup",
+      "durationMs": 12538,
+      "banks": [
+        0,
+        36,
+        32
+      ]
+    },
+    "liveResize": {
+      "status": "PASS",
+      "liveResizes": [
+        {
+          "width": 851,
+          "height": 393,
+          "ratio": 2.6666666666666665
+        },
+        {
+          "width": 393,
+          "height": 851,
+          "ratio": 2.6666666666666665
+        },
+        {
+          "width": 1280,
+          "height": 720,
+          "ratio": 2.6666666666666665
+        },
+        {
+          "width": 1920,
+          "height": 1080,
+          "ratio": 2.6666666666666665
+        }
+      ]
+    },
+    "fullscreenEntry": {
+      "supported": false,
+      "message": "Fullscreen is unavailable in this browser."
+    }
   },
   "extraBrowserAssertions": [
-    "Board fills available stage",
-    "Turn labels in upright player cards",
-    "Rotated owner bars hidden",
-    "No cup border/shadow",
-    "Enlarged cowries"
+    "Fixed guide height under long capture/reconnect messages",
+    "Eight tools in collapsed overlay; action and Escape dismissal",
+    "Invariant board aspect across all sizes"
   ],
   "files": {
     "index.html": {
-      "bytes": 28305,
-      "sha256": "056e6dbd3b6f0ea711162829b32cfc9123745a9ede0a4790b8b1cb19da210de3"
+      "bytes": 28577,
+      "sha256": "866bfe5af235319f207914e90b420f7ade2ce026bc4c1685586feadcdd99eefc"
     },
     "game.css": {
-      "bytes": 51199,
-      "sha256": "a056b3cd84eea01a954472ca478053916cc19c95ff460175d4f55f14c1d57c58"
+      "bytes": 54150,
+      "sha256": "aa50f47d8b558cbb8987758cba8ad21065f82773b16dd27e345a10358ccf2d11"
     },
     "app.js": {
-      "bytes": 139651,
-      "sha256": "b021c046a8b256f6cec7d3f5a5a9970afa2dad647fc08d1ad4b3ca46a1490484"
+      "bytes": 140424,
+      "sha256": "6515aaf82cb0a9b4b817526ac82db01055f1a604d86f90b92dae13016be83010"
     },
     "rules.js": {
       "bytes": 3153,
       "sha256": "10c706a2cdd2562b1caacc1c4c268b4fa2fc8afc6915849426b44ba196f15267"
     },
     "guidance.js": {
-      "bytes": 4344,
-      "sha256": "91085ac00c458e8835152bcc671b7a2fa82c99fa6284b62a6dc3fcacf525aaf7"
+      "bytes": 4258,
+      "sha256": "8b3d2b233ac84cae29224c4b8e6fa5cd59b291c0becce44864f8d35b58a1a8a9"
     },
     "locale.js": {
-      "bytes": 50092,
-      "sha256": "d1553c83c836618e93e96940bfc6184a235ed3624d9fb8cb5f3fd3002c65ca2e"
+      "bytes": 50203,
+      "sha256": "1f6516115ca72f638ab2380b4e90f3392216d6e815291ab230cc29d66fa17f29"
+    },
+    "physics.js": {
+      "bytes": 3075,
+      "sha256": "fd3e68df9ef1aeaea2c2f72a0afd2bc3c4b3aced900c3b2932f7d07036eb125c"
     },
     "native-bridge.js": {
       "bytes": 97491,
       "sha256": "d7f5ab63cb1533eb3356bd4a88ce0bd6b654c1708e0a3a36c777184176feaceb"
     },
     "reference-board.webp": {
-      "bytes": 308346,
-      "sha256": "6fb755ef1fec7fbe4b18b565a75301886f2e6483b8adee39bc84e14b80886682"
+      "bytes": 109138,
+      "sha256": "370d681e24b6e7b08a3197fc40f72efa862971992ca23f59a960ae5a97f09cce"
+    },
+    "royal-board.webp": {
+      "bytes": 185412,
+      "sha256": "b396277d09b5e804a8b80dfb440784779ccd804900ebc5e61be82f7e731eb0d6"
     },
     "cowrie-shell.webp": {
       "bytes": 2784,

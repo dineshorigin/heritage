@@ -1,6 +1,7 @@
-import { installLanguage, getLanguage } from './locale.js?v=3.11.1';
-import { turnGuidance, captureGuidance, boardSize, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.11.1';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.11.1';
+import {ballisticFlight} from './physics.js?v=3.12.0';
+import { installLanguage, getLanguage } from './locale.js?v=3.12.0';
+import { turnGuidance, captureGuidance, boardSize, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.12.0';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.12.0';
 
 (() => {
   'use strict';
@@ -1253,6 +1254,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     Array.from(cluster.children).forEach((bead,j)=>{
       const point=shellPosition(index,j,target);
       bead.style.left=point.x+'%';bead.style.top=point.y+'%';
+      bead.style.zIndex=String(point.layer||0);
       const color=getSeedClass(index, j);
       if(!bead.classList.contains(color)){
         bead.className='tamarind-seed '+color;
@@ -1291,6 +1293,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     Array.from(bank.children).forEach((bead,j)=>{
       const point=shellPosition(player,j,visible,true);
       bead.style.left=point.x+'%';bead.style.top=point.y+'%';
+      bead.style.zIndex=String(point.layer||0);
       const color=getSeedClass(player, j);
       if(!bead.classList.contains(color))bead.className='tamarind-seed '+color;
     });
@@ -1346,11 +1349,11 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     layoutCenters.clear();
     for(let i=0;i<N;i++){
       const r=$('pit-'+i).getBoundingClientRect();
-      layoutCenters.set('pit-'+i,{x:r.left+r.width/2,y:r.top+r.height/2});
+      layoutCenters.set('pit-'+i,{x:r.left+r.width*(portraitBoard()?.46:.5),y:r.top+r.height*(portraitBoard()?.5:.54)});
     }
     for(const player of [1,2]){
       const r=$('mc-'+player).querySelector('.mother-cavity').getBoundingClientRect();
-      layoutCenters.set('mc-'+player,{x:r.left+r.width/2,y:r.top+r.height/2});
+      layoutCenters.set('mc-'+player,{x:r.left+r.width*(portraitBoard()?.46:.5),y:r.top+r.height*(portraitBoard()?.5:.54)});
     }
     layoutDirty=false;
   }
@@ -1505,19 +1508,13 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     const tx=to.x+(Math.random()-.5)*spread,ty=to.y+(Math.random()-.5)*spread;
     const dx=tx-sx,dy=ty-sy,dist=Math.hypot(dx,dy);
     const spin=(Math.random()>.5?1:-1)*(15+Math.random()*67);
-    const arc=kind==='scoop'?Math.min(21,dist*.20):kind==='capture'?Math.min(27,dist*.14):Math.min(9,dist*.18);
-    const horizontalArc=portraitBoard();
-    const frame=(p,yArc,angle,scaleX=1,scaleY=1)=>{
-      const offset=-yArc;
-      const x=dx*p+(horizontalArc?offset:0);
-      const y=dy*p+(horizontalArc?0:offset);
-      return {offset:p,transform:`translate3d(calc(-50% + ${x.toFixed(1)}px),calc(-50% + ${y.toFixed(1)}px),0) rotate(${angle.toFixed(1)}deg) scale(${scaleX},${scaleY})`};
-    };
-    const frames=[frame(0,0,0,.95,.95),frame(.44,arc,spin*.47,1.06,1.06),frame(.8,arc*.24,spin*.8,1.1,.84),frame(1,0,spin,1,1)];
+    const frames=ballisticFlight({dx,dy,duration,portrait:portraitBoard(),kind,spin}).map(p=>({
+      offset:p.offset,transform:`translate3d(calc(-50% + ${p.x.toFixed(2)}px),calc(-50% + ${p.y.toFixed(2)}px),0) rotate(${p.angle.toFixed(2)}deg)`
+    }));
     el.style.left=sx+'px';el.style.top=sy+'px';document.body.append(el);
     let animation;
     try{
-      animation=el.animate(frames,{duration,delay,easing:'ease-in-out',fill:'both'});
+      animation=el.animate(frames,{duration,delay,easing:'linear',fill:'both'});
       activeAnims.add(animation);
       await animation.finished.catch(()=>{});
     }finally{
@@ -2567,6 +2564,17 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       if(audio)audio.pallanguzhiMaster.gain.setTargetAtTime(options.sound?options.volume:0,audio.currentTime,.02);
       if(options.sound&&options.volume>0)beadImpact('drop',.33);
     });
+    const closeTools=(focus=false)=>{
+      $('tools-panel').hidden=true;$('tools-toggle').setAttribute('aria-expanded','false');
+      if(focus)$('tools-toggle').focus();
+    };
+    $('tools-toggle').addEventListener('click',()=>{
+      const opening=$('tools-panel').hidden;$('tools-panel').hidden=!opening;
+      $('tools-toggle').setAttribute('aria-expanded',String(opening));
+    });
+    $('tools-panel').addEventListener('click',e=>{if(e.target.closest('button'))closeTools();});
+    document.addEventListener('pointerdown',e=>{if(!$('tools-panel').hidden&&!e.target.closest('#tools-panel,#tools-toggle'))closeTools();});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('tools-panel').hidden){e.preventDefault();e.stopImmediatePropagation();closeTools(true);}},true);
     $('speed-btn').setAttribute('aria-label','Gameplay pace: natural. Tap to change.');
     $('skip-btn').addEventListener('click',skipCurrentMove);
     $('hint-btn').addEventListener('click',showHint);
@@ -2623,6 +2631,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     window.addEventListener('pointerdown', () => ensureAudio(), { once: true });
     window.addEventListener('resize',()=>{invalidateLayout();updatePaceUI();render();},{passive:true});
     window.addEventListener('orientationchange', invalidateLayout, {passive:true});
+    document.addEventListener('fullscreenchange',()=>{invalidateLayout();requestAnimationFrame(invalidateLayout);});
     if(typeof ResizeObserver==='function'){
       const boardObserver=new ResizeObserver(invalidateLayout);
       boardObserver.observe(document.querySelector('.arena-stage'));

@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1b0d06">
-<title>பல்லாங்குழி • Heritage Edition (v3.11.1 • Reference Board Edition)</title>
+<title>பல்லாங்குழி • Heritage Edition (v3.12.0 • Reference Board Edition)</title>
 <!-- PeerJS is bundled locally; online play still uses external signaling. -->
-<link rel="preload" as="image" href="reference-board.webp?v=3.11.1">
-<link rel="stylesheet" href="game.css?v=3.11.1">
-<script id="peerjs-loader" defer src="native-bridge.js?v=3.11.1"></script>
+<link rel="preload" as="image" href="royal-board.webp?v=3.12.0">
+<link rel="preload" as="image" href="reference-board.webp?v=3.12.0">
+<link rel="stylesheet" href="game.css?v=3.12.0">
+<script id="peerjs-loader" defer src="native-bridge.js?v=3.12.0"></script>
 </head>
 <body>
 <!-- Board artwork is reconstructed from the supplied photograph; cups are interactive overlays. -->
@@ -50,7 +51,8 @@
   </section>
   <footer class="bottom-strip">
     <div class="status-message" id="status-text" aria-live="polite">Choose a game mode to start.</div>
-    <div class="actions">
+    <button type="button" class="action-btn tools-toggle" id="tools-toggle" aria-expanded="false" aria-controls="tools-panel">☰ Tools</button>
+    <div class="actions" id="tools-panel" role="group" aria-label="Match tools" hidden>
       <button type="button" class="action-btn assist-btn" id="hint-btn" aria-pressed="false" disabled title="Highlight a suggested cup">💡 Hint</button>
       <button type="button" class="action-btn assist-btn" id="undo-btn" disabled title="Undo your last move (and the AI reply, if any)">↶ Undo</button>
       <button type="button" class="action-btn" id="speed-btn" aria-pressed="false">🎞 Pace: Natural</button>
@@ -344,6 +346,6 @@
   </div>
 </div>
 
-<script type="module" src="app.js?v=3.11.1"></script>
+<script type="module" src="app.js?v=3.12.0"></script>
 </body>
 </html>

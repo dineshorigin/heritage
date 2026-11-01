@@ -700,7 +700,7 @@ button{min-height:34px}
    transparent interactive targets share its normalized coordinate system. */
 #game-frame{gap:3px;padding:calc(env(safe-area-inset-top) + 3px) max(3px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 3px) max(3px,env(safe-area-inset-left))}
 .arena-stage,.top-strip,.bottom-strip,.play-guide{max-width:1600px}
-body .play-arena{display:block;border:0;border-radius:0;background:transparent url('reference-board.webp?v=3.11.1') center/100% 100% no-repeat;box-shadow:none;filter:none}
+body .play-arena{display:block;border:0;border-radius:0;background:transparent url('reference-board.webp?v=3.12.0') center/100% 100% no-repeat;box-shadow:none;filter:none}
 .casket-wrapper,.plank,body.granite .plank,.pits-row,.pit-slot{display:contents}
 body .play-arena .pit{position:absolute;left:var(--cup-x);top:var(--cup-y);width:8%;height:20.7%;max-width:none;aspect-ratio:auto;transform:translate(-50%,-50%);border:1px solid transparent;background:transparent;box-shadow:none;outline:0;overflow:visible;container-type:inline-size;transition:border-color .12s}
 body .play-arena .pit.playable{border-color:#f2d29a80;box-shadow:none;outline:none}
@@ -710,7 +710,7 @@ body .play-arena .pit.capture-pulse{border-color:#ffe5a2!important;box-shadow:0 
 body .play-arena .pit.kasie{background:#170d08a8;border-color:#514635;box-shadow:none}
 .seed-pit-cluster{inset:8%;overflow:hidden;border-radius:50%}
 .pit .tamarind-seed{width:clamp(10px,28cqw,36px);height:clamp(7px,21cqw,27px)}
-body .seed-cowrie{border:0;border-radius:0;background:transparent url('cowrie-shell.webp?v=3.11.1') center/contain no-repeat;box-shadow:none}
+body .seed-cowrie{border:0;border-radius:0;background:transparent url('cowrie-shell.webp?v=3.12.0') center/contain no-repeat;box-shadow:none}
 body .seed-cowrie::before,body .seed-cowrie::after{display:none}
 .pit-count{top:0;right:0;left:auto;bottom:auto;transform:none;min-width:17px;border-radius:10px;padding:0 3px;font-size:11px;line-height:17px;text-align:center;color:#38200c;background:#fff0c8;text-shadow:none;box-shadow:0 1px 2px #0008}
 .owner-bar{position:absolute;left:20%;width:60%;height:12px;min-height:12px;padding:0 4px;font-size:9px;color:#fff0ce;text-shadow:0 1px 3px #000;pointer-events:none}
@@ -734,15 +734,15 @@ body .play-arena .active-owner .mother-cavity{border-color:#8fe3bd99}
 @media(orientation:landscape) and (max-height:500px){.owner-bar{height:10px;min-height:10px;font-size:8px}.actions .action-btn{min-height:26px}.play-guide{max-height:32px}.play-guide p{font-size:10px}}
 @media(prefers-reduced-motion:reduce){body .play-arena .pit{transition:none}}
 
-/* v3.11.1: upright player status, fuller board and settled shell piles. */
+/* v3.12.0: upright player status, fuller board and settled shell piles. */
 body,body.dark,body.chettinad,body.granite,body.sandalwood{
  background-color:#211513;
  background-image:radial-gradient(ellipse at 50% 45%,#50342c44,transparent 75%),repeating-linear-gradient(3deg,#fff2df03 0 1px,transparent 1px 4px),repeating-linear-gradient(93deg,#0000000a 0 1px,transparent 1px 5px);
 }
 .arena-stage,.top-strip,.bottom-strip,.play-guide{max-width:none}
 body .play-arena{background:none;isolation:isolate}
-.play-arena::before{content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;background:url('reference-board.webp?v=3.11.1') center/100% 100% no-repeat;filter:brightness(.79) saturate(.85) contrast(1.07)}
-.play-arena::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(155deg,transparent 14%,#fff3dd0d 28%,#fff6e522 35%,transparent 45%,transparent 77%,#fce6c808 90%);-webkit-mask:url('reference-board.webp?v=3.11.1') center/100% 100% no-repeat;mask:url('reference-board.webp?v=3.11.1') center/100% 100% no-repeat}
+.play-arena::before{content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;background:url('reference-board.webp?v=3.12.0') center/100% 100% no-repeat;filter:brightness(.79) saturate(.85) contrast(1.07)}
+.play-arena::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(155deg,transparent 14%,#fff3dd0d 28%,#fff6e522 35%,transparent 45%,transparent 77%,#fce6c808 90%);-webkit-mask:url('reference-board.webp?v=3.12.0') center/100% 100% no-repeat;mask:url('reference-board.webp?v=3.12.0') center/100% 100% no-repeat}
 /* Only the photographic carving outlines the cups. */
 body .play-arena .pit,body .play-arena .pit.playable,body .play-arena .pit.playable:hover,body .play-arena .pit.pulse,body .play-arena .pit.hinted,body .play-arena .pit.capture-pulse,body .play-arena .pit.kasie{
  border:0!important;outline:0;box-shadow:none!important;background:transparent!important;
@@ -759,3 +759,26 @@ body .play-arena .mother-cavity,body .play-arena .active-owner .mother-cavity{bo
 .mother-pile .tamarind-seed{width:clamp(15px,3.4vmin,35px);height:clamp(11px,2.6vmin,27px)}
 @media(orientation:portrait) and (max-width:700px){.player-pod{min-height:35px}.player-pod .owner-indicator{font-size:9px}.pit.kasie::after{transform:translate(-50%,-50%) rotate(-90deg)}}
 @media(orientation:landscape) and (max-height:500px){.player-pod{min-height:31px;padding:1px 7px}.player-pod .owner-indicator{font-size:8px;line-height:9px;min-height:9px}.top-strip{min-height:32px}}
+
+/* Royal table: stable play area, uniform board scale and a compact tool drawer. */
+body,body.dark,body.chettinad,body.granite,body.sandalwood{background:#130c0a}
+#game-frame{grid-template-rows:auto minmax(0,1fr) 64px 34px;gap:4px}
+.play-guide{height:64px;min-height:64px;max-height:64px;overflow:auto;scrollbar-width:thin;padding:5px 10px;background:#17130eea;border-color:#745a31}
+.play-guide p{font-size:11px;line-height:15px}#capture-guide{margin-top:3px}
+.arena-stage::before{content:"";position:absolute;inset:2px;border:1px solid #c8a252;border-radius:12px;pointer-events:none;background-color:#063f38;background-image:radial-gradient(ellipse at 50% 48%,#19605188,transparent 78%),repeating-linear-gradient(0deg,#d4e8cc05 0 1px,transparent 1px 4px),repeating-linear-gradient(90deg,#011f250f 0 1px,transparent 1px 4px);box-shadow:inset 0 0 0 5px #072923,inset 0 0 0 6px #b48c443d,inset 0 0 28px #00100c99}
+.play-arena::before{filter:none;background-image:url('reference-board.webp?v=3.12.0')}
+.play-arena::after{display:none}
+#p1-pod{background:#17324799;border-color:#536e83}#p2-pod{background:#521f2c99;border-color:#8b5461}
+.player-pod.active{border-color:#e4c276!important;outline-color:#e4c276;color:#ffe5ac;box-shadow:0 0 7px #d9b55c22}
+.player-pod.active .owner-indicator{color:#f4d78c}
+.bottom-strip{position:relative;display:flex;align-items:center;justify-content:center;height:34px;min-height:34px}
+.tools-toggle{font-size:12px;min-height:32px;padding:4px 25px;border:1px solid #c49b54;background:#241910;color:#ffe6b8;border-radius:18px}
+#tools-panel{position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);width:min(92vw,440px);padding:8px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;background:#1c1510f7;border:1px solid #b49150;border-radius:12px;box-shadow:0 5px 15px #0009;z-index:90}
+#tools-panel[hidden]{display:none!important}
+#tools-panel .action-btn{min-height:38px;padding:5px 2px;font-size:11px;white-space:nowrap}
+.skip-move{bottom:calc(108px + env(safe-area-inset-bottom));font-size:11px;padding:6px 10px}
+@media(orientation:portrait) and (max-width:700px){#tools-panel{bottom:calc(100% + 6px)}.bottom-strip{flex-direction:row}.top-strip .player-pod{min-height:35px}}
+@media(orientation:landscape) and (max-height:500px){#game-frame{grid-template-rows:auto minmax(0,1fr) 40px 30px;gap:3px}.play-guide{height:40px;min-height:40px;max-height:40px;padding:3px 8px}.play-guide p{font-size:10px;line-height:13px}.bottom-strip{height:30px;min-height:30px}.tools-toggle{min-height:28px;font-size:11px;padding:3px 20px}.skip-move{bottom:calc(80px + env(safe-area-inset-bottom))}}
+
+/* The old alpha silhouette provides a precise cutout for the polished texture. */
+.play-arena::before{background-image:url('royal-board.webp?v=3.12.0');-webkit-mask:url('reference-board.webp?v=3.12.0') center/100% 100% no-repeat;mask:url('reference-board.webp?v=3.12.0') center/100% 100% no-repeat}

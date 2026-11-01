@@ -1,3 +1,5 @@
+import {settledCowries} from './physics.js?v=3.12.0';
+export const BOARD_ASPECT=8/3;
 // Plain-text feedback shared by the interface and its tests.
 export function turnGuidance(g) {
   if (!g.started) return 'Choose a mode, or try Quick Play against the computer.';
@@ -23,7 +25,9 @@ export function captureGuidance(name,count,pasu=false) {
 export function boardSize(stageWidth,stageHeight,portrait) {
   const w=Math.max(0,Math.floor(stageWidth)-12);
   const h=Math.max(0,Math.floor(stageHeight)-12);
-  return portrait ? {width:h,height:w} : {width:w,height:h};
+  const aw=portrait?h:w,ah=portrait?w:h;
+  const width=Math.min(aw,ah*BOARD_ASPECT);
+  return {width,height:width/BOARD_ASPECT};
 }
 
 export function rematchView({online,connected,localReady,remoteReady}) {
@@ -58,17 +62,12 @@ export function pickupPattern(count) {
 export function referenceCup(index){
  if(!Number.isInteger(index)||index<0||index>13)throw new RangeError('Cup index must be 0..13');
  const top=index>=7,column=top?13-index:index;
- return {x:(top?22.7:17.95)+column*(top?9.23:9.35),y:top?20.8:77.4};
+ return {x:(top?23.8:17.9)+column*(top?9.18:9.40),y:top?21.3:77.1};
 }
 
 // A settled handful stays near the low central region of a carved bowl.
 // This is a bounded visual pile, not a per-frame physics simulation.
 export function shellPosition(index,serial,count,store=false){
- const n=Math.max(1,Math.min(store?30:20,Math.floor(count)||1));
- const j=Math.max(0,Math.min(n-1,Math.floor(serial)||0));
- if(n===1)return {x:50,y:58};
- const angle=j*2.39996323+index*.31;
- const spread=store?Math.min(28,10+Math.sqrt(n)*2.6):Math.min(24,10+Math.sqrt(n)*2.1);
- const radius=Math.sqrt((j+.5)/n)*spread;
- return {x:50+Math.cos(angle)*radius,y:58+Math.sin(angle)*radius*.68};
+ const pile=settledCowries(count,index,store);
+ return pile[Math.max(0,Math.min(pile.length-1,Math.floor(serial)||0))]||{x:50,y:55,layer:0,rotation:0};
 }
