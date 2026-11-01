@@ -3,21 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#1b0d06">
-<title>Pallanguzhi • Heritage Edition (v3.16.0 • Reference Board Edition)</title>
+
+<title>Pallanguzhi • Heritage Edition (v3.17.0 • Reference Board Edition)</title>
 <!-- PeerJS is bundled locally; online play still uses external signaling. -->
-<link rel="preload" as="image" href="royal-board.webp?v=3.16.0">
-<link rel="preload" as="image" href="reference-board.webp?v=3.16.0">
+<link rel="preload" as="image" href="royal-board.webp?v=3.17.0">
+<link rel="preload" as="image" href="reference-board.webp?v=3.17.0">
+<link rel="icon" type="image/png" href="icon-192.png?v=3.17.0"><link rel="apple-touch-icon" href="icon-192.png?v=3.17.0">
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#173e35">
-<link rel="stylesheet" href="game.css?v=3.16.0">
-<script id="peerjs-loader" defer src="native-bridge.js?v=3.16.0"></script>
+<link rel="stylesheet" href="game.css?v=3.17.0">
+<script id="peerjs-loader" defer src="native-bridge.js?v=3.17.0"></script>
 </head>
 <body>
 <!-- Board artwork is reconstructed from the supplied photograph; cups are interactive overlays. -->
 
 <main id="game-frame" aria-label="Pallanguzhi game">
   <header class="top-strip">
-    <div class="brand">Pallanguzhi<small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
+    <div class="brand"><img class="brand-icon" src="icon-192.png?v=3.17.0" alt="" width="34" height="34"><span class="brand-title">Pallanguzhi</span><small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
     <div class="header-tools"><button type="button" class="action-btn" id="language-btn" data-no-i18n data-language-toggle aria-label="Switch language">Language</button><button type="button" class="action-btn" id="pause-btn">Ⅱ Pause</button><button type="button" class="stats-trigger" id="stats-btn" aria-label="Open match statistics and achievements">📊 Stats</button></div>
     <div class="players-scoreboard">
       <div class="player-pod" id="p2-pod"><span class="player-name" id="p2-label" data-no-i18n>Azhagi (AI)</span><span class="score-badge" id="p2-score">0</span><span class="owner-indicator" id="ind-2" aria-live="polite"></span></div>
@@ -30,10 +31,10 @@
       
       <div class="side-highlight" id="side-highlight-2" aria-hidden="true"></div><div class="side-highlight" id="side-highlight-1" aria-hidden="true"></div>
       <section class="player-dock dock-2" aria-label="Player 2 score and turn">
-        <button type="button" class="wish-lamp" id="wish-lamp-2" aria-label="Hint" title="Hint"></button><span class="dock-name" id="dock-name-2" data-no-i18n></span><span class="dock-score" id="dock-score-2">0</span><span class="dock-turn" id="dock-turn-2"></span>
+        <button type="button" class="wish-lamp" id="wish-lamp-2" aria-label="Hint" title="Hint"></button><span class="dock-name" id="dock-name-2" data-no-i18n></span><span class="dock-score" id="dock-score-2">0</span><span class="dock-turn" id="dock-turn-2"></span><span class="turn-clock" id="turn-clock-2" aria-label="Time to choose a cup" hidden></span>
       </section>
       <section class="player-dock dock-1" aria-label="Player 1 score and turn">
-        <button type="button" class="wish-lamp" id="wish-lamp-1" aria-label="Hint" title="Hint"></button><span class="dock-name" id="dock-name-1" data-no-i18n></span><span class="dock-score" id="dock-score-1">0</span><span class="dock-turn" id="dock-turn-1"></span>
+        <button type="button" class="wish-lamp" id="wish-lamp-1" aria-label="Hint" title="Hint"></button><span class="dock-name" id="dock-name-1" data-no-i18n></span><span class="dock-score" id="dock-score-1">0</span><span class="dock-turn" id="dock-turn-1"></span><span class="turn-clock" id="turn-clock-1" aria-label="Time to choose a cup" hidden></span>
       </section>
 
       <aside class="outer-mother-cup" id="mc-2" aria-label="Player 2 captured seeds">
@@ -164,7 +165,7 @@
 <div class="overlay" id="setup-modal" role="dialog" aria-modal="true" aria-label="Set up game">
 <div class="modal-card home-card lobby-home">
 <div class="home-top-actions"><button type="button" class="action-btn" id="setup-back" hidden>← Back</button><span id="setup-progress">Step 1 of 3</span><button type="button" class="action-btn" id="appearance-setup-btn">Dark mode</button><button type="button" class="action-btn" id="language-setup-btn" data-no-i18n data-language-toggle>Language</button></div>
-<div class="home-eyebrow">HERITAGE · STRATEGY · TRADITION</div><h1>Pallanguzhi</h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
+<div class="home-eyebrow">HERITAGE · STRATEGY · TRADITION</div><h1 class="home-game-title"><img class="brand-icon" src="icon-192.png?v=3.17.0" alt="" width="60" height="60"><span>Pallanguzhi</span></h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
 <section data-setup-step="1">    <section class="resume-panel" id="resume-panel" hidden aria-label="Continue saved match">
       <div class="resume-heading">💾 Continue your match?</div>
       <div class="resume-summary" id="resume-summary"></div>
@@ -174,7 +175,7 @@
       </div>
     </section>
 
-<div class="menu-emblem" aria-hidden="true"><span>🐚</span></div><h2>Choose your way to play</h2>
+<h2>Choose your way to play</h2>
 <div class="mode-cards" role="group" aria-label="Game mode">
 <button type="button" class="option" data-mode="ai"><span class="mode-icon"></span><strong>Play computer</strong><small>Meet Azhagi</small></button>
 <button type="button" class="option" data-mode="two"><span class="mode-icon"></span><strong>Pass N Play</strong><small>Two players · one device</small></button>
@@ -183,7 +184,7 @@
 <button type="button" id="quick-play-btn" hidden>Quick play</button>
 </section>
 <section data-setup-step="2" hidden><h2>Your seat at the board</h2>
-<div class="input-group"><label for="p1-input">Your name</label><input id="p1-input" maxlength="18" value="Player 1" autocomplete="nickname"></div><input type="hidden" id="p2-input" value="Azhagi (AI)" disabled aria-hidden="true">
+<div class="input-group"><label for="p1-input">Your name</label><input id="p1-input" maxlength="18" value="Player 1" autocomplete="nickname"></div><div class="input-group" id="p2-name-group" hidden><label for="p2-input">Player 2 name</label><input type="text" id="p2-input" maxlength="18" value="Player 2" autocomplete="off" disabled></div>
 <div class="opponent-preview"><span>Opponent</span><strong id="setup-opponent-name" data-no-i18n>Azhagi (AI)</strong></div>
     <div class="difficulty-chooser" id="difficulty-picker">
       <span class="field-label">Computer difficulty</span>
@@ -226,7 +227,8 @@
 <section data-setup-step="3" hidden><h2>Make it your match</h2>
     <details class="home-settings">
       <summary>Match rules <span>Single Match recommended · Kasie is a longer tournament</span></summary>
-    <span class="field-label">First move</span>
+    <span class="field-label">Time to choose a cup</span><div class="button-grid" id="timer-picker"><button type="button" class="option" data-clock="0">Off</button><button type="button" class="option" data-clock="30">30 seconds</button><button type="button" class="option" data-clock="60">60 seconds</button><button type="button" class="option" data-clock="90">90 seconds</button></div><p class="difficulty-note">Last 10 seconds tick. When time ends, a legal cup is chosen automatically.</p>
+<span class="field-label">First move</span>
     <div class="button-grid" style="grid-template-columns: repeat(4, 1fr);">
       <button type="button" class="option active" data-toss="coin">🪙 Toss</button>
       <button type="button" class="option" data-toss="p1">⬇️ P1</button>
@@ -348,6 +350,6 @@
   </div>
 </div>
 
-<script type="module" src="app.js?v=3.16.0"></script>
+<script type="module" src="app.js?v=3.17.0"></script>
 </body>
 </html>

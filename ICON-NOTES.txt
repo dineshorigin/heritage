@@ -1,0 +1,7 @@
+Pallanguzhi icon v3.17
+Generated using built-in image generation, not CLI.
+
+Project assets: icon-192.png and icon-512.png. Resized and palette-optimized for the game. Original generation retained unchanged at generated_images/exec-9e034914-8ef0-484f-801d-f9adb4373ec6.png.
+
+Prompt:
+Use case: stylized-concept. Asset type: production square app icon for the traditional Tamil Pallanguzhi game. Create one exceptional premium 3D rendered game icon, no text or lettering. A richly polished reddish walnut Pallanguzhi board at a gentle overhead three-quarter angle, with two neat rows of seven carved round pits and two central oval stores, a few large creamy ivory cowrie shells resting in the foreground, subtle ivory elephant relief ornaments at the board ends. Distinctive elegant Tamil heritage craft, warm golden rim light, jade emerald rounded-square background with a restrained golden inset edge. Board and cowries are bold and readable at 48 pixels; simplify tiny detail, keep central subject inside safe 78% of square, softly dimensional and tactile, not glossy candy, not a Ludo game, no dice, no coins, no crowns, no words, no watermark. Square composition, luminous high-quality casual-game icon, consistent with an emerald/gold heritage game menu.

@@ -1,5 +1,13 @@
 // English/Tamil UI translation; player names and input values remain unchanged.
 export const tamil = {
+"Player 2 name":"வீரர் 2 பெயர்",
+"Time to choose a cup":"குழியைத் தேர்ந்தெடுக்கும் நேரம்",
+"Off":"இல்லை",
+"30 seconds":"30 விநாடிகள்",
+"60 seconds":"60 விநாடிகள்",
+"90 seconds":"90 விநாடிகள்",
+"Last 10 seconds tick. When time ends, a legal cup is chosen automatically.":"கடைசி 10 விநாடிகளில் கடிகார ஒலி வரும். நேரம் முடிந்தால் நகர்த்தக்கூடிய ஒரு குழி தானாகத் தேர்ந்தெடுக்கப்படும்.",
+
 "HERITAGE · STRATEGY · TRADITION":"மரபு · உத்தி · பாரம்பரியம்",
 "Choose your way to play":"ஆட்ட முறையைத் தேர்ந்தெடுக்கவும்",
 "Meet Azhagi":"அழகியுடன் ஆடுங்கள்",

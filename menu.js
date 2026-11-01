@@ -3,10 +3,10 @@ export const FIXED_AI_NAME='Azhagi (AI)';
 export function modeIdentity({mode,ownName='Player 1',peerName='Player 2',player=1}){
  const own=String(ownName).trim().slice(0,18)||'Player 1';
  if(mode==='ai')return {1:own,2:FIXED_AI_NAME};
- if(mode==='two')return {1:own,2:'Player 2'};
+ if(mode==='two')return {1:own,2:String(peerName||'Player 2').trim().slice(0,18)||'Player 2'};
  return player===2?{1:peerName,2:own}:{1:own,2:peerName};
 }
-export function lobbySignature(o){return [o.firstMove,o.format,o.seedsPerPit,o.pasu].join('|');}
+export function lobbySignature(o){return [o.firstMove,o.format,o.seedsPerPit,o.pasu,o.turnSeconds??30].join('|');}
 export function canStartRoom({connected,host,localReady,remoteReady,localSignature,remoteSignature}){
  return Boolean(connected&&host&&localReady&&remoteReady&&localSignature===remoteSignature);
 }

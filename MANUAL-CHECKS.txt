@@ -1,11 +1,9 @@
-v3.16 device acceptance checklist
-1. Open updated game: mode cards and shaded icons, no settings form on first step. Check portrait/landscape and Back/Continue.
-2. Play computer: enter only your own name; opponent must be Azhagi (AI), never editable. Test all four AI levels. New mode should begin with cowries. Existing material choices remain selectable in step 3.
-3. Pass N Play: only your name input, fixed other-player name; both hint lamps visible and facing their respective players. Only active player's lamp enabled.
-4. Connect from TWO devices on v3.16. Enter different own names before/after joining. Check automatic opponent display. Neither may edit the other's name.
-5. Ready: host cannot start with zero/one ready player. Both Ready enables host only. Cancel readiness disables Start. Changing shared rules clears readiness on both sides. Guest rule controls disabled. Disconnect/reconnect and re-ready. Test rematch separately after game end.
-6. Move in online game: only the active local device should play the turn notice. The waiting device should not. Test sound mute and 1% slider increments; enabled buttons should give a tiny click when sound is enabled.
-7. Test light/dark switch on home and Tools, persistence after refresh, and Tamil/English UI including default player names. Custom names should remain unchanged.
-8. Inspect outer-edge pit counts, store side counts, painted black pupils and lamps at Fit and normal sizes. Comments should not resize the board.
-9. Recheck old features: rules, all six tutorial lessons, daily puzzle, replay, Undo, room chat, fourteen mats, seed materials, result fireworks and saved match recovery.
-10. Install/offline: first load online, let cache finish, close/reopen offline. Tutorial/AI/puzzle should work; online room/chat require internet. Close all old tabs and reopen online after each update.
+v3.17 device acceptance checklist
+1. From home switch Light/Dark. Start a match, open Tools; appearance toggle must agree. Dark must visibly dim board, mat and pieces while labels stay clear. Return home and reload; preference persists.
+2. Pass N Play: enter two different names. Start, check correct names by correct rows; top player name is above their score/turn in their own reading direction. Switch to AI: Azhagi fixed. Connect: opponent auto-supplied, never editable.
+3. Check left eye black dot is in the carved iris in portrait, landscape and Fit. Verify no hit-target drift.
+4. Step 3 choose 30s. Human turn: count down from 30, ticks at 10..1, legal auto-selection at zero. Start a cup early: timer stops through sowing and restarts for the next human decision. Repeat 60, 90 and Off. Mute and volume respected.
+5. Pause at 17s, wait, resume: roughly 17s should remain. Background and return; no unexpected timeout. Save/reload/continue. Open local Rules/Mat/replay/puzzle: local clock should hold. Tutorial pauses match; Resume afterward.
+6. TWO devices both v3.17: host chooses timer before Ready; guest cannot change it. Timer changes invalidate readiness. Both Ready -> host starts. Active local device alone ticks. Observer receives approximate countdown. Test actual timed-out MOVE, manual tap near expiry, reconnect and Undo/rematch; boards must agree.
+7. Check icon next to title in home and gameplay, browser tab and installed shortcut. OS may retain a previously installed icon until it refreshes. Android native icon changes require building/installing the new source (no APK included).
+8. Recheck counter placement, lamp ownership, all materials/mats, six tutorial lessons, daily puzzles, replays, chat, Kasie round progression, saved matches and fireworks. Test Tamil/English. This release has automated tests but no final browser/device certification.

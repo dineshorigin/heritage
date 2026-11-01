@@ -1,33 +1,30 @@
-PALLANGUZHI v3.16.0 — MODE-FIRST MENU
+PALLANGUZHI v3.17.0 — APPEARANCE, IDENTITY & TURN CLOCK
 
-REQUESTS IMPLEMENTED
-1. Computer opponent is fixed to Azhagi (AI), including loaded computer-match names. It is not user-editable.
-2. Play together is now Pass N Play, with localized Tamil wording.
-3. Only your own name is editable. The other seat is fixed Player 2 locally or supplied by the peer online.
-4. Warm Teak/Rosewood/Chettinad/Granite/Sandalwood selectors were removed. Retired saved board themes migrate to the one natural board. The Tools appearance button now switches UI light/dark, not board artwork.
-5. Cowrie is the initial material and resets to default when choosing any fresh game mode. A continued saved match keeps its pieces. Players can still explicitly select another material in step 3.
-6. Volume slider supports every integer percent, step=1 (0..100), respecting master mute.
-7. Simple Learn to play button, without the previous large decorated launcher.
-8. Each device enters its own name; host/guest names are exchanged automatically and displayed in the opponent preview and room panel. No opponent-name entry is exposed. Names are bounded to 18 characters.
-9. Explicit Ready/Cancel readiness per player. Opponent status is shown live. The host's Start button is guarded by connection, both ready flags and the same rules signature. Guest cannot change shared rules. Changing rules clears readiness; loss of connection clears readiness. Existing in-match reconnect and bilateral rematch flows are retained. Both devices must use v3.16 for this readiness protocol.
-10. Tiny, throttled synthesized click sound on actual enabled-button interactions; ordinary cup taps retain seed pickup sound. Click feedback respects mute, volume and browser gesture requirements. No ambient idle loop.
-11. Three small custom shaded vector icons: computer companion, shared-device players and connected globe. Inspired by the reference's game-menu feel; no Ludo artwork copied, no 3D engine or new raster download.
-12. Mode-first three-step setup: Choose mode -> Your name / difficulty or room connection -> Match rules / pieces / sound / Start. Back/Continue navigation and direct room links are supported. Resume saved match remains available on the home step.
-13. Small matte black painted pupil dots on the original carved eyes, without photographic eye inserts.
-14. Persistent light/dark UI appearance from the home toolbar or Tools. This does not recolour the actual board or override the selected mat.
-15. Uniform pit count badges moved to the outer wooden edge of each row. Thaaikuli counters moved between each store and its adjacent elephant. Player strips were tightened to leave room for the badges.
-16. Online turn sound is guarded to the active local player only; AI turn produces no human turn alert. Pass N Play names the active player with a shared-device sound; one device cannot make an audible sound physically private to just one listener. Existing mute controls apply.
-17. Small gold Aladdin-style hint lamp in the player strip. AI: only human lamp. Connect: only local player's lamp. Pass N Play: one per side, facing its owner. Only the active human's lamp is enabled and it invokes the existing hint/explanation feature. It is a hint shortcut, not a new game currency/power.
-18. Built-in Player 1/Player 2/Azhagi names and new UI captions use Tamil when selected. Custom personal names are preserved as entered rather than guessed/transliterated.
-19. Original Pallanguzhi menu with shaded SVG icons and gold/jade styling, responsive portrait/landscape arrangements. No fake balances, advertisements or shop buttons added.
+1. ONE LIGHT/DARK SETTING
+Home toolbar and gameplay Tools use the same persistent setting, action labels and pressed state. Browser theme colour follows it. Online opponents may choose their own appearance independently; rules/turns are unaffected.
 
-OTHER FEATURES RETAINED
-Daily puzzles, replays, chat, offline support, fourteen mats, seed sounds, tutorials, recovery and the prior rules remain. Chat: Tools > Play & learn > Room chat. No existing functionality was removed beyond the requested board-design selectors and opponent-name editor.
+2. DARKER GAMEPLAY
+Dark mode dims the actual board texture, ivory edge, mat and resting pieces; it is no longer just a menu colour change. Counts, names and active-player feedback stay readable. Light mode restores normal material brightness. Transitions respect reduced-motion preferences.
+
+3. PASS N PLAY NAMES
+Both player names can now be edited in step 2. The second local name is remembered separately from AI/online identities. Computer opponent remains fixed Azhagi (AI); room opponent still comes from the other device. Default names localize; custom names remain as entered.
+
+4. LEFT PUPIL
+Measured the left carved eye from a close crop of the actual 1600x600 board texture. Black pupil moved from 8.7%,37.3% to 9.2%,35.7%, centred on the carved iris. Board artwork and cup calibration were not regenerated.
+
+5. TURN CLOCK
+Step 3 > Match rules offers Off, 30, 60 or 90 seconds. Default is 30 seconds to CHOOSE a starting cup, not to finish the sowing animation. Final ten seconds have one short tick per displayed second; last three ticks are higher. Mute/volume apply. In online games only the active local player device ticks or triggers timeout. AI thinking does not need a human countdown. Pass N Play uses the shared device sound.
+At zero, the first legal cup whose rule simulation finishes is chosen automatically. The normal move handler and online MOVE validation are used. No seeds/scores are removed. If no safely simulated cup can be found, a warning is shown rather than inventing a move.
+Clock pauses during sowing, explicit pause, backgrounding, disconnection, synchronization and round summaries. Local help/review overlays hold the clock. Opening the interactive tutorial pauses the match; Resume is available afterward. Online chat/review does not silently pause the opponent's match; use Pause when needed.
+Remaining local decision time is restored from stable saved progress and retained on same-turn state synchronization. Opponent countdown snapshots are informational and arrive about once per second. This is a friendly, active-client clock, NOT a server-enforced competitive timer or anti-cheat mechanism. Real network behaviour remains a device test. Both room clients must use v3.17 because timer settings participate in readiness signatures.
+
+6. PLAYER LABELS
+Each player name is now the upper line of its compact player strip, with score/turn/time below. In Pass N Play, the top player's whole strip faces that player. In Connect, the top strip remains readable from the device's viewing direction. The board is not automatically flipped for the guest. Hint lamp visibility and ownership are retained.
+
+7. GAME ICON
+A new generated walnut/ivory-cowrie/emerald icon appears beside Pallanguzhi on the menu and gameplay header, as browser favicon, touch icon and PWA launcher icon. Android source launcher images have also been replaced. Native source sync passed; no APK built. Installed-launcher icon refresh timing depends on the OS/browser. Small 192px/512px PNGs are used; full generation prompt is in ICON-NOTES.txt.
 
 VALIDATION
-45 automated tests passed. New tests cover fixed AI identity, host/guest seat mapping, readiness/connection/rule guards, invalid/stale readiness packets and unique icon gradient IDs. Existing rule/replay/puzzle/chat/recovery tests pass. 800 engine simulations, 50131 moves, zero errors/unfinished matches. JavaScript syntax, unique HTML IDs, literal element references, assets/module imports and balanced HTML passed. Android source sync passed; no APK built. Archive integrity passed.
+53 automated tests passed (including eight new timer/name tests). 800 engine simulations, 50131 moves, zero errors/unfinished matches. Syntax, local assets, unique IDs and module/element references passed. Native source synchronization and archive integrity passed. No new runtime dependencies.
 
-LIMITATIONS
-New browser layout, two-device readiness/name exchange, real audio and physical touch layouts have not been browser/device-verified. Automatic approval review previously rejected browser inspection because the session usage limit was reached; no alternate browser was used to bypass it. Unit checks are not full release certification. Use MANUAL-CHECKS.txt. Some networks may still require a TURN relay for WebRTC; none was newly provisioned.
-
-No GitHub commit or live deployment was performed. Upload the extracted game files to publish.
+Browser/device verification is outstanding. Automatic approval review previously rejected browser inspection because the session usage limit was reached; no alternate browser was used to bypass it. These checks do not certify visual placement, real ticking sounds, two-device countdown/reconnect behaviour, physical performance, or Android installation. Follow MANUAL-CHECKS.txt. No live deployment or GitHub commit was performed.

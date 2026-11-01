@@ -700,7 +700,7 @@ button{min-height:34px}
    transparent interactive targets share its normalized coordinate system. */
 #game-frame{gap:3px;padding:calc(env(safe-area-inset-top) + 3px) max(3px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 3px) max(3px,env(safe-area-inset-left))}
 .arena-stage,.top-strip,.bottom-strip,.play-guide{max-width:1600px}
-body .play-arena{display:block;border:0;border-radius:0;background:transparent url('reference-board.webp?v=3.16.0') center/100% 100% no-repeat;box-shadow:none;filter:none}
+body .play-arena{display:block;border:0;border-radius:0;background:transparent url('reference-board.webp?v=3.17.0') center/100% 100% no-repeat;box-shadow:none;filter:none}
 .casket-wrapper,.plank,body.granite .plank,.pits-row,.pit-slot{display:contents}
 body .play-arena .pit{position:absolute;left:var(--cup-x);top:var(--cup-y);width:8%;height:20.7%;max-width:none;aspect-ratio:auto;transform:translate(-50%,-50%);border:1px solid transparent;background:transparent;box-shadow:none;outline:0;overflow:visible;container-type:inline-size;transition:border-color .12s}
 body .play-arena .pit.playable{border-color:#f2d29a80;box-shadow:none;outline:none}
@@ -710,7 +710,7 @@ body .play-arena .pit.capture-pulse{border-color:#ffe5a2!important;box-shadow:0 
 body .play-arena .pit.kasie{background:#170d08a8;border-color:#514635;box-shadow:none}
 .seed-pit-cluster{inset:8%;overflow:hidden;border-radius:50%}
 .pit .tamarind-seed{width:clamp(10px,28cqw,36px);height:clamp(7px,21cqw,27px)}
-body .seed-cowrie{border:0;border-radius:0;background:transparent url('cowrie-shell.webp?v=3.16.0') center/contain no-repeat;box-shadow:none}
+body .seed-cowrie{border:0;border-radius:0;background:transparent url('cowrie-shell.webp?v=3.17.0') center/contain no-repeat;box-shadow:none}
 body .seed-cowrie::before,body .seed-cowrie::after{display:none}
 .pit-count{top:0;right:0;left:auto;bottom:auto;transform:none;min-width:17px;border-radius:10px;padding:0 3px;font-size:11px;line-height:17px;text-align:center;color:#38200c;background:#fff0c8;text-shadow:none;box-shadow:0 1px 2px #0008}
 .owner-bar{position:absolute;left:20%;width:60%;height:12px;min-height:12px;padding:0 4px;font-size:9px;color:#fff0ce;text-shadow:0 1px 3px #000;pointer-events:none}
@@ -734,15 +734,15 @@ body .play-arena .active-owner .mother-cavity{border-color:#8fe3bd99}
 @media(orientation:landscape) and (max-height:500px){.owner-bar{height:10px;min-height:10px;font-size:8px}.actions .action-btn{min-height:26px}.play-guide{max-height:32px}.play-guide p{font-size:10px}}
 @media(prefers-reduced-motion:reduce){body .play-arena .pit{transition:none}}
 
-/* v3.16.0: upright player status, fuller board and settled shell piles. */
+/* v3.17.0: upright player status, fuller board and settled shell piles. */
 body,body.dark,body.chettinad,body.granite,body.sandalwood{
  background-color:#211513;
  background-image:radial-gradient(ellipse at 50% 45%,#50342c44,transparent 75%),repeating-linear-gradient(3deg,#fff2df03 0 1px,transparent 1px 4px),repeating-linear-gradient(93deg,#0000000a 0 1px,transparent 1px 5px);
 }
 .arena-stage,.top-strip,.bottom-strip,.play-guide{max-width:none}
 body .play-arena{background:none;isolation:isolate}
-.play-arena::before{content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;background:url('reference-board.webp?v=3.16.0') center/100% 100% no-repeat;filter:brightness(.79) saturate(.85) contrast(1.07)}
-.play-arena::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(155deg,transparent 14%,#fff3dd0d 28%,#fff6e522 35%,transparent 45%,transparent 77%,#fce6c808 90%);-webkit-mask:url('reference-board.webp?v=3.16.0') center/100% 100% no-repeat;mask:url('reference-board.webp?v=3.16.0') center/100% 100% no-repeat}
+.play-arena::before{content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;background:url('reference-board.webp?v=3.17.0') center/100% 100% no-repeat;filter:brightness(.79) saturate(.85) contrast(1.07)}
+.play-arena::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(155deg,transparent 14%,#fff3dd0d 28%,#fff6e522 35%,transparent 45%,transparent 77%,#fce6c808 90%);-webkit-mask:url('reference-board.webp?v=3.17.0') center/100% 100% no-repeat;mask:url('reference-board.webp?v=3.17.0') center/100% 100% no-repeat}
 /* Only the photographic carving outlines the cups. */
 body .play-arena .pit,body .play-arena .pit.playable,body .play-arena .pit.playable:hover,body .play-arena .pit.pulse,body .play-arena .pit.hinted,body .play-arena .pit.capture-pulse,body .play-arena .pit.kasie{
  border:0!important;outline:0;box-shadow:none!important;background:transparent!important;
@@ -766,7 +766,7 @@ body,body.dark,body.chettinad,body.granite,body.sandalwood{background:#130c0a}
 .play-guide{height:64px;min-height:64px;max-height:64px;overflow:auto;scrollbar-width:thin;padding:5px 10px;background:#17130eea;border-color:#745a31}
 .play-guide p{font-size:11px;line-height:15px}#capture-guide{margin-top:3px}
 .arena-stage::before{content:"";position:absolute;inset:2px;border:1px solid #c8a252;border-radius:12px;pointer-events:none;background-color:#063f38;background-image:radial-gradient(ellipse at 50% 48%,#19605188,transparent 78%),repeating-linear-gradient(0deg,#d4e8cc05 0 1px,transparent 1px 4px),repeating-linear-gradient(90deg,#011f250f 0 1px,transparent 1px 4px);box-shadow:inset 0 0 0 5px #072923,inset 0 0 0 6px #b48c443d,inset 0 0 28px #00100c99}
-.play-arena::before{filter:none;background-image:url('reference-board.webp?v=3.16.0')}
+.play-arena::before{filter:none;background-image:url('reference-board.webp?v=3.17.0')}
 .play-arena::after{display:none}
 #p1-pod{background:#17324799;border-color:#536e83}#p2-pod{background:#521f2c99;border-color:#8b5461}
 .player-pod.active{border-color:#e4c276!important;outline-color:#e4c276;color:#ffe5ac;box-shadow:0 0 7px #d9b55c22}
@@ -781,19 +781,19 @@ body,body.dark,body.chettinad,body.granite,body.sandalwood{background:#130c0a}
 @media(orientation:landscape) and (max-height:500px){#game-frame{grid-template-rows:auto minmax(0,1fr) 40px 30px;gap:3px}.play-guide{height:40px;min-height:40px;max-height:40px;padding:3px 8px}.play-guide p{font-size:10px;line-height:13px}.bottom-strip{height:30px;min-height:30px}.tools-toggle{min-height:28px;font-size:11px;padding:3px 20px}.skip-move{bottom:calc(80px + env(safe-area-inset-bottom))}}
 
 /* The old alpha silhouette provides a precise cutout for the polished texture. */
-.play-arena::before{background-image:url('royal-board.webp?v=3.16.0');-webkit-mask:url('reference-board.webp?v=3.16.0') center/100% 100% no-repeat;mask:url('reference-board.webp?v=3.16.0') center/100% 100% no-repeat}
+.play-arena::before{background-image:url('royal-board.webp?v=3.17.0');-webkit-mask:url('reference-board.webp?v=3.17.0') center/100% 100% no-repeat;mask:url('reference-board.webp?v=3.17.0') center/100% 100% no-repeat}
 /* Calibrated, centred pieces and uniform owner-relative counters. */
 body .play-arena .pit{width:var(--cup-w);height:var(--cup-h)}
 .pit .tamarind-seed{width:clamp(11px,31cqw,39px);height:clamp(8px,23cqw,29px)}
 .pit .tamarind-seed[class*="seed-colored"]{width:clamp(9px,26cqw,31px);height:clamp(9px,26cqw,31px)}
-.tamarind-seed[class*="seed-colored"]{border:0;border-radius:50%;background-color:var(--bead-color);background-image:url('wood-bead.webp?v=3.16.0');background-size:contain;background-blend-mode:multiply;box-shadow:0 1px 2px #0006}
+.tamarind-seed[class*="seed-colored"]{border:0;border-radius:50%;background-color:var(--bead-color);background-image:url('wood-bead.webp?v=3.17.0');background-size:contain;background-blend-mode:multiply;box-shadow:0 1px 2px #0006}
 .tamarind-seed[class*="seed-colored"]::after{display:none}
 .seed-colored-0{--bead-color:#cb786c}.seed-colored-1{--bead-color:#dbb45d}.seed-colored-2{--bead-color:#6dac94}.seed-colored-3{--bead-color:#729bb5}.seed-colored-4{--bead-color:#ad83ae}
 body .play-arena .pit-count{left:50%;right:auto;top:10%;bottom:auto;transform:translate(-50%,-50%);font-size:10px;line-height:16px;min-width:16px}
 body.table-facing .pit[data-owner="2"] .pit-count{transform:translate(-50%,-50%) rotate(180deg)}
 @media(orientation:portrait) and (max-width:700px){body:not(.table-facing) .play-arena .pit-count{transform:translate(-50%,-50%) rotate(-90deg)}}
 /* Photographic eye insets, clipped softly into the existing ivory carving. */
-.elephant-eye{position:absolute;width:3.6%;height:7%;z-index:1;pointer-events:none;background:url('elephant-eye.webp?v=3.16.0') center/100% 100% no-repeat;-webkit-mask:radial-gradient(ellipse,#000 56%,transparent 73%);mask:radial-gradient(ellipse,#000 56%,transparent 73%)}
+.elephant-eye{position:absolute;width:3.6%;height:7%;z-index:1;pointer-events:none;background:url('elephant-eye.webp?v=3.17.0') center/100% 100% no-repeat;-webkit-mask:radial-gradient(ellipse,#000 56%,transparent 73%);mask:radial-gradient(ellipse,#000 56%,transparent 73%)}
 .eye-left{left:8.7%;top:37.3%;transform:translate(-50%,-50%) rotate(-14deg)}.eye-right{left:89.6%;top:65.2%;transform:translate(-50%,-50%) rotate(166deg)}
 .side-highlight{position:absolute;left:14%;width:70%;height:27%;border-radius:18px;pointer-events:none;z-index:0;background:linear-gradient(90deg,transparent,#ffe4a11c,transparent);opacity:0;transition:opacity .25s}
 #side-highlight-2{top:8%}#side-highlight-1{top:64%}.side-highlight.active{opacity:1}
@@ -885,3 +885,20 @@ body[data-ui-theme="light"] .lobby-home{background:radial-gradient(ellipse at to
 .player-dock{min-height:20px;height:20px;box-sizing:border-box;padding:0 5px;font-size:10px;gap:4px}.dock-2{top:2%}.dock-1{top:97%}.wish-lamp{width:26px;height:20px}.dock-score{font-size:11px}
 body .play-arena .pit-count{font-size:9px;line-height:12px;min-width:13px;padding:0 2px}
 body[data-ui-theme="light"] .modal-card:not(.lobby-home) [style*="color"]{color:#574b34!important}
+/* v3.17: one global appearance, with real darkening of the game materials. */
+body[data-ui-theme="dark"]{background:#091316;color:#f2e5c9;color-scheme:dark;--board-light:.72;--board-saturation:.88}
+body[data-ui-theme="light"]{color-scheme:light;--board-light:1;--board-saturation:1}
+#arena::before{filter:brightness(var(--board-light,1)) saturate(var(--board-saturation,1));transition:filter .2s ease}
+body[data-ui-theme="dark"] .arena-stage::before{filter:brightness(.65);transition:filter .2s ease}
+body[data-ui-theme="dark"] .ivory-edge{filter:brightness(.76)}
+body[data-ui-theme="dark"] .pit .tamarind-seed,body[data-ui-theme="dark"] .mother-pile .tamarind-seed{filter:brightness(.86) drop-shadow(2px 3px 1.5px #000b)}
+body[data-ui-theme="dark"] .top-strip,body[data-ui-theme="dark"] .play-guide{background:#0c191b;color:#efddb8;border-color:#5e654d}
+body[data-ui-theme="dark"] .modal-card:not(.lobby-home){background:#142323;color:#f4e6c8}
+.pupil-left{left:9.2%;top:35.7%}
+/* The name is the upper line in each owner's own reading direction. */
+.player-dock{display:grid;grid-template-columns:24px auto auto auto;grid-template-rows:10px 9px;column-gap:5px;row-gap:0;height:22px;min-height:22px;padding:0 5px}
+.player-dock .wish-lamp{grid-column:1;grid-row:1/3;width:24px;height:20px}.player-dock .dock-name{grid-column:2/5;grid-row:1;max-width:180px;text-align:center;font-size:9px;line-height:10px}.player-dock .dock-score{grid-column:2;grid-row:2;font-size:10px;line-height:9px}.player-dock .dock-turn{grid-column:3;grid-row:2;max-width:150px;font-size:8px;line-height:9px}.turn-clock{grid-column:4;grid-row:2;font-size:9px;font-variant-numeric:tabular-nums;color:#ffedb8;min-width:20px;line-height:9px}.turn-clock[hidden]{display:none!important}.turn-clock.clock-urgent{color:#ffb299;font-weight:850}
+.brand{display:grid;grid-template-columns:34px auto;grid-template-rows:auto auto;column-gap:7px;align-items:center}.brand-icon{width:34px;height:34px;object-fit:contain;border-radius:9px;box-shadow:0 2px 4px #0004;flex:none}.brand>.brand-icon{grid-column:1;grid-row:1/3}.brand .brand-title{grid-column:2;grid-row:1}.brand>small{grid-column:2;grid-row:2}.home-game-title{display:flex;align-items:center;justify-content:center;gap:12px}.home-game-title .brand-icon{width:58px;height:58px;border-radius:14px}
+#timer-picker{grid-template-columns:repeat(4,1fr)}#timer-picker .option{font-size:12px;padding:8px 3px}
+@media(orientation:landscape) and (max-height:550px){.home-game-title .brand-icon{width:40px;height:40px}.brand-icon{width:28px;height:28px}.brand{grid-template-columns:28px auto}}
+@media(prefers-reduced-motion:reduce){#arena::before,body[data-ui-theme="dark"] .arena-stage::before{transition:none}}
