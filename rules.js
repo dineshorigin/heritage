@@ -66,3 +66,14 @@ export function simulateMove(originalPits, originalBanks, player, selected, conf
     return {pits,banks,events,safetyStop:false};
   }
 
+
+// Credit seeds trapped in locked cups to the opponent of the cup owner.
+// Mutates the supplied round position; safe to call again after settlement.
+export function settleLockedSeeds(pits,banks,locked) {
+  for (let i=0;i<14;i++) {
+    if (locked[i] && pits[i]>0) {
+      banks[owner(i)===1?2:1]+=pits[i];
+      pits[i]=0;
+    }
+  }
+}

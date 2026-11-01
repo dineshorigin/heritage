@@ -1,5 +1,5 @@
 import { turnGuidance, captureGuidance } from './guidance.js';
-import { simulateMove as simulateRules } from './rules.js';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
 
 (() => {
   'use strict';
@@ -105,10 +105,12 @@ import { simulateMove as simulateRules } from './rules.js';
     if(state.busy && options.ai && state.turn===2){state.busy=false;render();}
     saveStableMatch();
     $('quit-modal').classList.remove('hidden');
+    render();
   }
   function closeQuitModal(resume=true) {
     $('quit-modal').classList.add('hidden');
     state.paused=false;
+    render();
     if(resume&&state.started&&!state.over){
       if(options.ai&&state.turn===2&&!state.busy)scheduleAiTurn(()=>state.started&&!state.over&&!state.paused);
       if(options.online)processRemoteQueue();
@@ -1201,7 +1203,7 @@ import { simulateMove as simulateRules } from './rules.js';
     $('ind-2').textContent=state.turn===2&&!state.over ? (options.ai?'AI PLAYING…':state.busy?'SOWING…':'YOUR TURN') : '';
     updateAssistButtons();
     updateOnlineControls();
-    $('turn-guide').textContent=turnGuidance({started:state.started,over:state.over,busy:state.busy,paused:state.paused,awaitingToss:state.awaitingToss,roundPending:state.roundPending,turn:state.turn,name:names[state.turn],ai:options.ai,online:options.online,connected:onlineState.connected,myPlayer:onlineState.myPlayerIndex,awaitingSync:onlineState.awaitingSync,undoPending:onlineState.undoPending});
+    $('turn-guide').textContent=turnGuidance({started:state.started,over:state.over,busy:state.busy,paused:state.paused,awaitingToss:state.awaitingToss,roundPending:state.roundPending,turn:state.turn,name:names[state.turn],ai:options.ai,online:options.online,connected:onlineState.connected,myPlayer:onlineState.myPlayerIndex,awaitingSync:onlineState.awaitingSync,undoPending:onlineState.undoPending,portrait:matchMedia('(orientation:portrait) and (max-width:700px)').matches});
   }
 
   function setStatus(text) {$('status-text').textContent=text;}
@@ -1576,6 +1578,7 @@ import { simulateMove as simulateRules } from './rules.js';
     const result=simulateMove(pits,banks,player,pit);
     const ps=result.pits.slice(), bs=result.banks.slice();
     const over=settleIfFinished(ps,bs);
+    if(over)settleLockedSeeds(ps,bs,state.kasiePits);
     return {pits:ps,banks:bs,over};
   }
   function recommendMove(player,difficulty='hard',pits=state.pits,banks=state.banks){
@@ -1633,13 +1636,7 @@ import { simulateMove as simulateRules } from './rules.js';
   }
 
   function handleRoundSettlement() {
-    for (let i = 0; i < N; i++) {
-      if (state.kasiePits && state.kasiePits[i] && state.pits[i] > 0) {
-        const opp = other(owner(i));
-        state.banks[opp] += state.pits[i];
-        state.pits[i] = 0;
-      }
-    }
+    settleLockedSeeds(state.pits,state.banks,state.kasiePits);
     render();
     assertConservation('round settlement');
 
@@ -1807,6 +1804,7 @@ import { simulateMove as simulateRules } from './rules.js';
   }
   function performLocalUndo(){
     if(!state.started||!state.history.length)return false;
+    $('capture-guide').textContent='';
     const previous=state.history.pop();
     if(state.resultRecorded)rollbackFinishedResult();
     invalidateMatch();
@@ -2431,7 +2429,7 @@ import { simulateMove as simulateRules } from './rules.js';
     });
 
     window.addEventListener('pointerdown', () => ensureAudio(), { once: true });
-    window.addEventListener('resize',()=>{invalidateLayout();updatePaceUI();},{passive:true});
+    window.addEventListener('resize',()=>{invalidateLayout();updatePaceUI();render();},{passive:true});
     window.addEventListener('orientationchange', invalidateLayout, {passive:true});
     if(typeof ResizeObserver==='function'){
       const boardObserver=new ResizeObserver(invalidateLayout);

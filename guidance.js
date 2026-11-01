@@ -10,8 +10,8 @@ export function turnGuidance(g) {
   if (g.busy) return `${g.name} is sowing. Watch the seeds move around the board.`;
   if (g.ai && g.turn === 2) return 'The computer is choosing a cup. Your turn is next.';
   if (g.online && g.turn !== g.myPlayer) return `Waiting for ${g.name} to play.`;
-  const side = g.turn === 1 ? 'bottom' : 'top';
-  return `${g.name}'s turn — tap a highlighted cup in the ${side} row.`;
+  const side = g.portrait ? (g.turn===1?'left':'right') : (g.turn===1?'bottom':'top');
+  return `${g.name}'s turn — tap a highlighted cup on the ${side} side.`;
 }
 export function captureGuidance(name,count,pasu=false) {
   return pasu
