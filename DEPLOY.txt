@@ -1,14 +1,22 @@
-Upload these five files together to the ROOT of your GitHub repository:
+PALLANGUZHI HERITAGE 3.9.1 — ROOT DEPLOYMENT
+
+Upload these SEVEN files together directly into the root of your GitHub Pages repository:
 index.html
 game.css
 app.js
 rules.js
 guidance.js
+locale.js
+native-bridge.js
 
-Replace the existing index.html. Do not upload the ZIP itself. No css, js or www folders are needed. Keep file names unchanged.
+Do not put them inside a www/js/css folder. Replace files with matching names. Do not upload the ZIP itself. Keep all names unchanged. Versioned links help prevent browsers mixing old and new files.
 
-GitHub Pages: main branch, / (root). Wait for the Pages deployment to succeed, then refresh the game.
+The new native-bridge.js also bundles PeerJS for the website. It is required on the website even when you are not building an Android app. No script CDN is needed, but online play still uses external signaling.
 
-To test locally, serve the folder over HTTP. Opening index.html directly may block JavaScript modules.
+GitHub Pages: publish main, / (root). After deployment succeeds, reload on BOTH phones. Choose language with the Tamil/English button. Pause is available in the header. Online matches show connection status and a Reconnect button when needed.
 
-Quick Play starts a Single Match against Easy AI. Kasie remains optional in Match Rules.
+android-project.zip is the separate Android SOURCE project. It is NOT an APK and does not need to be uploaded for the website. Extract it separately and follow its README to build a test APK.
+
+Reconnect keeps the same room; the host must remain available or restore the saved match. Automatic retries are bounded; tap Reconnect to retry again. Saves stay in this browser/app installation. This does not provide a persistent multiplayer server or cloud accounts.
+
+3.9.1 adds an explicit Kasie draw when the same seed allocation repeats three times. See QA-REPORT.md. Standalone cross-phone WebRTC and Android APK/device verification remain pending.

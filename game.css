@@ -679,3 +679,19 @@ button{min-height:34px}
  .brand small{display:none}.actions{grid-template-columns:repeat(8,minmax(0,1fr))}.actions .action-btn{min-height:28px;padding:3px 2px}
  .play-guide{max-height:42px;padding:3px 8px}.play-guide p{font-size:10px}.bottom-strip .status-message{display:none}
 }
+
+/* Results keep replay and navigation ahead of optional sharing actions. */
+.results-card{text-align:center}.results-card h1{font-size:25px}.results-card .sub{margin-bottom:12px}
+.result-match-info{color:var(--muted);font-size:12px;margin:8px 0 14px}
+.results-card .result-player{min-width:0;flex:1}.result-player span{overflow-wrap:anywhere}
+.result-player small{display:block;color:var(--muted);font-size:10px;margin-top:4px}
+.result-player.result-winner{border-color:var(--mint);box-shadow:inset 0 0 0 1px var(--mint)}
+.rematch-status{font-size:12px;line-height:1.45;color:var(--muted);margin:8px 0 12px}
+.results-card button:disabled{opacity:.55;cursor:default}.results-card .secondary-btn{font-size:12px;padding:10px}
+
+.owner-indicator{max-width:52%;overflow:hidden;text-overflow:ellipsis}.owner-name{min-width:0}.player-pod.active{outline:1px solid var(--mint);outline-offset:1px}
+
+.header-tools{display:flex;gap:4px;align-items:center}.header-tools .action-btn{font-size:10px;padding:5px 6px;min-height:30px}
+#online-recovery{display:flex;gap:6px;justify-content:space-between;align-items:center;font-size:10px;margin-top:4px}#online-recovery[hidden]{display:none}#online-recovery .action-btn{font-size:10px;padding:4px 7px}
+.play-guide{max-height:90px}@media(max-width:700px){.play-guide{max-height:86px}.header-tools .stats-trigger{font-size:10px;padding:5px 6px}}
+.language-inline{display:block;margin-left:auto;font-size:11px;padding:5px 8px}

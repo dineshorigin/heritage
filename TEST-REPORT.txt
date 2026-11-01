@@ -1,0 +1,12 @@
+PALLANGUZHI HERITAGE 3.9.1 — TEST SUMMARY
+1 November 2026
+
+PASS: 26 regression tests; 800 deterministic engine matches (50,131 moves); 40 complete browser configurations (1,967 moves); eight isolated local-fallback multiplayer matches (422 moves); 12 tutorial lessons; six viewport layouts; emulated touch; controls, audio gating, save/undo/results/sharing and interruption tests.
+
+FIXED: endless repeated Kasie allocation (explicit threefold-allocation draw rule); reconnect handshake churn; stale local fallback connection status; abandoned toss/background tutorial state; hint/undo during remote pause; draw result sharing.
+
+BLOCKED / NOT CERTIFIED: standalone WebRTC and actual cross-phone networks, installable Android APK and physical Android behaviour/audio/vibration. A standalone loopback WebRTC probe could not open or gather ICE candidates in this environment. Gradle/Android build prerequisites are unavailable.
+
+Earlier reports that browser-session testing proved standalone WebRTC are superseded. Those tests could use the browser-local BroadcastChannel fallback. No message, GitHub commit, remote workflow or live deployment was made.
+
+See QA-REPORT.md for feature-by-feature evidence, limits and deployment instructions.

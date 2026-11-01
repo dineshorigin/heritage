@@ -25,3 +25,30 @@ export function boardSize(stageWidth,stageHeight,portrait) {
   const h=Math.max(0,Math.floor(stageHeight)-12);
   return portrait ? {width:h,height:w} : {width:w,height:h};
 }
+
+export function rematchView({online,connected,localReady,remoteReady}) {
+ if(!online)return {disabled:false,label:'↻ Rematch',message:'Same players and rules. A fresh score.'};
+ if(!connected)return {disabled:true,label:'Friend disconnected',message:'Open Home to reconnect to your room.'};
+ if(localReady)return {disabled:true,label:'Waiting for friend…',message:'Your rematch request is sent. The match starts when both players are ready.'};
+ return {disabled:false,label:remoteReady?'↻ Accept rematch':'↻ Request rematch',message:remoteReady?'Your friend is ready. Accept to play again in the same room.':'Both players must choose Rematch. Your room and rules stay the same.'};
+}
+export function canStartRematch({online,connected,isHost,over,busy,localReady,remoteReady}) {
+ return Boolean(online&&connected&&isHost&&over&&!busy&&localReady&&remoteReady);
+}
+
+export function playerTurnLabel(g,player) {
+ if(!g.started||g.over||g.paused||g.awaitingToss||g.roundPending)return '';
+ if(player!==g.turn)return 'WAITING';
+ if(g.online&&(!g.connected||g.awaitingSync||g.undoPending))return 'CONNECTING…';
+ if(g.busy)return g.ai&&player===2?'COMPUTER PLAYING…':'SOWING…';
+ if(g.ai&&player===2)return 'COMPUTER TURN';
+ if(g.online)return player===g.myPlayer?'YOUR TURN':'FRIEND’S TURN';
+ return `${g.names[player]}'s turn`;
+}
+export function shouldNotifyTurn(g) {
+ return Boolean(g.started&&!g.over&&!g.paused&&!g.awaitingToss&&!g.roundPending&&!g.busy&&!(g.ai&&g.turn===2)&&(!g.online||(g.connected&&!g.awaitingSync&&!g.undoPending&&g.turn===g.myPlayer)));
+}
+export function pickupPattern(count) {
+ const taps=Math.min(7,Math.max(2,Math.ceil(count/2)));
+ return Array.from({length:taps},(_,i)=>({offset:i*.024,strength:.9-i*.065}));
+}

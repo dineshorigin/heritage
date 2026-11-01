@@ -4,20 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1b0d06">
-<title>பல்லாங்குழி • Heritage Edition (v3.8.1 • Stability & Online Edition)</title>
-<!-- PeerJS uses an external signaling service; the rest of the game works offline. -->
-<script id="peerjs-loader" async src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<link rel="stylesheet" href="game.css">
+<title>பல்லாங்குழி • Heritage Edition (v3.9.1 • Reconnect & Bilingual Edition)</title>
+<!-- PeerJS is bundled locally; online play still uses external signaling. -->
+<link rel="stylesheet" href="game.css?v=3.9.1">
+<script id="peerjs-loader" defer src="native-bridge.js?v=3.9.1"></script>
 </head>
 <body>
 
 <main id="game-frame" aria-label="Pallanguzhi game">
   <header class="top-strip">
     <div class="brand">பல்லாங்குழி<small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
-    <button type="button" class="stats-trigger" id="stats-btn" aria-label="Open match statistics and achievements">📊 Stats</button>
+    <div class="header-tools"><button type="button" class="action-btn" id="language-btn" data-no-i18n data-language-toggle aria-label="Switch language">தமிழ்</button><button type="button" class="action-btn" id="pause-btn">Ⅱ Pause</button><button type="button" class="stats-trigger" id="stats-btn" aria-label="Open match statistics and achievements">📊 Stats</button></div>
     <div class="players-scoreboard">
-      <div class="player-pod" id="p2-pod"><span class="player-name" id="p2-label">Azhagi (AI)</span><span class="score-badge" id="p2-score">0</span></div>
-      <div class="player-pod active" id="p1-pod"><span class="player-name" id="p1-label">Player 1</span><span class="score-badge" id="p1-score">0</span></div>
+      <div class="player-pod" id="p2-pod"><span class="player-name" id="p2-label" data-no-i18n>Azhagi (AI)</span><span class="score-badge" id="p2-score">0</span></div>
+      <div class="player-pod active" id="p1-pod"><span class="player-name" id="p1-label" data-no-i18n>Player 1</span><span class="score-badge" id="p1-score">0</span></div>
     </div>
   </header>
   <div class="arena-stage">
@@ -27,13 +27,13 @@
       </aside>
       <div class="casket-wrapper">
         <section class="plank" id="plank-top" aria-label="Player 2's pits">
-          <div class="owner-bar"><span class="owner-name" id="owner-2">PLAYER 2 • TOP</span><span class="owner-indicator" id="ind-2"></span></div>
+          <div class="owner-bar"><span class="owner-name" id="owner-2">PLAYER 2 • TOP</span><span class="owner-indicator" id="ind-2" aria-live="polite"></span></div>
           <div class="pits-row" id="row-top"></div>
         </section>
         <div class="board-seam" aria-hidden="true"><span></span><span></span><span></span></div>
         <section class="plank active-side" id="plank-bottom" aria-label="Player 1's pits">
           <div class="pits-row" id="row-bottom"></div>
-          <div class="owner-bar"><span class="owner-name" id="owner-1">PLAYER 1 • BOTTOM</span><span class="owner-indicator" id="ind-1">YOUR TURN</span></div>
+          <div class="owner-bar"><span class="owner-name" id="owner-1">PLAYER 1 • BOTTOM</span><span class="owner-indicator" id="ind-1" aria-live="polite"></span></div>
         </section>
       </div>
       <aside class="outer-mother-cup active-owner" id="mc-1" aria-label="Player 1 captured seeds">
@@ -44,6 +44,7 @@
   <section class="play-guide" aria-label="Game guidance">
     <p id="turn-guide" role="status">Choose a mode, or try Quick Play against the computer.</p>
     <p id="capture-guide" role="status"></p>
+    <div id="online-recovery" hidden><span id="connection-text" role="status"></span><button type="button" class="action-btn" id="reconnect-btn">Reconnect</button></div>
   </section>
   <footer class="bottom-strip">
     <div class="status-message" id="status-text" aria-live="polite">Choose a game mode to start.</div>
@@ -142,6 +143,7 @@
 
 <div class="overlay" id="setup-modal" role="dialog" aria-modal="true" aria-label="Set up game">
   <div class="modal-card home-card">
+    <button type="button" class="action-btn language-inline" id="language-setup-btn" data-no-i18n data-language-toggle>தமிழ்</button>
     <div class="home-eyebrow">PALLANGUZHI · HERITAGE</div>
     <h1>பல்லாங்குழி</h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
     <p class="home-intro">Play a timeless Tamil board game.</p>
@@ -266,10 +268,10 @@
       <p><strong>3. Keep sowing · தொடர் சுழற்சி:</strong> When your hand becomes empty, examine the <em>next</em> cup. If it has seeds, pick them up and continue from the following cup.</p>
       <p><strong>4. Capture · துடைத்தல்:</strong> If that next cup is empty, your turn ends. Capture all seeds in the cup immediately after the empty one, if any. They go to the current player's store.</p>
       <p><strong>5. Pasu · பசு:</strong> Whenever sowing makes a cup contain exactly 4 seeds, its owner immediately collects those 4 seeds into their store, even during an opponent's move.</p>
-      <p><strong>6. Match end:</strong> When either player has no playable cup, the round ends and remaining playable seeds return to their owner. In Single Match, most seeds wins; in Kasie Tournament, remaining seeds refill as many cups as possible, with unfilled cups locked next round.</p>
+      <p><strong>6. Match end:</strong> When either player has no playable cup, the round ends and remaining playable seeds return to their owner. In Single Match, most seeds wins; in Kasie Tournament, remaining seeds refill as many cups as possible, with unfilled cups locked next round. If the same seed allocation repeats three times, the tournament ends as a draw.</p>
       <p><strong>7. Smart play:</strong> Choose Easy, Medium, Hard, or Expert when facing the computer. Tap 💡 Hint on your turn for a suggested cup; the suggestion does not play for you. Tap ↶ Undo to restore the previous human decision (including the computer's reply in AI mode). Undo also works during an animation.</p>
       <p><strong>8. Interactive lessons:</strong> Open Learn from Match settings or Rules for six bilingual practice lessons, now including the traditional Kasie (காசி) tournament rules.</p>
-      <p><strong>9. Save &amp; resume:</strong> The game automatically saves at completed-turn boundaries. If you close the app while beads are moving, Resume restores the position before that move. Use Continue on the setup screen to recover it.</p>
+      <p><strong>9. Save &amp; resume:</strong> The game saves after completed moves. Calls, screen locks and app switches pause play and finish any active sowing safely. Tap Resume to continue; use Continue on the home screen after reopening.</p>
       <p><strong>10. Online multi-device:</strong> Two devices can connect by room code using PeerJS signaling and WebRTC. Internet access and a hosted HTTPS game are recommended. Connection is network-dependent; play locally if unavailable.</p>
     </div>
     <button type="button" class="secondary-btn tutorial-launch" id="tutorial-rules-btn">🎓 Try the interactive tutorial · பயிற்சி</button>
@@ -278,19 +280,22 @@
 </div>
 
 <div class="overlay hidden" id="end-modal" role="dialog" aria-modal="true" aria-label="Game result">
-  <div class="modal-card">
+  <div class="modal-card results-card">
+    <button type="button" class="action-btn language-inline" data-no-i18n data-language-toggle>தமிழ்</button>
     <div class="victory-emblem" aria-hidden="true">🏆</div>
     <h1 id="result-heading">ஆட்டம் முடிந்தது!</h1><p class="sub" id="result-subtitle">A BEAUTIFUL MATCH</p>
     <div class="winner-line" id="winner-text"></div>
     <p class="result-message" id="result-message"></p>
+    <p id="result-match-info" class="result-match-info"></p>
     <div class="final-scores result-score-cards" id="final-scores"></div>
     <div class="score-comparison" aria-label="Share of captured seeds" id="score-comparison"><span id="score-share-1"></span><span id="score-share-2"></span></div>
     <div class="unlock-list" id="new-unlocks" hidden aria-live="polite"></div>
+    <button type="button" class="primary-btn" id="again-btn">↻ Rematch</button>
+    <p id="rematch-status" role="status" class="rematch-status"></p>
+    <button type="button" class="secondary-btn" id="change-btn">⌂ Home &amp; match settings</button>
     <button type="button" class="secondary-btn" id="result-wa-btn" style="background:#135d38; border-color:#22c55e; color:#bbf7d0;">📲 Share Result on WhatsApp · பகிருங்கள்</button>
     <button type="button" class="secondary-btn" id="result-stats-btn">📊 Match history & achievements</button>
     <button type="button" class="secondary-btn" id="undo-end-btn" hidden>↶ Undo last move</button>
-    <button type="button" class="primary-btn" id="again-btn">↻ Play again</button>
-    <button type="button" class="secondary-btn" id="change-btn">⚙️ Change match settings</button>
   </div>
 </div>
 
@@ -337,6 +342,6 @@
   </div>
 </div>
 
-<script type="module" src="app.js"></script>
+<script type="module" src="app.js?v=3.9.1"></script>
 </body>
 </html>

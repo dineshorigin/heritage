@@ -1,8 +1,13 @@
-import { turnGuidance, captureGuidance, boardSize } from './guidance.js';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
+import { installLanguage, getLanguage } from './locale.js?v=3.9.1';
+import { turnGuidance, captureGuidance, boardSize, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.9.1';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.9.1';
 
 (() => {
   'use strict';
+  const recovery={timer:null,attempt:0,lastHeard:Date.now(),hidden:false,pendingSync:null,connectingUntil:0,pauseAfterToss:false};
+  let lastTurnNotice=null;
+  const tournament={allocations:[],forcedDraw:false,endReason:''};
+  const rematch={localReady:false,remoteReady:false};
   const N = 14, START_SEEDS = 5, TOTAL_SEEDS = 70, MAX_DROPS = 1600;
   const $ = id => document.getElementById(id);
   const other = p => p === 1 ? 2 : 1;
@@ -73,7 +78,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     remoteUndoAvailable: false,
     undoPending: false,
     pendingUndoRequest: null,
-    revision: 0
+    revision: 0,remotePaused:false
   };
   let resetStatsConfirmTimer = null;
 
@@ -98,9 +103,11 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     return el && !el.classList.contains('hidden') && !el.hidden;
   }
   function openQuitModal() {
+    if(!state.started||state.over||state.awaitingToss)return;
+    state.paused=true;
+    if(options.online)sendOnlinePacket({type:'PLAYER_PAUSE',matchId:state.matchId,paused:true});
     if(state.activeMove)skipCurrentMove();
     if(state.over)return;
-    state.paused=true;
     state.aiTicket++;
     if(state.busy && options.ai && state.turn===2){state.busy=false;render();}
     saveStableMatch();
@@ -110,10 +117,11 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
   function closeQuitModal(resume=true) {
     $('quit-modal').classList.add('hidden');
     state.paused=false;
+    if(options.online)sendOnlinePacket({type:'PLAYER_PAUSE',matchId:state.matchId,paused:!resume});
     render();
     if(resume&&state.started&&!state.over){
       if(options.ai&&state.turn===2&&!state.busy)scheduleAiTurn(()=>state.started&&!state.over&&!state.paused);
-      if(options.online)processRemoteQueue();
+      if(options.online){processPendingUndo();processRemoteQueue();}
     }
   }
 
@@ -179,22 +187,12 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       if (handled) {
         try { history.pushState({ trap: true }, ''); } catch {}
       } else {
-        if (window.Capacitor?.Plugins?.App?.exitApp) {
-          window.Capacitor.Plugins.App.exitApp();
+        if (window.PallanguzhiNative?.App?.exitApp) {
+          window.PallanguzhiNative.App.exitApp();
         }
       }
     });
 
-    if (window.Capacitor?.Plugins?.App?.addListener) {
-      try {
-        window.Capacitor.Plugins.App.addListener('backButton', () => {
-          const handled = handleSystemBack();
-          if (!handled) {
-            window.Capacitor.Plugins.App.exitApp();
-          }
-        });
-      } catch {}
-    }
   }
 
   function storedGet(key){try{return localStorage.getItem(key);}catch{return null;}}
@@ -305,6 +303,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
   }
 
   function showSetup(){
+    recovery.pauseAfterToss=false;
     $('capture-guide').textContent='';
     invalidateMatch();
     state.started = false;
@@ -351,6 +350,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
      ======================================================== */
   function onlineStatus(message, connected=false) {
     onlineState.connected=connected;
+    if(connected){clearTimeout(recovery.timer);recovery.timer=null;recovery.attempt=0;recovery.connectingUntil=0;recovery.lastHeard=Date.now();}
     const badge=$('online-status-badge');
     if(badge){badge.className='online-badge '+(connected?'connected':'waiting');badge.textContent=message;}
     updateOnlineControls();
@@ -367,8 +367,16 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     if($('start-online-help'))$('start-online-help').hidden=!options.online;
     if($('online-reactions'))$('online-reactions').hidden=!options.online||!onlineState.connected;
     if($('join-room-btn'))$('join-room-btn').disabled=options.online&&onlineState.connected;
+    updateRematchUI();
+    $('online-recovery').hidden=!options.online||!state.started;
+    $('reconnect-btn').hidden=onlineState.connected&&!onlineState.awaitingSync;
+    $('connection-text').textContent=onlineState.connected?(onlineState.awaitingSync?'Synchronizing boards…':onlineState.remotePaused?'Your friend paused the match.':'Connected · Room '+onlineState.roomCode):'Connection lost · Room '+onlineState.roomCode;
   }
   function resetOnlineConnection({keepRoom=false}={}) {
+    clearTimeout(recovery.timer);recovery.timer=null;
+    if(!keepRoom)recovery.attempt=0;
+    recovery.pendingSync=null;recovery.connectingUntil=0;onlineState.remotePaused=false;
+    rematch.localReady=false;rematch.remoteReady=false;
     onlineState.generation++;
     onlineState.pendingRemoteMoves=[];
     onlineState.pendingNextRound=null;
@@ -412,7 +420,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     if(!options.online||!onlineState.isHost||!onlineState.connected||!state.started){onlineState.syncPending=false;return;}
     if(state.activeMove||state.busy||state.awaitingToss){onlineState.syncPending=true;return;}
     const position={pits:state.pits.slice(),banks:state.banks.slice(),turn:state.turn,
-      kasiePits:state.kasiePits.slice(),round:state.round,roundPending:state.roundPending,
+      kasiePits:state.kasiePits.slice(),round:state.round,roundPending:state.roundPending,over:state.over,paused:state.paused,
+      tournament:{allocations:tournament.allocations.slice(),forcedDraw:tournament.forcedDraw,endReason:tournament.endReason},
       metrics:{...state.metrics},currentRoundStarter:state.currentRoundStarter,matchStartedAt:state.matchStartedAt};
     sendOnlinePacket({type:'STATE_SYNC',matchId:state.matchId,rev:onlineState.revision,
       undoAvailable:state.history.length>0,position,
@@ -426,7 +435,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
   }
   function processPendingUndo(){
     if(!options.online||!onlineState.isHost||!onlineState.pendingUndoRequest)return;
-    if(state.busy||state.activeMove||state.awaitingToss)return;
+    if(state.busy||state.activeMove||state.awaitingToss||state.paused||onlineState.remotePaused)return;
     const request=onlineState.pendingUndoRequest;
     onlineState.pendingUndoRequest=null;
     if(!onlineState.connected||request.matchId!==state.matchId||request.rev!==onlineState.revision||request.round!==state.round||request.seq!==state.metrics.moves||state.roundPending||!state.history.length){
@@ -451,7 +460,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     setupNextRound(f1,f2,S,false,packet.starter);
   }
   function processRemoteQueue() {
-    if(!options.online||!onlineState.connected||!state.started||state.busy||state.paused||state.over||state.awaitingToss||state.roundPending||isModalOpen('setup-modal')||isModalOpen('quit-modal')||isModalOpen('coin-toss-modal'))return;
+    if(!options.online||!onlineState.connected||!state.started||state.busy||state.paused||onlineState.remotePaused||onlineState.awaitingSync||state.over||state.awaitingToss||state.roundPending||isModalOpen('setup-modal')||isModalOpen('quit-modal')||isModalOpen('coin-toss-modal'))return;
     onlineState.pendingRemoteMoves=onlineState.pendingRemoteMoves.filter(m=>m.matchId===state.matchId&&m.rev===onlineState.revision&&m.round>=state.round&&m.seq>=state.metrics.moves);
     const ix=onlineState.pendingRemoteMoves.findIndex(m=>m.matchId===state.matchId&&m.round===state.round&&m.seq===state.metrics.moves&&m.player===state.turn&&owner(m.pit)===state.turn&&state.turn!==onlineState.myPlayerIndex);
     if(ix<0)return;
@@ -477,6 +486,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
 
   function getShareableGameUrl(roomCode) {
     try {
+      if(window.PallanguzhiNative){const base='https://dineshorigin.github.io/heritage/';return roomCode?`${base}?room=${encodeURIComponent(roomCode)}`:base;}
       const loc = window.location;
       if (loc && (loc.protocol === 'http:' || loc.protocol === 'https:') && loc.origin && loc.origin !== 'null') {
         const base = loc.origin + loc.pathname;
@@ -538,6 +548,10 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       onlineState.bc=bc;
       bc.onmessage=ev=>{
         if(generation!==onlineState.generation||!ev?.data||!options.online)return;
+        if(ev.data.type==='PING'&&ev.data.player===other(onlineState.myPlayerIndex)&&ev.data.roomCode===onlineState.roomCode&&!onlineState.connected){
+          onlineStatus('🟢 Connected through local browser channel',true);
+          if(onlineState.isHost&&state.started){onlineState.syncPending=true;sendAuthoritativeState();}
+        }
         if(ev.data.type==='BC_JOIN_REQUEST'&&onlineState.isHost){
           onlineStatus('🟢 Friend connected · Ready to play',true);
           // Respond over the same channel, even if a previous WebRTC path is stale.
@@ -561,15 +575,16 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       onlineStatus('📡 Local tabs ready · Cross-phone requires PeerJS and internet',false);
       return;
     }
-    if(onlineState.peer&&!onlineState.peer.destroyed)return;
+    if(onlineState.peer&&!onlineState.peer.destroyed){if(onlineState.peer.disconnected){try{onlineState.peer.reconnect();}catch{}}return;}
     onlineStatus('📡 Opening room '+code+'…',false);
     try{
       const peer=new window.Peer('pallanguzhi-'+code.toLowerCase());
-      onlineState.peer=peer;
+      onlineState.peer=peer;attachPeerRecovery(peer,generation);
       peer.on('open',()=>{
         if(generation!==onlineState.generation||onlineState.peer!==peer)return;
         onlineStatus('📡 Room '+code+' ready · Waiting for friend…',onlineState.connected);
       });
+      peer.on('disconnected',()=>{if(generation===onlineState.generation&&onlineState.peer===peer)scheduleReconnect();});
       peer.on('connection',conn=>{
         if(generation!==onlineState.generation||onlineState.peer!==peer){try{conn.close();}catch{}return;}
         if(onlineState.conn?.open){try{conn.close();}catch{}return;}
@@ -577,11 +592,12 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       });
       peer.on('error',err=>{
         if(generation!==onlineState.generation||onlineState.peer!==peer)return;
+        if(err?.type==='unavailable-id'&&state.started){try{peer.destroy();}catch{}onlineState.peer=null;onlineStatus('Room already open on another device. Close it, then reconnect.',false);scheduleReconnect();return;}
         if(err?.type==='unavailable-id'){
           try{peer.destroy();}catch{}
           onlineState.peer=null;onlineState.roomCode=generateRoomCode();ensureRoomCode();
           attachBroadcastChannel(onlineState.roomCode);initOnlineHost();
-        }else onlineStatus('⚠️ Peer signaling unavailable · Local tabs only',onlineState.connected);
+        }else {onlineStatus('⚠️ Peer signaling unavailable · Local tabs only',onlineState.connected);scheduleReconnect();}
       });
     }catch{onlineStatus('⚠️ Peer signaling unavailable · Local tabs only',false);}
   }
@@ -595,6 +611,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     $('online-room-code').textContent=cleanCode;
     const generation=onlineState.generation;
     attachBroadcastChannel(cleanCode);
+    recovery.connectingUntil=Date.now()+20000;
     onlineState.awaitingSync=Boolean(resuming);
     if(resuming){const saved=loadSavedMatch();if(saved)onlineState.revision=saved.onlineRevision||0;}
     onlineStatus('🔄 Connecting to room '+cleanCode+'…',false);
@@ -605,7 +622,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       return;
     }
     try{
-      const peer=new window.Peer();onlineState.peer=peer;
+      const peer=new window.Peer();onlineState.peer=peer;attachPeerRecovery(peer,generation);
       peer.on('open',()=>{
         if(generation!==onlineState.generation||onlineState.peer!==peer)return;
         const conn=peer.connect('pallanguzhi-'+cleanCode.toLowerCase(),{reliable:true});
@@ -613,7 +630,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       });
       peer.on('error',()=>{
         if(generation!==onlineState.generation||onlineState.peer!==peer)return;
-        onlineStatus('⚠️ Room unavailable · Check room code or network',onlineState.connected);
+        recovery.connectingUntil=0;onlineStatus('⚠️ Room unavailable · Check room code or network',onlineState.connected);scheduleReconnect();
       });
     }catch{onlineStatus('⚠️ Peer connection could not start',false);}
   }
@@ -627,7 +644,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       onlineStatus('🟢 Connected · Ready to play',true);
       toast('🎉 Opponent connected!',1500);
       if(onlineState.isHost)sendOnlinePacket({type:'CONFIG_SYNC',options:{...options},hostName:names[1]});
-      else {sendOnlinePacket({type:'GUEST_HELLO',guestName:names[2]});sendOnlinePacket({type:'STATE_REQUEST'});}
+      if(state.started&&onlineState.isHost){onlineState.syncPending=true;sendAuthoritativeState();}
+      if(!onlineState.isHost) {sendOnlinePacket({type:'GUEST_HELLO',guestName:names[2]});sendOnlinePacket({type:'STATE_REQUEST'});}
     });
     conn.on('data',data=>{
       if(generation===onlineState.generation&&onlineState.conn===conn)handleOnlineMessage(data);
@@ -637,17 +655,99 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       onlineState.conn=null;
       // A local BroadcastChannel may still be active; otherwise no more moves.
       onlineStatus('⚠️ Connection closed · Rejoin to continue',false);
+      saveStableMatch();scheduleReconnect();
       toast('Opponent disconnected',2400);
     });
     conn.on('error',()=>{
-      if(generation===onlineState.generation&&onlineState.conn===conn)
-        onlineStatus('⚠️ Connection problem · Try reconnecting',false);
+      if(generation===onlineState.generation&&onlineState.conn===conn){onlineStatus('⚠️ Connection problem · Try reconnecting',false);scheduleReconnect();}
     });
+  }
+
+  function attachPeerRecovery(peer,generation){
+    peer.on('close',()=>{
+      if(generation!==onlineState.generation||onlineState.peer!==peer)return;
+      onlineState.conn=null;onlineStatus('Connection closed. Reconnecting…',false);
+      saveStableMatch();scheduleReconnect();
+    });
+  }
+  function scheduleReconnect(){
+    if(!options.online||!onlineState.roomCode||recovery.timer||recovery.attempt>=8||navigator.onLine===false)return;
+    const backoff=Math.min(15000,1000*2**Math.min(recovery.attempt++,4));
+    const delay=Math.max(backoff,(recovery.connectingUntil||0)-Date.now());
+    recovery.timer=setTimeout(()=>{recovery.timer=null;reconnectRoom(false);},delay);
+  }
+  function reconnectRoom(manual=true){
+    if(!options.online||!onlineState.roomCode)return;
+    if(manual){recovery.attempt=0;clearTimeout(recovery.timer);recovery.timer=null;}
+    if(onlineState.connected){
+      if(onlineState.isHost){onlineState.syncPending=true;sendAuthoritativeState();}
+      else {onlineState.awaitingSync=true;sendOnlinePacket({type:'STATE_REQUEST'});}
+      render();return;
+    }
+    const room=onlineState.roomCode;
+    if(onlineState.isHost)initOnlineHost();
+    else joinOnlineRoom(room,state.started);
+    scheduleReconnect();
+  }
+  function finishTossRecovery(){
+    if(recovery.pauseAfterToss||document.hidden){recovery.pauseAfterToss=false;state.paused=true;$('quit-modal').classList.remove('hidden');if(options.online)sendOnlinePacket({type:'PLAYER_PAUSE',matchId:state.matchId,paused:true});}
+  }
+  function suspendMatch(){
+    if(tutorial.open)tutorialClose();
+    if(audio)void audio.suspend().catch(()=>{});
+    if(!state.started||state.over)return;
+    if(state.awaitingToss){recovery.pauseAfterToss=true;return;}
+    openQuitModal();saveStableMatch();
+    if(audio)void audio.suspend().catch(()=>{});
+  }
+  function installNativeLifecycle(){
+    let installed=false;
+    const install=()=>{
+      if(installed||!window.PallanguzhiNative?.App)return;
+      installed=true;const App=window.PallanguzhiNative.App;
+      void App.addListener('appStateChange',({isActive})=>{
+        if(!isActive)suspendMatch();
+        else {recovery.lastHeard=Date.now();if(options.online)reconnectRoom(true);}
+      });
+      void App.addListener('backButton',()=>{if(!handleSystemBack())void App.exitApp();});
+    };
+    window.addEventListener('pallanguzhi-native-ready',install);install();
+  }
+  function installRecovery(){
+    $('pause-btn').addEventListener('click',openQuitModal);
+    $('reconnect-btn').addEventListener('click',()=>reconnectRoom(true));
+    document.addEventListener('visibilitychange',()=>{
+      recovery.hidden=document.hidden;
+      if(document.hidden)suspendMatch();
+      else {recovery.lastHeard=Date.now();if(options.online)reconnectRoom(true);}
+    });
+    window.addEventListener('pagehide',suspendMatch);
+    window.addEventListener('offline',()=>{if(options.online){onlineStatus('Offline · Match saved on this phone.',false);saveStableMatch();}});
+    window.addEventListener('online',()=>reconnectRoom(true));
+    setInterval(()=>{
+      if(!options.online||!onlineState.roomCode||document.hidden)return;
+      if(!onlineState.connected){scheduleReconnect();return;}
+      if(Date.now()-recovery.lastHeard>15000){
+        const stale=onlineState.conn;onlineState.conn=null;try{stale?.close();}catch{}
+        onlineStatus('Connection timed out. Reconnecting…',false);saveStableMatch();scheduleReconnect();return;
+      }
+      sendOnlinePacket({type:'PING',matchId:state.matchId,player:onlineState.myPlayerIndex,roomCode:onlineState.roomCode});
+    },3000);
   }
 
   function handleOnlineMessage(data){
     if(!options.online||!data||typeof data!=='object'||typeof data.type!=='string')return;
-    if(data.type==='ROOM_BUSY'){
+    recovery.lastHeard=Date.now();
+    if(data.type==='PING'){sendOnlinePacket({type:'PONG',matchId:state.matchId});return;}
+    if(data.type==='PONG')return;
+    if(data.type==='PLAYER_PAUSE'){
+      if(data.matchId!==state.matchId||typeof data.paused!=='boolean')return;
+      onlineState.remotePaused=data.paused;render();if(!data.paused){processPendingUndo();processRemoteQueue();}return;
+    }
+    if(data.type==='REMATCH_READY'){
+      if(!onlineState.connected||!state.started||data.matchId!==state.matchId)return;
+      rematch.remoteReady=true;updateRematchUI();tryStartRematch();
+    }else if(data.type==='ROOM_BUSY'){
       onlineStatus('⚠️ Host is in a match. Ask for a new match.',false);
     }else if(data.type==='CONFIG_SYNC'){
       if(onlineState.isHost)return;
@@ -681,20 +781,25 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       toast('Undo no longer available. Board resynchronizing.',2200);
     }else if(data.type==='STATE_SYNC'){
       if(onlineState.isHost||!onlineState.connected||!data.position||!data.names)return;
+      if(state.activeMove||state.busy){recovery.pendingSync=data;return;}
       const pos=data.position;
+      const keepResult=state.resultRecorded&&state.matchId===data.matchId&&state.over&&pos.over===true;
+      const previousStats=state.recordedStatsBefore;
       if(!Number.isInteger(data.rev)||data.rev<0||data.rev>10000)return;
-      if(typeof data.matchId!=='string'||data.matchId.length>90||!validPosition({...pos,options:{seedsPerPit:data.options?.seedsPerPit||options.seedsPerPit}})||!Array.isArray(pos.kasiePits)||!Array.isArray(pos.banks)||typeof pos.metrics!=='object'||!Number.isInteger(pos.round)||pos.round<1)return;
+      if(typeof data.matchId!=='string'||data.matchId.length>90||!validPosition({...pos,pendingRound:pos.over===true||pos.roundPending===true,options:{seedsPerPit:data.options?.seedsPerPit||options.seedsPerPit}})||!Array.isArray(pos.kasiePits)||!Array.isArray(pos.banks)||typeof pos.metrics!=='object'||!Number.isInteger(pos.round)||pos.round<1)return;
       applyRemoteRules(data.options);
+      restoreTournament(pos.tournament);
       if(state.resultRecorded&&pos.metrics?.moves<state.metrics.moves)rollbackFinishedResult();
       invalidateMatch();
       state.pits=pos.pits.slice();state.banks=pos.banks.slice();state.turn=pos.turn;
       state.kasiePits=normalizeKasie(pos.kasiePits);state.round=normalizeRound(pos.round);
-      state.roundPending=pos.roundPending===true;state.over=state.roundPending;
-      state.awaitingToss=false;state.paused=false;state.started=true;state.history=[];
+      rematch.localReady=false;rematch.remoteReady=false;
+      state.roundPending=pos.roundPending===true;state.over=pos.over===true||state.roundPending;
+      state.awaitingToss=false;state.paused=isModalOpen('quit-modal');onlineState.remotePaused=pos.paused===true;state.started=true;state.history=[];
       state.metrics=cleanMetrics(pos.metrics);state.matchId=data.matchId;
       state.currentRoundStarter=[1,2].includes(pos.currentRoundStarter)?pos.currentRoundStarter:1;
       state.matchStartedAt=Number.isFinite(pos.matchStartedAt)?pos.matchStartedAt:Date.now();
-      state.recordedStatsBefore=null;state.resultRecorded=false;
+      state.recordedStatsBefore=keepResult?previousStats:null;state.resultRecorded=keepResult;
       names[1]=safeRemoteName(data.names[1],'Player 1');names[2]=safeRemoteName(data.names[2],'Player 2');
       $('p1-input').value=names[1];$('p2-input').value=names[2];
       onlineState.awaitingSync=false;onlineState.undoPending=false;
@@ -703,9 +808,10 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       onlineState.pendingRemoteMoves=[];
       applyPlayerLabels();
       $('round-brand-sub').textContent=options.format==='kasie'?`ROUND ${state.round} · KASIE TOURNAMENT`:'SINGLE MATCH';
-      ['setup-modal','end-modal','quit-modal','coin-toss-modal','round-modal'].forEach(id=>$(id).classList.add('hidden'));
+      ['setup-modal','end-modal','coin-toss-modal','round-modal'].forEach(id=>$(id).classList.add('hidden'));
       render();saveStableMatch();
       if(state.roundPending)showRoundSummary();
+      else if(state.over)finishMatch();
       else setStatus(`🌐 Reconnected · ${names[state.turn]}'s turn.`);
       processRemoteQueue();
     }else if(data.type==='START_GAME'){
@@ -789,7 +895,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     panel.hidden=!saved;
     if(saved){
       const when=new Date(saved.savedAt||0);
-      const date=Number.isNaN(when.getTime())?'Recently':when.toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+      const date=Number.isNaN(when.getTime())?'Recently':when.toLocaleString(getLanguage()==='ta'?'ta-IN':'en-IN',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
       const playMode=saved.options.online?(saved.onlineRoomCode?'Online · reconnect room '+saved.onlineRoomCode:'Online · offline recovery'):(saved.options.ai?'Computer · '+saved.options.difficulty:'2 Players');
       $('resume-summary').textContent=`${saved.names[1]} vs ${saved.names[2]} · ${playMode} · Turn: ${saved.names[saved.turn]} · ${date}.`;
     }
@@ -805,6 +911,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       kasiePits:state.kasiePits.slice(),round:state.round,currentRoundStarter:state.currentRoundStarter,
       pendingRound:state.roundPending===true,
       onlineRoomCode:options.online?onlineState.roomCode:null,onlineIsHost:options.online?onlineState.isHost:null,onlineRevision:options.online?onlineState.revision:0,
+      tournament:{allocations:tournament.allocations.slice(),forcedDraw:tournament.forcedDraw,endReason:tournament.endReason},
       options:{...options},
       names:{...names}};
     if(validPosition(pos))storedSet(PROGRESS_KEY,pos);
@@ -836,6 +943,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       saved.options.online=false;saved.options.ai=false;
     }
     applySavedOptions(saved);
+    restoreTournament(saved.tournament);
     names={...saved.names};$('p1-input').value=names[1];$('p2-input').value=names[2];
     state.pits=saved.pits.slice();state.banks=saved.banks.slice();state.turn=saved.turn;
     state.kasiePits=saved.kasiePits.slice();state.round=saved.round;
@@ -889,7 +997,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     state.recordedStatsBefore=JSON.parse(JSON.stringify(stats));
     state.resultRecorded=true;
     const s1=state.banks[1],s2=state.banks[2];
-    const result=s1===s2?'draw':s1>s2?'win':'loss';
+    const result=tournament.forcedDraw||s1===s2?'draw':s1>s2?'win':'loss';
     stats.matches++;
     if(result==='win'){
       stats.wins++;stats.streak++;
@@ -944,7 +1052,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     else for(const m of stats.history){
       const item=document.createElement('div');item.className='match-record';
       const left=document.createElement('span');
-      const d=new Date(m.at);const when=!Number.isNaN(d.getTime())?d.toLocaleDateString(undefined,{month:'short',day:'numeric'}):'—';
+      const d=new Date(m.at);const when=!Number.isNaN(d.getTime())?d.toLocaleDateString(getLanguage()==='ta'?'ta-IN':'en-IN',{month:'short',day:'numeric'}):'—';
       left.textContent=`${when} · ${m.ai?'AI '+m.difficulty:'2 Players'}`;
       const right=document.createElement('strong');right.className=m.result;
       right.textContent=`${m.result==='win'?'Win':m.result==='loss'?'Loss':'Draw'} · ${m.score1}–${m.score2}`;
@@ -1163,7 +1271,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     
     // In online mode, you can only play your assigned player side!
     const isMyTurnOnline = !options.online || (onlineState.connected && !onlineState.awaitingSync && !onlineState.undoPending && state.turn === onlineState.myPlayerIndex);
-    const playable=state.started&&!state.busy&&!state.over&&!state.paused&&!state.awaitingToss&&!isKasie&&count>0&&owner(index)===state.turn&&!(options.ai&&state.turn===2)&&isMyTurnOnline;
+    const playable=state.started&&!state.busy&&!state.over&&!state.paused&&!onlineState.remotePaused&&!state.awaitingToss&&!isKasie&&count>0&&owner(index)===state.turn&&!(options.ai&&state.turn===2)&&isMyTurnOnline;
     el.disabled=!playable;el.classList.toggle('playable',playable);
     el.classList.toggle('hinted',state.hintPit===index && playable);
     el.setAttribute('aria-label',`Player ${owner(index)} cup ${index<7?index+1:14-index}, ${count} ${options.seedStyle==='natural'?'seeds':'beads'}${isKasie?', locked as Kasie':''}${playable?', tap to play':''}`);
@@ -1195,15 +1303,26 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     for(let i=0;i<N;i++) paintPit(i);
     for(let p=1;p<=2;p++) {
       paintBank(p);
-      $('p'+p+'-pod').classList.toggle('active',state.turn===p&&!state.over);
-      $('mc-'+p).classList.toggle('active-owner',state.turn===p&&!state.over);
-      $(p===1?'plank-bottom':'plank-top').classList.toggle('active-side',state.turn===p&&!state.over);
+      $('p'+p+'-pod').classList.toggle('active',state.started&&state.turn===p&&!state.over&&!state.paused&&!state.awaitingToss);
+      $('mc-'+p).classList.toggle('active-owner',state.started&&state.turn===p&&!state.over&&!state.paused&&!state.awaitingToss);
+      $(p===1?'plank-bottom':'plank-top').classList.toggle('active-side',state.started&&state.turn===p&&!state.over&&!state.paused&&!state.awaitingToss);
     }
-    $('ind-1').textContent=state.turn===1&&!state.over ? (state.busy?'SOWING…':'YOUR TURN') : '';
-    $('ind-2').textContent=state.turn===2&&!state.over ? (options.ai?'AI PLAYING…':state.busy?'SOWING…':'YOUR TURN') : '';
+    const turnState={started:state.started,over:state.over,paused:state.paused||onlineState.remotePaused,awaitingToss:state.awaitingToss,roundPending:state.roundPending,busy:state.busy,turn:state.turn,ai:options.ai,online:options.online,connected:onlineState.connected,awaitingSync:onlineState.awaitingSync,undoPending:onlineState.undoPending,myPlayer:onlineState.myPlayerIndex,names};
+    for(const player of [1,2])$('ind-'+player).textContent=playerTurnLabel(turnState,player);
+    if(shouldNotifyTurn(turnState)){
+      const key=`${state.matchId}|${state.round}|${state.metrics.moves}|${state.turn}`;
+      if(key!==lastTurnNotice){
+        lastTurnNotice=key;
+        const side=portraitBoard()?(state.turn===1?'left':'right'):(state.turn===1?'bottom':'top');
+        toast(`${names[state.turn]}, your turn · ${side} side`,1800);
+        turnSound(state.turn);
+        const pod=$('p'+state.turn+'-pod');
+        if(!reducedMotion()&&typeof pod.animate==='function')pod.animate([{filter:'brightness(1)'},{filter:'brightness(1.65)'},{filter:'brightness(1)'}],{duration:650});
+      }
+    }
     updateAssistButtons();
     updateOnlineControls();
-    $('turn-guide').textContent=turnGuidance({started:state.started,over:state.over,busy:state.busy,paused:state.paused,awaitingToss:state.awaitingToss,roundPending:state.roundPending,turn:state.turn,name:names[state.turn],ai:options.ai,online:options.online,connected:onlineState.connected,myPlayer:onlineState.myPlayerIndex,awaitingSync:onlineState.awaitingSync,undoPending:onlineState.undoPending,portrait:matchMedia('(orientation:portrait) and (max-width:700px)').matches});
+    $('turn-guide').textContent=turnGuidance({started:state.started,over:state.over,busy:state.busy,paused:state.paused||onlineState.remotePaused,awaitingToss:state.awaitingToss,roundPending:state.roundPending,turn:state.turn,name:names[state.turn],ai:options.ai,online:options.online,connected:onlineState.connected,myPlayer:onlineState.myPlayerIndex,awaitingSync:onlineState.awaitingSync,undoPending:onlineState.undoPending,portrait:matchMedia('(orientation:portrait) and (max-width:700px)').matches});
   }
 
   function setStatus(text) {$('status-text').textContent=text;}
@@ -1503,7 +1622,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       source.buffer=samples[Math.floor(Math.random()*samples.length)];
       source.playbackRate.value=0.92+Math.random()*.16;
       const gain=ctx.createGain();
-      const typeFactor=kind==='pickup'?.28:kind==='bank'?.82:1;
+      const typeFactor=kind==='pickup'?.55:kind==='bank'?.82:1;
       const level=Math.min(1,Math.max(.005,.55*strength*typeFactor));
       const t=ctx.currentTime+offset;
       gain.gain.setValueAtTime(level,t);
@@ -1513,15 +1632,33 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     }catch{}
   }
 
-  function scoopSound(count){
-    const taps=Math.min(3,Math.max(1,Math.ceil(count/4)));
-    for(let i=0;i<taps;i++) beadImpact('pickup',.60-i*.12,i*.040);
+  function softNotes(frequencies,level=.065){
+    const ctx=ensureAudio();if(!ctx||!options.sound||options.volume===0)return;
+    try{
+      frequencies.forEach((frequency,i)=>{
+        const osc=ctx.createOscillator(),gain=ctx.createGain(),t=ctx.currentTime+i*.075;
+        osc.type='sine';osc.frequency.setValueAtTime(frequency,t);
+        gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(level,t+.009);
+        gain.gain.exponentialRampToValueAtTime(.0001,t+.14);
+        osc.connect(gain);gain.connect(ctx.pallanguzhiMaster);osc.start(t);osc.stop(t+.15);
+        osc.onended=()=>{osc.disconnect();gain.disconnect();};
+      });
+    }catch{}
   }
-
-  function captureSound(){
-    beadImpact('bank',.95,0);
-    beadImpact('bank',.45,.061);
-    if(navigator.vibrate)navigator.vibrate(18);
+  function turnSound(player){
+    softNotes(player===1?[440,660]:[523.25,783.99],.075);
+    if(options.sound&&options.volume>0&&document.visibilityState==='visible'){
+      try{navigator.vibrate?.([25,45,25]);}catch{}
+    }
+  }
+  function scoopSound(count){
+    for(const tap of pickupPattern(count))beadImpact('pickup',tap.strength,tap.offset);
+  }
+  function captureSound(count=4){
+    const taps=Math.min(6,Math.max(3,Math.ceil(count/3)));
+    for(let i=0;i<taps;i++)beadImpact('bank',1-i*.11,i*.030);
+    softNotes([587.33,739.99,880],.048);
+    if(options.sound&&options.volume>0){try{navigator.vibrate?.(18);}catch{}}
   }
 
   function layeredLanding(count){
@@ -1567,7 +1704,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       {x:seedStart.x+(i%3-1)*2,y:seedStart.y},to,
       {kind:'capture',index:pit,serial:i,delay:i*(options.fast?12:28)}
     ).then(()=>{if(live()&&i%3===0)beadImpact('bank',.32);})));
-    if(live())captureSound();
+    if(live())captureSound(count);
   }
 
   const difficultyDescriptions={
@@ -1661,15 +1798,27 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     showRoundSummary();
   }
 
+  function restoreTournament(saved){
+    tournament.allocations=Array.isArray(saved?.allocations)?saved.allocations.filter(x=>x&&Number.isInteger(x.round)&&x.round>0&&typeof x.signature==='string'&&x.signature.length<100).slice(-512):[];
+    tournament.forcedDraw=saved?.forcedDraw===true;
+    tournament.endReason=typeof saved?.endReason==='string'?saved.endReason.slice(0,200):'';
+  }
   function showRoundSummary(){
-    const S=options.seedsPerPit,s1=state.banks[1],s2=state.banks[2];
+    const S=options.seedsPerPit,s1=state.banks[1],s2=state.banks[2],ta=getLanguage()==='ta';
     if(s1<S||s2<S){state.roundPending=false;finishMatch();return;}
+    const signature=`${s1}|${s2}|${S}|${options.pasu}|${options.firstMove==='alt'?state.currentRoundStarter:options.firstMove}`;
+    if(tournament.allocations.at(-1)?.round!==state.round)tournament.allocations.push({round:state.round,signature});
+    if(tournament.allocations.filter(x=>x.signature===signature).length>=3){
+      tournament.forcedDraw=true;tournament.endReason='Kasie draw: the same seed allocation repeated three times. The tournament is declared a draw to prevent an endless cycle.';
+      state.roundPending=false;finishMatch();return;
+    }
+    saveStableMatch();
     const fill1=Math.min(7,Math.floor(s1/S)),fill2=Math.min(7,Math.floor(s2/S));
     const rem1=s1-fill1*S,rem2=s2-fill2*S;
     $('round-modal-title').textContent=`சுற்று ${state.round} முடிந்தது! (Round ${state.round} Complete)`;
-    $('round-details').innerHTML=`<div style="margin-bottom:8px;font-weight:850;color:#ffd700">Round ${state.round} score</div>
-       <div style="display:flex;justify-content:space-between;gap:8px"><span>${escapeMarkup(names[1])}: <b>${s1} seeds</b></span><span>${escapeMarkup(names[2])}: <b>${s2} seeds</b></span></div>
-       <div style="margin-top:9px;border-top:1px dashed #644525;padding-top:8px"><div>${escapeMarkup(names[1])}: ${fill1} filled, ${7-fill1} Kasie 🔒 (${rem1} surplus)</div><div>${escapeMarkup(names[2])}: ${fill2} filled, ${7-fill2} Kasie 🔒 (${rem2} surplus)</div></div>`;
+    $('round-details').innerHTML=`<div style="margin-bottom:8px;font-weight:850;color:#ffd700">${ta?'சுற்று':'Round'} ${state.round} ${ta?'விதைகள்':'score'}</div>
+       <div style="display:flex;justify-content:space-between;gap:8px"><span>${escapeMarkup(names[1])}: <b>${s1} ${ta?'விதைகள்':'seeds'}</b></span><span>${escapeMarkup(names[2])}: <b>${s2} ${ta?'விதைகள்':'seeds'}</b></span></div>
+       <div style="margin-top:9px;border-top:1px dashed #644525;padding-top:8px"><div>${escapeMarkup(names[1])}: ${fill1} ${ta?'நிரப்பிய குழிகள்':'filled'}, ${7-fill1} ${ta?'காசி':'Kasie'} 🔒 (${rem1} ${ta?'மீதி விதைகள்':'surplus'})</div><div>${escapeMarkup(names[2])}: ${fill2} ${ta?'நிரப்பிய குழிகள்':'filled'}, ${7-fill2} ${ta?'காசி':'Kasie'} 🔒 (${rem2} ${ta?'மீதி விதைகள்':'surplus'})</div></div>`;
     const button=$('next-round-btn');
     button.disabled=options.online&&!onlineState.isHost;
     button.textContent=options.online&&!onlineState.isHost?'⏳ Waiting for host to begin next round…':'START NEXT ROUND • அடுத்த சுற்று';
@@ -1733,7 +1882,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       launchCoinToss((tossWinner) => {
         state.turn = tossWinner;
         state.currentRoundStarter = tossWinner;
-        state.awaitingToss=false;
+        state.awaitingToss=false;finishTossRecovery();
         render();
         if(onlineState.syncPending)sendAuthoritativeState();
         processRemoteQueue();
@@ -1744,7 +1893,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     } else {
       state.currentRoundStarter = nextStarter;
       state.turn = nextStarter;
-      state.awaitingToss=false;
+      state.awaitingToss=false;finishTossRecovery();
       render();
       if(onlineState.syncPending)sendAuthoritativeState();
       processRemoteQueue();
@@ -1759,12 +1908,12 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       kasiePits:state.kasiePits.slice(),round:state.round,metrics:{...state.metrics}};
   }
   function updateAssistButtons(){
-    const canHint=state.started&&!state.over&&!state.busy&&!state.paused&&!state.awaitingToss&&(!options.online||(onlineState.connected&&!onlineState.awaitingSync&&state.turn===onlineState.myPlayerIndex))&&!(options.ai&&state.turn===2)&&validMoves(state.turn).length>0;
+    const canHint=state.started&&!state.over&&!state.busy&&!state.paused&&!onlineState.remotePaused&&!state.awaitingToss&&(!options.online||(onlineState.connected&&!onlineState.awaitingSync&&state.turn===onlineState.myPlayerIndex))&&!(options.ai&&state.turn===2)&&validMoves(state.turn).length>0;
     $('hint-btn').disabled=!canHint;
     $('hint-btn').setAttribute('aria-pressed',String(canHint&&state.hintPit!==null));
     const canUndo=state.started&&(
       options.online
-        ? onlineState.connected&&!onlineState.awaitingSync&&!onlineState.undoPending&&!state.busy&&!state.awaitingToss&&!state.paused&&!state.roundPending&&(onlineState.isHost?state.history.length>0:onlineState.remoteUndoAvailable)
+        ? onlineState.connected&&!onlineState.remotePaused&&!onlineState.awaitingSync&&!onlineState.undoPending&&!state.busy&&!state.awaitingToss&&!state.paused&&!state.roundPending&&(onlineState.isHost?state.history.length>0:onlineState.remoteUndoAvailable)
         : state.history.length>0);
     $('undo-btn').disabled=!canUndo;
     $('undo-end-btn').hidden=!canUndo;
@@ -1775,7 +1924,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     $('hint-explanation-text').textContent='';
   }
   function showHint(){
-    if(!state.started||state.over||state.paused||state.busy||state.awaitingToss||(options.online&&(!onlineState.connected||state.turn!==onlineState.myPlayerIndex))||(options.ai&&state.turn===2))return;
+    if(!state.started||state.over||state.paused||onlineState.remotePaused||state.busy||state.awaitingToss||(options.online&&(!onlineState.connected||state.turn!==onlineState.myPlayerIndex))||(options.ai&&state.turn===2))return;
     if(state.hintPit!==null){state.hintPit=null;hideHintExplanation();render();return;}
     const pit=recommendMove(state.turn,'hard');
     if(pit===null){toast('No safe move found. Try a different cup.',1500);return;}
@@ -1791,14 +1940,14 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     if(caps)effects.push(`captures ${caps}`);
     if(pasu)effects.push(`${pasu} Pasu`);
     if(!effects.length)effects.push('positions your seeds');
-    $('hint-explanation-text').textContent=`💡 Cup ${local}: ${effects.join(' and ')}. You gain ${myGain}, the opponent gains ${theirGain} immediately. The recommendation considers the next response.`;
+    $('hint-explanation-text').textContent=getLanguage()==='ta'?`💡 குழி ${local}: நீங்கள் உடனே ${myGain} விதைகளையும் எதிர்வீரர் ${theirGain} விதைகளையும் பெறுவர். அடுத்த பதில் நகர்வையும் கணக்கில் கொண்டு இக்குழி பரிந்துரைக்கப்படுகிறது.`:`💡 Cup ${local}: ${effects.join(' and ')}. You gain ${myGain}, the opponent gains ${theirGain} immediately. The recommendation considers the next response.`;
     $('hint-explanation').hidden=false;
     setStatus(`💡 Suggested cup ${local}.`);
     render();
   }
   function undoMove(){
     if(!options.online){performLocalUndo();return;}
-    if(!state.started||!onlineState.connected||onlineState.awaitingSync||onlineState.undoPending||state.busy||state.activeMove||state.awaitingToss||state.roundPending)return;
+    if(!state.started||!onlineState.connected||onlineState.awaitingSync||onlineState.undoPending||state.paused||onlineState.remotePaused||state.busy||state.activeMove||state.awaitingToss||state.roundPending)return;
     if(onlineState.isHost){
       onlineState.revision++;
       if(performLocalUndo()){
@@ -1816,7 +1965,9 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
   function performLocalUndo(){
     if(!state.started||!state.history.length)return false;
     $('capture-guide').textContent='';
+    rematch.localReady=false;rematch.remoteReady=false;
     const previous=state.history.pop();
+    tournament.allocations=[];tournament.forcedDraw=false;tournament.endReason='';
     if(state.resultRecorded)rollbackFinishedResult();
     invalidateMatch();
     state.pits=previous.pits.slice();state.banks=previous.banks.slice();
@@ -1887,6 +2038,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     if (settleIfFinished(state.pits,state.banks)) {
       state.over=true;state.busy=false;render();
       handleRoundSettlement();
+      if(recovery.pendingSync){const packet=recovery.pendingSync;recovery.pendingSync=null;handleOnlineMessage(packet);}
       return;
     }
     state.turn=other(mover);
@@ -1894,6 +2046,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     render();
     saveStableMatch();
     if(options.online){
+      if(recovery.pendingSync){const packet=recovery.pendingSync;recovery.pendingSync=null;handleOnlineMessage(packet);return;}
       if(onlineState.syncPending)queueMicrotask(sendAuthoritativeState);
       if(onlineState.isHost){queueMicrotask(sendUndoAvailability);queueMicrotask(processPendingUndo);}
       queueMicrotask(processRemoteQueue);
@@ -1908,7 +2061,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
   }
 
   async function playPit(index,fromAI=false,fromRemote=false) {
-    if(!state.started||state.busy||state.paused||state.over||state.awaitingToss||owner(index)!==state.turn||state.pits[index]<=0)return;
+    if(!state.started||state.busy||state.paused||onlineState.remotePaused||state.over||state.awaitingToss||owner(index)!==state.turn||state.pits[index]<=0)return;
     if(options.ai && state.turn===2 && !fromAI)return;
     if(options.online && (!onlineState.connected || (fromRemote ? state.turn===onlineState.myPlayerIndex : state.turn!==onlineState.myPlayerIndex)))return;
     if(state.kasiePits[index])return;
@@ -2026,6 +2179,23 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       });
     }catch{}
   }
+  function updateRematchUI(){
+    const view=rematchView({online:options.online,connected:onlineState.connected,...rematch});
+    $('again-btn').disabled=view.disabled;$('again-btn').textContent=view.label;
+    $('rematch-status').textContent=view.message;
+  }
+  function tryStartRematch(){
+    if(canStartRematch({online:options.online,connected:onlineState.connected,isHost:onlineState.isHost,over:state.over,busy:state.busy,...rematch}))startGame(true);
+  }
+  function requestRematch(){
+    if(!state.over||state.roundPending)return;
+    if(!options.online){startGame(true);return;}
+    if(!onlineState.connected||rematch.localReady)return;
+    rematch.localReady=true;
+    sendOnlinePacket({type:'REMATCH_READY',matchId:state.matchId});
+    updateRematchUI();tryStartRematch();
+  }
+
   function finishMatch(){
     closeAnimations();
     hideHintExplanation();
@@ -2034,38 +2204,48 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     removeSavedMatch();
     const total = getTotalSeeds();
     const score1=state.banks[1],score2=state.banks[2];
-    const tied=score1===score2;
+    const tied=tournament.forcedDraw||score1===score2;
     const winner=score1>score2?1:2;
-    const text=tied?'A beautiful draw! 🤝':`${names[winner]} wins!`;
+    const text=tournament.forcedDraw?'Kasie tournament drawn — repeated position':tied?'A beautiful draw! 🤝':`${names[winner]} wins!`;
     $('winner-text').textContent=text;
     $('result-heading').textContent=tied?'சமநிலை!':'வாழ்த்துகள்!';
     $('result-subtitle').textContent=tied?'A MATCH WELL PLAYED':'HERITAGE CHAMPION';
-    $('result-message').textContent=tied
+    $('result-message').textContent=tournament.forcedDraw?tournament.endReason:tied
       ? 'Both players collected the same number of seeds. Ready for a rematch?'
       : `${names[winner]} gathered ${state.banks[winner]} out of ${total} seeds. Play again and try a different strategy!`;
     $('final-scores').replaceChildren();
     for(const p of [1,2]){
       const box=document.createElement('div');box.className='result-player';
-      const playerName=document.createElement('span');playerName.textContent=names[p];
+      const playerName=document.createElement('span');playerName.dataset.noI18n='';playerName.textContent=names[p];
       const score=document.createElement('strong');score.textContent=state.banks[p];
-      box.append(playerName,score);$('final-scores').append(box);
+      const label=document.createElement('small');label.textContent='seeds collected';
+      if(!tied&&p===winner)box.classList.add('result-winner');
+      box.append(playerName,score,label);$('final-scores').append(box);
     }
     $('score-share-1').style.width=Math.min(100, Math.round(score1/total*100))+'%';
     $('score-share-2').style.width=Math.min(100, Math.round(score2/total*100))+'%';
     $('score-comparison').setAttribute('aria-label',`${names[1]} ${score1} seeds, ${names[2]} ${score2} seeds`);
     setStatus(`Game over — ${text} (${score1} – ${score2})`);
+    $('result-match-info').textContent=`${options.format==='kasie'?'Kasie tournament · '+state.round+' rounds':'Single Match'} · ${state.metrics.moves} moves`;
+    updateRematchUI();
     $('end-modal').classList.remove('hidden');
+    $('again-btn').focus({preventScroll:true});
     playVictoryChime();
-    if(options.online&&onlineState.isHost)sendUndoAvailability();
+    if(options.online&&onlineState.isHost){sendUndoAvailability();if(onlineState.syncPending)sendAuthoritativeState();}
+    tryStartRematch();
   }
 
   function invalidateMatch(){hideHintExplanation();state.epoch++;state.aiTicket++;state.busy=false;state.activeMove=null;state.hintPit=null;updateSkipButton();closeAnimations();clearTimeout(toastTimer);$('toast').classList.remove('visible');}
   
   function startGame(broadcast=true,forcedStarter=null,remoteMatchId=null){
+    recovery.pauseAfterToss=false;
     $('capture-guide').textContent='';
     if(options.online&&broadcast&&(!onlineState.isHost||!onlineState.connected)){
       toast(onlineState.isHost?'Wait for your friend to connect.':'Only the host can start the match.',2300);return;
     }
+    lastTurnNotice=null;
+    tournament.allocations=[];tournament.forcedDraw=false;tournament.endReason='';
+    rematch.localReady=false;rematch.remoteReady=false;
     invalidateMatch();
     saveSettings();
     const S=options.seedsPerPit||5;
@@ -2096,7 +2276,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     state.awaitingToss=options.firstMove==='coin';
     const begin=who=>{
       state.turn=who;state.currentRoundStarter=who;state.lastStarter=who;
-      state.awaitingToss=false;render();
+      state.awaitingToss=false;finishTossRecovery();render();
       if(onlineState.syncPending)sendAuthoritativeState();
       setStatus(`${names[state.turn]}'s turn. Choose a cup on your side.`);
       saveStableMatch();processRemoteQueue();
@@ -2283,6 +2463,9 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     tutorialInit();
     refreshResumePanel();
     initBackButtonHandler();
+    installRecovery();
+    installNativeLifecycle();
+    installLanguage(lang=>{tutorialSetLanguage(lang);refreshResumePanel();if(isModalOpen('stats-modal'))renderStats();render();});
     // Treat a direct room link as a guest, not a new host room.
     const incomingRoom=new URLSearchParams(window.location.search).get('room');
     if(incomingRoom&&/^[A-Z0-9]{5}$/i.test(incomingRoom)){
@@ -2358,7 +2541,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       const s1 = state.banks[1], s2 = state.banks[2];
       const total = getTotalSeeds();
       const shareUrl = getShareableGameUrl('');
-      const summary = s1 === s2
+      const summary = tournament.forcedDraw || s1 === s2
         ? `🤝 Draw match (${s1}–${s2})`
         : `${s1 > s2 ? names[1] : names[2]} won with ${Math.max(s1, s2)}/${total} seeds!`;
       const text = `🏆 பல்லாங்குழி • Pallanguzhi Heritage\n${summary}\n${names[1]}: ${s1} | ${names[2]}: ${s2}${shareUrl ? '\n👉 Play here: ' + shareUrl : ''}`;
@@ -2402,7 +2585,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       startGame(true);
     });
     $('start-btn').addEventListener('click',()=>startGame(true));
-    $('again-btn').addEventListener('click',()=>startGame(true));
+    $('again-btn').addEventListener('click',requestRematch);
     $('match-btn').addEventListener('click',showSetup);
     $('change-btn').addEventListener('click',showSetup);
     $('rules-btn').addEventListener('click',()=>$('rules-modal').classList.remove('hidden'));
@@ -2458,6 +2641,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
       getRound:()=>({round:state.round,locked:state.kasiePits.slice(),pending:state.roundPending,options:{...options}}),
       setTestPosition:(p)=>{if(!p||!Array.isArray(p.pits)||p.pits.length!==N||!Array.isArray(p.banks))throw Error('Invalid test input'); invalidateMatch();state.pits=p.pits.slice();state.banks=p.banks.slice();state.kasiePits=normalizeKasie(p.kasiePits);state.turn=p.turn||1;state.round=p.round||1;state.started=true;state.over=false;render();},
       getMatch:()=>({matchId:state.matchId,started:state.started,over:state.over,resultRecorded:state.resultRecorded,round:state.round,awaitingToss:state.awaitingToss}),
+      getRecovery:()=>({attempt:recovery.attempt,age:Date.now()-recovery.lastHeard,hidden:document.hidden,connOpen:Boolean(onlineState.conn?.open),awaitingSync:onlineState.awaitingSync,paused:state.paused,remotePaused:onlineState.remotePaused}),
       getOnline:()=>({isHost:onlineState.isHost,player:onlineState.myPlayerIndex,connected:onlineState.connected,roomCode:onlineState.roomCode,queued:onlineState.pendingRemoteMoves.length}),
       inspect:()=>({pits:state.pits.slice(),banks:state.banks.slice(),turn:state.turn,started:state.started,over:state.over,round:state.round,roundPending:state.roundPending,busy:state.busy,awaitingToss:state.awaitingToss,kasiePits:state.kasiePits.slice(),moves:state.metrics.moves,matchId:state.matchId}),
       injectOnlinePacket:handleOnlineMessage,drainOnline:processRemoteQueue};
