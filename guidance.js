@@ -18,3 +18,10 @@ export function captureGuidance(name,count,pasu=false) {
     ? `Pasu! ${name} gains 4 seeds because this cup reached four.`
     : `${name} captured ${count} seeds from the cup beyond the empty or locked cup!`;
 }
+
+// Board dimensions are based on its allocated stage, never the full viewport.
+export function boardSize(stageWidth,stageHeight,portrait) {
+  const w=Math.max(0,Math.floor(stageWidth)-12);
+  const h=Math.max(0,Math.floor(stageHeight)-12);
+  return portrait ? {width:h,height:w} : {width:w,height:h};
+}

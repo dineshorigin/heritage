@@ -646,3 +646,36 @@ button{min-height:34px}
 .home-play #start-btn{font-size:13px;min-height:44px;background:#332217;color:#ffe1a4;border:1px solid #987242;box-shadow:none}
 .pit.playable{outline:2px solid #9fe4b7;outline-offset:2px}
 @media(max-height:500px) and (orientation:landscape){.play-guide{padding:3px 9px}.play-guide p{font-size:10px}.play-arena{min-height:130px}}
+
+/* Layout correction: reserve real space for header, guidance and controls. */
+#game-frame{display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;justify-content:normal;justify-items:center;gap:5px}
+.arena-stage{height:100%;min-width:0;min-height:0;overflow:hidden;isolation:isolate}
+.play-arena{position:absolute;left:50%;top:50%;width:var(--fit-width,100%);height:var(--fit-height,100%);min-width:0;min-height:0;max-width:none;max-height:none;transform:translate(-50%,-50%);filter:drop-shadow(0 3px 3px #070201)}
+.play-guide{min-width:0;max-height:76px;overflow:auto;padding:6px 10px}
+.play-guide p{overflow-wrap:anywhere;font-size:12px;line-height:1.35}
+.bottom-strip{min-width:0;min-height:0}
+@media(max-width:700px){
+ .top-strip{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;min-height:0;align-items:center}
+ .brand{overflow:hidden;text-overflow:ellipsis;font-size:15px;line-height:1.2}
+ .brand small{font-size:8px;letter-spacing:.6px}
+ .stats-trigger{margin:0;padding:5px 9px;min-height:30px;font-size:11px}
+ .players-scoreboard{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%}
+ .player-pod{max-width:none;flex-direction:row;justify-content:space-between;padding:3px 8px;min-height:28px;gap:5px}
+ .player-name{max-width:none;font-size:11px}.score-badge{font-size:11px;min-width:24px}
+ .bottom-strip{gap:3px;display:flex;flex-direction:column}
+ .bottom-strip .status-message{font-size:10px;line-height:13px;min-height:13px;max-height:26px;white-space:normal;overflow:hidden}
+ .actions{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+ .actions .action-btn{min-height:32px;padding:5px 2px;font-size:10px;border-radius:8px;overflow:hidden;text-overflow:ellipsis}
+ .play-guide{max-height:65px}.play-guide p{font-size:11px}
+}
+@media(orientation:portrait) and (max-width:700px){
+ .play-arena{width:var(--fit-width,0px);height:var(--fit-height,0px);transform:translate(-50%,-50%) rotate(90deg);gap:6px}
+ .outer-mother-cup{flex-basis:38px;padding:5px 3px;gap:3px;border-radius:20px}
+ .mother-tag{font-size:8px}.store-count{font-size:10px;padding:0 5px}
+ .pit{max-width:74px}.pit.playable{outline-offset:0}
+}
+@media(orientation:landscape) and (max-height:500px){
+ .top-strip{display:flex;min-height:28px;gap:6px}.players-scoreboard{display:flex;width:auto}.player-pod{min-height:24px;max-width:135px}
+ .brand small{display:none}.actions{grid-template-columns:repeat(8,minmax(0,1fr))}.actions .action-btn{min-height:28px;padding:3px 2px}
+ .play-guide{max-height:42px;padding:3px 8px}.play-guide p{font-size:10px}.bottom-strip .status-message{display:none}
+}

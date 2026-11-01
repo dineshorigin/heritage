@@ -1,4 +1,4 @@
-import { turnGuidance, captureGuidance } from './guidance.js';
+import { turnGuidance, captureGuidance, boardSize } from './guidance.js';
 import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
 
 (() => {
@@ -1212,7 +1212,18 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     toastTimer=setTimeout(()=>el.classList.remove('visible'),ms);
   }
 
-  function invalidateLayout(){ layoutDirty=true; }
+  function fitBoard(){
+    const stage=document.querySelector('.arena-stage');
+    if(!stage)return;
+    const size=boardSize(stage.clientWidth,stage.clientHeight,portraitBoard());
+    const arena=$('arena');
+    for(const key of ['width','height']){
+      const value=size[key]+'px';
+      if(arena.style.getPropertyValue('--fit-'+key)!==value)arena.style.setProperty('--fit-'+key,value);
+    }
+    layoutDirty=true;
+  }
+  function invalidateLayout(){ fitBoard();layoutDirty=true; }
   function measureBoard(){
     if(!layoutDirty)return;
     layoutCenters.clear();
@@ -2433,8 +2444,12 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js';
     window.addEventListener('orientationchange', invalidateLayout, {passive:true});
     if(typeof ResizeObserver==='function'){
       const boardObserver=new ResizeObserver(invalidateLayout);
-      boardObserver.observe($('arena'));
+      boardObserver.observe(document.querySelector('.arena-stage'));
+      boardObserver.observe(document.querySelector('.play-guide'));
+      boardObserver.observe(document.querySelector('.top-strip'));
+      boardObserver.observe(document.querySelector('.bottom-strip'));
     }
+    fitBoard();
     window.PallanguzhiTest={simulateMove,settleIfFinished,validMoves,owner,skipCurrentMove,undoMove,showHint,recommendMove,getSnapshot:()=>({pits:state.pits.slice(),banks:state.banks.slice(),turn:state.turn,over:state.over,busy:state.busy,epoch:state.epoch,handVisible:$('player-hand').classList.contains('visible'),activeMove:Boolean(state.activeMove),pace:options.pace,difficulty:options.difficulty,history:state.history.length,hintPit:state.hintPit,handFacing:$('player-hand').dataset.facing}),startGame,chooseAI,
       tutorialOpen,tutorialRebuild,tutorialNext,tutorialPlay,tutorialSetLanguage,
       getTutorial:()=>({open:tutorial.open,step:tutorial.step,running:tutorial.running,complete:tutorial.complete,pits:tutorial.pits.slice(),banks:tutorial.banks.slice(),lang:tutorial.lang}),
