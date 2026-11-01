@@ -627,6 +627,26 @@ button{min-height:34px}
 .player-hand{contain:layout style}
 @media(max-width:700px){.actions .action-btn{min-height:36px}.pit{box-shadow:inset 0 7px 14px #000c,0 2px 3px #0009}}
 @media(prefers-reduced-motion:reduce){.brass-coin{transition:none!important}.coin-face{box-shadow:none}}
+
+/* Mobile home: progressive disclosure keeps the primary play action close. */
+#setup-modal .home-card{width:min(100%,520px);padding:24px;scrollbar-width:thin}
+.home-eyebrow{text-align:center;font-size:10px;letter-spacing:3px;color:var(--brass);margin:0 0 12px;font-weight:800}
+#setup-modal .home-tagline{letter-spacing:.3px;margin:8px 0;color:#dec9af}
+.home-intro{text-align:center;color:var(--muted);font-size:13px;margin:0 0 22px}
+.mode-cards{display:grid;gap:9px}
+.mode-cards .option{display:grid;grid-template-columns:38px 1fr;column-gap:10px;text-align:left;padding:14px 16px;min-height:72px}
+.mode-icon{grid-row:span 2;align-self:center;font-size:28px;color:var(--brass);text-align:center}
+.mode-cards strong{font-size:15px;align-self:end}.mode-cards small{font-weight:500;font-size:12px;opacity:.8;margin-top:3px;line-height:1.4}
+.home-settings{border:1px solid #705036;border-radius:13px;margin-top:14px;padding:0 13px;background:#ffffff03}
+.home-settings summary{cursor:pointer;list-style:none;padding:15px 0;font-size:14px;font-weight:750;min-height:48px}
+.home-settings summary::after{content:'+';float:right;color:var(--brass);font-size:20px}.home-settings[open] summary::after{content:'−'}
+.home-settings summary span{display:block;color:var(--muted);font-size:11px;font-weight:500;margin-top:4px}
+.home-settings[open]{padding-bottom:14px}.home-settings .field-label:first-of-type{margin-top:3px}
+.home-play{position:sticky;bottom:-24px;padding:10px 0 14px;background:var(--panel);margin-top:8px;z-index:2}
+.home-play .primary-btn{margin-top:0;min-height:50px}.home-card .resume-panel{margin:14px 0}
+#setup-modal .tutorial-launch{min-height:46px;margin-top:16px}
+@media(max-width:420px){#setup-modal .home-card{padding:18px}.home-play{bottom:-18px}.home-eyebrow{letter-spacing:2px}}
+@media(prefers-reduced-motion:reduce){.mode-cards .option{transition:none}}
 </style>
 </head>
 <body>
@@ -757,13 +777,23 @@ button{min-height:34px}
 </div>
 
 <div class="overlay" id="setup-modal" role="dialog" aria-modal="true" aria-label="Set up game">
-  <div class="modal-card">
-    <h1>பல்லாங்குழி</h1><p class="sub">TAMIL HERITAGE · STABILITY & KASIE EDITION</p>
+  <div class="modal-card home-card">
+    <div class="home-eyebrow">PALLANGUZHI · HERITAGE</div>
+    <h1>பல்லாங்குழி</h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
+    <p class="home-intro">Play a timeless Tamil board game.</p>
+    <section class="resume-panel" id="resume-panel" hidden aria-label="Continue saved match">
+      <div class="resume-heading">💾 Continue your match?</div>
+      <div class="resume-summary" id="resume-summary"></div>
+      <div class="resume-controls">
+        <button type="button" class="resume-go" id="resume-btn">▶ Continue</button>
+        <button type="button" class="resume-discard" id="discard-save-btn">✕ Discard save</button>
+      </div>
+    </section>
     <span class="field-label">Game mode</span>
-    <div class="button-grid" style="grid-template-columns: repeat(3, 1fr);">
-      <button type="button" class="option active" data-mode="ai">👤 vs AI</button>
-      <button type="button" class="option" data-mode="two">👥 Pass & Play</button>
-      <button type="button" class="option" data-mode="online">🌐 Online P2P</button>
+    <div class="mode-cards" role="group" aria-label="Game mode">
+      <button type="button" class="option active" data-mode="ai"><span class="mode-icon" aria-hidden="true">✦</span><strong>Play computer</strong><small>Practice at your own pace</small></button>
+      <button type="button" class="option" data-mode="two"><span class="mode-icon" aria-hidden="true">♟</span><strong>Play together</strong><small>Two players · one phone</small></button>
+      <button type="button" class="option" data-mode="online"><span class="mode-icon" aria-hidden="true">◎</span><strong>Play a friend</strong><small>Connect with a room code</small></button>
     </div>
 
     <!-- Online P2P Card -->
@@ -793,6 +823,8 @@ button{min-height:34px}
       </div>
     </div>
     
+    <details class="home-settings">
+      <summary>Match rules <span>Toss, seeds &amp; tournament</span></summary>
     <span class="field-label">First move · முதல் வாய்ப்பு</span>
     <div class="button-grid" style="grid-template-columns: repeat(4, 1fr);">
       <button type="button" class="option active" data-toss="coin">🪙 Toss</button>
@@ -819,6 +851,7 @@ button{min-height:34px}
       <button type="button" class="option" data-pasu="off">✕ Disabled (தூய விதைத்தல்)</button>
     </div>
 
+    </details>
     <div class="difficulty-chooser" id="difficulty-picker">
       <span class="field-label">Computer difficulty · திறன் நிலை</span>
       <div class="button-grid">
@@ -829,6 +862,8 @@ button{min-height:34px}
       </div>
       <p class="difficulty-note" id="difficulty-description">Medium considers each move's immediate outcome.</p>
     </div>
+    <details class="home-settings">
+      <summary>Make it yours <span>Board, names &amp; sound</span></summary>
     <span class="field-label">Board design · பலகை வடிவமைப்பு</span>
     <div class="button-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
       <button type="button" class="option active" data-theme="bright">☀️ Warm Teak</button>
@@ -847,20 +882,12 @@ button{min-height:34px}
     <div class="input-group"><label for="p2-input">Player 2 · top</label><input id="p2-input" maxlength="18" value="Azhagi (AI)" autocomplete="off"></div>
     <span class="field-label">Sound volume · ஒலி அளவு</span>
     <label class="slider-line" for="volume-input">🔊 <input type="range" id="volume-input" min="0" max="100" value="65" step="5"><output id="volume-display">65%</output></label>
-    <div style="text-align:center"><span class="live-badge">✋ Opposing hands &nbsp; • &nbsp; 🫘 Natural pace &nbsp; • &nbsp; 🌐 P2P Online</span></div>
-    
+    </details>
+
     <button type="button" class="secondary-btn tutorial-launch" id="tutorial-setup-btn">🎓 Learn to play · கற்றுக்கொள்வோம்</button>
 
-    <section class="resume-panel" id="resume-panel" hidden aria-label="Continue saved match">
-      <div class="resume-heading">💾 Continue your match?</div>
-      <div class="resume-summary" id="resume-summary"></div>
-      <div class="resume-controls">
-        <button type="button" class="resume-go" id="resume-btn">▶ Continue</button>
-        <button type="button" class="resume-discard" id="discard-save-btn">✕ Discard save</button>
-      </div>
-    </section>
-    <button type="button" class="primary-btn" id="start-btn">START NEW MATCH · ஆடுவோம்</button>
-    <p id="start-online-help" style="font-size:11px;color:#f2cf9c;text-align:center;line-height:1.4" hidden>Share the room code, then wait for your opponent to connect.</p>
+    <div class="home-play"><button type="button" class="primary-btn" id="start-btn">START NEW MATCH · ஆடுவோம்</button>
+    <p id="start-online-help" style="font-size:11px;color:#f2cf9c;text-align:center;line-height:1.4" hidden>Share the room code, then wait for your opponent to connect.</p></div>
   </div>
 </div>
 
@@ -945,6 +972,77 @@ button{min-height:34px}
 </div>
 
 <script>
+// Pure rules: no DOM, networking, storage, or animation dependencies.
+const N=14, MAX_DROPS=1600;
+const owner=pit=>pit<7?1:2;
+function simulateRules(originalPits, originalBanks, player, selected, config={}) {
+    const locked=config.locked || Array(N).fill(false);
+    const enablePasu=(config.pasu || 'on')==='on';
+    if (!Number.isInteger(player) || ![1, 2].includes(player) ||
+        !Number.isInteger(selected) || selected < 0 || selected >= N ||
+        owner(selected) !== player || originalPits[selected] <= 0)
+      throw new Error('Illegal move: select a nonempty cup on your side.');
+    if (locked && locked[selected])
+      throw new Error('This cup is locked as Kasie (காசி அடைப்பு). Choose another cup.');
+
+    const pits = originalPits.slice();
+    const banks = originalBanks.slice();
+    const events = [];
+    let inHand = pits[selected], cursor = selected, drops = 0;
+    pits[selected] = 0;
+    events.push({kind:'pickup',pit:selected,count:inHand});
+    const visited = new Set();
+
+    while (true) {
+      const signature = cursor + '|' + inHand + '|' + pits.join(',') + '|' + banks[1] + '|' + banks[2];
+      if (visited.has(signature))
+        throw new Error('Repeating sowing loop detected. Select another cup.');
+      visited.add(signature);
+
+      while (inHand > 0) {
+        if (++drops > MAX_DROPS)
+          throw new Error('Move exceeded the sowing safety limit. Select another cup.');
+        cursor = (cursor + 1) % N;
+        pits[cursor]++;
+        inHand--;
+        events.push({kind:'drop',pit:cursor,left:inHand});
+
+        if (enablePasu && pits[cursor] === 4 && (!locked || !locked[cursor])) {
+          const credited = owner(cursor);
+          pits[cursor] = 0;
+          banks[credited] += 4;
+          events.push({kind:'pasu',pit:cursor,player:credited,count:4});
+        }
+      }
+
+      const next = (cursor + 1) % N;
+      if (pits[next] > 0 && (!locked || !locked[next])) {
+        inHand = pits[next];
+        pits[next] = 0;
+        cursor = next;
+        events.push({kind:'pickup',pit:next,count:inHand});
+      } else {
+        const target = (next + 1) % N;
+        if (pits[target] > 0 && (!locked || !locked[target])) {
+          const taken = pits[target];
+          pits[target] = 0;
+          banks[player] += taken;
+          events.push({kind:'capture',pit:target,player,count:taken,emptyPit:next});
+        } else {
+          events.push({kind:'no-capture',emptyPit:next});
+        }
+        break;
+      }
+    }
+    const expectedTotal = originalPits.reduce((a,b)=>a+b,0) + originalBanks[1] + originalBanks[2];
+    const count = pits.reduce((a,b)=>a+b,0) + banks[1] + banks[2];
+    if (count !== expectedTotal) throw new Error('Seed conservation error: ' + count);
+    return {pits,banks,events,safetyStop:false};
+  }
+
+
+
+
 (() => {
   'use strict';
   const N = 14, START_SEEDS = 5, TOTAL_SEEDS = 70, MAX_DROPS = 1600;
@@ -1221,7 +1319,7 @@ button{min-height:34px}
   }
   function syncSetupModalUI(){
     const currentMode=options.online?'online':(options.ai?'ai':'two');
-    document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===currentMode));
+    document.querySelectorAll('[data-mode]').forEach(b=>{const active=b.dataset.mode===currentMode;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
     document.querySelectorAll('[data-toss]').forEach(b=>b.classList.toggle('active',b.dataset.toss===options.firstMove));
     document.querySelectorAll('[data-format]').forEach(b=>b.classList.toggle('active',b.dataset.format===options.format));
     document.querySelectorAll('[data-seedscount]').forEach(b=>b.classList.toggle('active',Number(b.dataset.seedscount)===options.seedsPerPit));
@@ -1988,69 +2086,8 @@ button{min-height:34px}
     }, 2250);
   }
 
-  function simulateMove(originalPits, originalBanks, player, selected, config=null) {
-    const locked=config?.locked||state.kasiePits;
-    const enablePasu=(config?.pasu||options.pasu)==='on';
-    if (!Number.isInteger(player) || ![1, 2].includes(player) ||
-        !Number.isInteger(selected) || selected < 0 || selected >= N ||
-        owner(selected) !== player || originalPits[selected] <= 0)
-      throw new Error('Illegal move: select a nonempty cup on your side.');
-    if (locked && locked[selected])
-      throw new Error('This cup is locked as Kasie (காசி அடைப்பு). Choose another cup.');
-
-    const pits = originalPits.slice();
-    const banks = originalBanks.slice();
-    const events = [];
-    let inHand = pits[selected], cursor = selected, drops = 0;
-    pits[selected] = 0;
-    events.push({kind:'pickup',pit:selected,count:inHand});
-    const visited = new Set();
-
-    while (true) {
-      const signature = cursor + '|' + inHand + '|' + pits.join(',') + '|' + banks[1] + '|' + banks[2];
-      if (visited.has(signature))
-        throw new Error('Repeating sowing loop detected. Select another cup.');
-      visited.add(signature);
-
-      while (inHand > 0) {
-        if (++drops > MAX_DROPS)
-          throw new Error('Move exceeded the sowing safety limit. Select another cup.');
-        cursor = (cursor + 1) % N;
-        pits[cursor]++;
-        inHand--;
-        events.push({kind:'drop',pit:cursor,left:inHand});
-
-        if (enablePasu && pits[cursor] === 4 && (!locked || !locked[cursor])) {
-          const credited = owner(cursor);
-          pits[cursor] = 0;
-          banks[credited] += 4;
-          events.push({kind:'pasu',pit:cursor,player:credited,count:4});
-        }
-      }
-
-      const next = (cursor + 1) % N;
-      if (pits[next] > 0 && (!locked || !locked[next])) {
-        inHand = pits[next];
-        pits[next] = 0;
-        cursor = next;
-        events.push({kind:'pickup',pit:next,count:inHand});
-      } else {
-        const target = (next + 1) % N;
-        if (pits[target] > 0 && (!locked || !locked[target])) {
-          const taken = pits[target];
-          pits[target] = 0;
-          banks[player] += taken;
-          events.push({kind:'capture',pit:target,player,count:taken,emptyPit:next});
-        } else {
-          events.push({kind:'no-capture',emptyPit:next});
-        }
-        break;
-      }
-    }
-    const expectedTotal = originalPits.reduce((a,b)=>a+b,0) + originalBanks[1] + originalBanks[2];
-    const count = pits.reduce((a,b)=>a+b,0) + banks[1] + banks[2];
-    if (count !== expectedTotal) throw new Error('Seed conservation error: ' + count);
-    return {pits,banks,events,safetyStop:false};
+  function simulateMove(pits,banks,player,selected,config=null) {
+    return simulateRules(pits,banks,player,selected,{locked:state.kasiePits,pasu:options.pasu,...(config || {})});
   }
 
   /* Single, authoritative validMoves definition with Kasie pit filtering */
@@ -3441,6 +3478,7 @@ button{min-height:34px}
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
+
 </script>
 </body>
 </html>
