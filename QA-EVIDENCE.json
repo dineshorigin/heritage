@@ -1,518 +1,198 @@
 {
-  "version": "3.9.1",
-  "date": "2026-11-01",
-  "regression_tests": 26,
-  "engine_simulations": {
+  "version": "3.11.0",
+  "unitTests": 28,
+  "engineSimulations": {
     "matches": 800,
     "moves": 50131,
-    "rounds": 2652,
-    "failures": 0
+    "errors": 0
   },
-  "browser_match_matrix": [
-    {
-      "mode": "two",
-      "seeds": "4",
-      "pasu": "on",
-      "format": "single",
-      "difficulty": "medium",
-      "moves": 13,
-      "rounds": 1
+  "browser": {
+    "layouts": {
+      "status": "PASS",
+      "checks": "6 layouts; all 84 cup centers unobstructed; artwork loaded; legal sowing matches engine; seed conservation; hint; undo; pause/resume; languages; 5 themes",
+      "results": [
+        {
+          "viewport": [
+            320,
+            568
+          ],
+          "board": {
+            "width": 145.875,
+            "height": 389
+          },
+          "cups": 14,
+          "result": "PASS"
+        },
+        {
+          "viewport": [
+            360,
+            640
+          ],
+          "board": {
+            "width": 177.75,
+            "height": 474
+          },
+          "cups": 14,
+          "result": "PASS"
+        },
+        {
+          "viewport": [
+            393,
+            851
+          ],
+          "board": {
+            "width": 256.875,
+            "height": 685
+          },
+          "cups": 14,
+          "result": "PASS"
+        },
+        {
+          "viewport": [
+            412,
+            915
+          ],
+          "board": {
+            "width": 280.875,
+            "height": 749
+          },
+          "cups": 14,
+          "result": "PASS"
+        },
+        {
+          "viewport": [
+            740,
+            360
+          ],
+          "board": {
+            "width": 634.65625,
+            "height": 238
+          },
+          "cups": 14,
+          "result": "PASS"
+        },
+        {
+          "viewport": [
+            1024,
+            768
+          ],
+          "board": {
+            "width": 1006,
+            "height": 377.25
+          },
+          "cups": 14,
+          "result": "PASS"
+        }
+      ]
     },
-    {
-      "mode": "two",
-      "seeds": "4",
-      "pasu": "on",
-      "format": "kasie",
-      "difficulty": "medium",
-      "moves": 121,
-      "rounds": 8
+    "matches": {
+      "status": "PASS",
+      "matches": [
+        {
+          "seeds": "4",
+          "pasu": "on",
+          "format": "single",
+          "moves": 3,
+          "result": "PASS"
+        },
+        {
+          "seeds": "4",
+          "pasu": "on",
+          "format": "kasie",
+          "moves": 44,
+          "result": "PASS"
+        },
+        {
+          "seeds": "4",
+          "pasu": "off",
+          "format": "single",
+          "moves": 40,
+          "result": "PASS"
+        },
+        {
+          "seeds": "4",
+          "pasu": "off",
+          "format": "kasie",
+          "moves": 163,
+          "result": "PASS"
+        },
+        {
+          "seeds": "5",
+          "pasu": "on",
+          "format": "single",
+          "moves": 17,
+          "result": "PASS"
+        },
+        {
+          "seeds": "5",
+          "pasu": "on",
+          "format": "kasie",
+          "moves": 145,
+          "result": "PASS"
+        },
+        {
+          "seeds": "5",
+          "pasu": "off",
+          "format": "single",
+          "moves": 52,
+          "result": "PASS"
+        },
+        {
+          "seeds": "5",
+          "pasu": "off",
+          "format": "kasie",
+          "moves": 146,
+          "result": "PASS"
+        }
+      ]
     },
-    {
-      "mode": "two",
-      "seeds": "4",
-      "pasu": "off",
-      "format": "single",
-      "difficulty": "medium",
-      "moves": 52,
-      "rounds": 1
-    },
-    {
-      "mode": "two",
-      "seeds": "4",
-      "pasu": "off",
-      "format": "kasie",
-      "difficulty": "medium",
-      "moves": 76,
-      "rounds": 4
-    },
-    {
-      "mode": "two",
-      "seeds": "5",
-      "pasu": "on",
-      "format": "single",
-      "difficulty": "medium",
-      "moves": 21,
-      "rounds": 1
-    },
-    {
-      "mode": "two",
-      "seeds": "5",
-      "pasu": "on",
-      "format": "kasie",
-      "difficulty": "medium",
-      "moves": 94,
-      "rounds": 5
-    },
-    {
-      "mode": "two",
-      "seeds": "5",
-      "pasu": "off",
-      "format": "single",
-      "difficulty": "medium",
-      "moves": 33,
-      "rounds": 1
-    },
-    {
-      "mode": "two",
-      "seeds": "5",
-      "pasu": "off",
-      "format": "kasie",
-      "difficulty": "medium",
-      "moves": 121,
-      "rounds": 5
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "on",
-      "format": "single",
-      "difficulty": "easy",
-      "moves": 21,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "on",
-      "format": "single",
-      "difficulty": "medium",
-      "moves": 17,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "on",
-      "format": "single",
-      "difficulty": "hard",
-      "moves": 21,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "on",
-      "format": "single",
-      "difficulty": "expert",
-      "moves": 6,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "on",
-      "format": "kasie",
-      "difficulty": "easy",
-      "moves": 84,
-      "rounds": 5
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "on",
-      "format": "kasie",
-      "difficulty": "medium",
-      "moves": 35,
-      "rounds": 3
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "on",
-      "format": "kasie",
-      "difficulty": "hard",
-      "moves": 44,
-      "rounds": 2
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "on",
-      "format": "kasie",
-      "difficulty": "expert",
-      "moves": 34,
-      "rounds": 4
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "off",
-      "format": "single",
-      "difficulty": "easy",
-      "moves": 45,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "off",
-      "format": "single",
-      "difficulty": "medium",
-      "moves": 44,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "off",
-      "format": "single",
-      "difficulty": "hard",
-      "moves": 25,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "off",
-      "format": "single",
-      "difficulty": "expert",
-      "moves": 37,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "off",
-      "format": "kasie",
-      "difficulty": "easy",
-      "moves": 116,
-      "rounds": 6
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "off",
-      "format": "kasie",
-      "difficulty": "medium",
-      "moves": 50,
-      "rounds": 3
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "off",
-      "format": "kasie",
-      "difficulty": "hard",
-      "moves": 39,
-      "rounds": 3
-    },
-    {
-      "mode": "ai",
-      "seeds": "4",
-      "pasu": "off",
-      "format": "kasie",
-      "difficulty": "expert",
-      "moves": 48,
-      "rounds": 4
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "on",
-      "format": "single",
-      "difficulty": "easy",
-      "moves": 33,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "on",
-      "format": "single",
-      "difficulty": "medium",
-      "moves": 4,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "on",
-      "format": "single",
-      "difficulty": "hard",
-      "moves": 11,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "on",
-      "format": "single",
-      "difficulty": "expert",
-      "moves": 26,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "on",
-      "format": "kasie",
-      "difficulty": "easy",
-      "moves": 24,
-      "rounds": 4
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "on",
-      "format": "kasie",
-      "difficulty": "medium",
-      "moves": 129,
-      "rounds": 9
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "on",
-      "format": "kasie",
-      "difficulty": "hard",
-      "moves": 41,
-      "rounds": 4
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "on",
-      "format": "kasie",
-      "difficulty": "expert",
-      "moves": 79,
-      "rounds": 7
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "off",
-      "format": "single",
-      "difficulty": "easy",
-      "moves": 72,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "off",
-      "format": "single",
-      "difficulty": "medium",
-      "moves": 26,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "off",
-      "format": "single",
-      "difficulty": "hard",
-      "moves": 31,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "off",
-      "format": "single",
-      "difficulty": "expert",
-      "moves": 39,
-      "rounds": 1
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "off",
-      "format": "kasie",
-      "difficulty": "easy",
-      "moves": 125,
-      "rounds": 7
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "off",
-      "format": "kasie",
-      "difficulty": "medium",
-      "moves": 47,
-      "rounds": 4
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "off",
-      "format": "kasie",
-      "difficulty": "hard",
-      "moves": 41,
-      "rounds": 5
-    },
-    {
-      "mode": "ai",
-      "seeds": "5",
-      "pasu": "off",
-      "format": "kasie",
-      "difficulty": "expert",
-      "moves": 42,
-      "rounds": 3
+    "animation": {
+      "status": "PASS",
+      "checks": "Actual unskipped pickup, sowing, four-shell capture, turn change and flight sprite cleanup",
+      "durationMs": 15484,
+      "banks": [
+        0,
+        36,
+        32
+      ]
     }
-  ],
-  "local_fallback_multiplayer": {
-    "cases": [
-      {
-        "seeds": "4",
-        "pasu": "on",
-        "format": "single",
-        "moves": 27,
-        "rounds": 1
-      },
-      {
-        "seeds": "4",
-        "pasu": "on",
-        "format": "kasie",
-        "moves": 54,
-        "rounds": 6
-      },
-      {
-        "seeds": "4",
-        "pasu": "off",
-        "format": "single",
-        "moves": 25,
-        "rounds": 1
-      },
-      {
-        "seeds": "4",
-        "pasu": "off",
-        "format": "kasie",
-        "moves": 58,
-        "rounds": 4
-      },
-      {
-        "seeds": "5",
-        "pasu": "on",
-        "format": "single",
-        "moves": 36,
-        "rounds": 1
-      },
-      {
-        "seeds": "5",
-        "pasu": "on",
-        "format": "kasie",
-        "moves": 55,
-        "rounds": 5
-      },
-      {
-        "seeds": "5",
-        "pasu": "off",
-        "format": "single",
-        "moves": 56,
-        "rounds": 1
-      },
-      {
-        "seeds": "5",
-        "pasu": "off",
-        "format": "kasie",
-        "moves": 111,
-        "rounds": 4
-      }
-    ],
-    "errors": []
   },
-  "controls": [
-    {
-      "name": "all themes, seed styles and volume persist",
-      "pass": true
+  "files": {
+    "index.html": {
+      "bytes": 28305,
+      "sha256": "9a475f1579671d043596f1982e0bd08d63e793f3db0d465d71f45f07d8d1a577"
     },
-    {
-      "name": "rapid language switches restore English and preserve player names",
-      "pass": true
+    "game.css": {
+      "bytes": 48542,
+      "sha256": "303ea63c59bf1efc304b93f7aa1afb954deb2cad45e244a216bc812bbf3febc5"
     },
-    {
-      "name": "hint is legal and does not change board; dismiss works",
-      "pass": true
+    "app.js": {
+      "bytes": 140066,
+      "sha256": "a9d960e91e40fd15eecc2fd7df89364f6bb05289df63185de920216dd437e977"
     },
-    {
-      "name": "AI thinking disables user play; undo cancels thinking",
-      "pass": true
+    "rules.js": {
+      "bytes": 3153,
+      "sha256": "10c706a2cdd2562b1caacc1c4c268b4fa2fc8afc6915849426b44ba196f15267"
     },
-    {
-      "name": "undo after AI reply restores both turns",
-      "pass": true
+    "guidance.js": {
+      "bytes": 3843,
+      "sha256": "5d3dc3b61f1a6cf4baa9a7d50e1d230211c674739587eadaf61b8f8139129517"
     },
-    {
-      "name": "pause -> Home -> Continue restores board and ID",
-      "pass": true
+    "locale.js": {
+      "bytes": 50099,
+      "sha256": "7aade422ff0a2a085d84587b8b0b73848f2064fe0379b12771c494108dd00bf8"
     },
-    {
-      "name": "results recorded once; undo end restores stats; rematch resets",
-      "pass": true
+    "native-bridge.js": {
+      "bytes": 97491,
+      "sha256": "d7f5ab63cb1533eb3356bd4a88ce0bd6b654c1708e0a3a36c777184176feaceb"
     },
-    {
-      "name": "stats reset requires confirmation and clears results",
-      "pass": true
+    "reference-board.webp": {
+      "bytes": 308346,
+      "sha256": "6fb755ef1fec7fbe4b18b565a75301886f2e6483b8adee39bc84e14b80886682"
     },
-    {
-      "name": "rules and Escape return to current game",
-      "pass": true
-    },
-    {
-      "name": "corrupt saved data and settings do not crash startup",
-      "pass": true
+    "cowrie-shell.webp": {
+      "bytes": 2784,
+      "sha256": "27efd7d3ee441ac0461048a74d7dd01db8ff12f1a386652492266cc4b6497ad5"
     }
-  ],
-  "tutorial_layout": {
-    "lessons": 12,
-    "viewports": 6,
-    "errors": []
-  },
-  "special": [
-    {
-      "name": "pickup and capture create audio; mute and zero volume block sources",
-      "pass": true
-    },
-    {
-      "name": "native background hook pauses; foreground waits for explicit resume",
-      "pass": true
-    },
-    {
-      "name": "native back pauses in-game and exits only from home",
-      "pass": true
-    },
-    {
-      "name": "repeated Kasie allocation draws after three rounds and survives reload",
-      "pass": true
-    }
-  ],
-  "standalone_webrtc": {
-    "status": "blocked",
-    "loopback_open": false,
-    "ice_candidates": 0,
-    "probe_seconds": 25
-  },
-  "android_apk": {
-    "status": "blocked",
-    "reason": "Gradle download unavailable; JDK 21 and Android SDK absent"
-  },
-  "sha256": {
-    "index.html": "4ac348f7879907777f6b81a47a2edffaa4daf419d2cbf454438390e7d07a20c3",
-    "game.css": "4d1c3526ff2204f98415c48be45131e85176160f64ddb24479236b3d139cacb7",
-    "app.js": "54be98df2a61328bd1da10c0dfe4ed4bab64f3bbb3ed3f77eb47e43d8f4d43c2",
-    "rules.js": "10c706a2cdd2562b1caacc1c4c268b4fa2fc8afc6915849426b44ba196f15267",
-    "guidance.js": "e6b86bd2df485ec02eea4c28db8089c24982abfbba4e79c3b7363faa8684a63d",
-    "locale.js": "7aade422ff0a2a085d84587b8b0b73848f2064fe0379b12771c494108dd00bf8",
-    "native-bridge.js": "d7f5ab63cb1533eb3356bd4a88ce0bd6b654c1708e0a3a36c777184176feaceb"
   }
 }

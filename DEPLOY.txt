@@ -1,6 +1,6 @@
-PALLANGUZHI HERITAGE 3.9.1 — ROOT DEPLOYMENT
+REFERENCE BOARD EDITION v3.11.0
 
-Upload these SEVEN files together directly into the root of your GitHub Pages repository:
+Extract this ZIP. Upload these NINE files to your GitHub repository root, keeping their names:
 index.html
 game.css
 app.js
@@ -8,15 +8,9 @@ rules.js
 guidance.js
 locale.js
 native-bridge.js
+reference-board.webp
+cowrie-shell.webp
 
-Do not put them inside a www/js/css folder. Replace files with matching names. Do not upload the ZIP itself. Keep all names unchanged. Versioned links help prevent browsers mixing old and new files.
+Commit the upload, wait for GitHub Pages deployment, then refresh the game. Both .webp images are required. The old heritage-board.webp is no longer used. No js/css folders required for the web version.
 
-The new native-bridge.js also bundles PeerJS for the website. It is required on the website even when you are not building an Android app. No script CDN is needed, but online play still uses external signaling.
-
-GitHub Pages: publish main, / (root). After deployment succeeds, reload on BOTH phones. Choose language with the Tamil/English button. Pause is available in the header. Online matches show connection status and a Reconnect button when needed.
-
-android-project.zip is the separate Android SOURCE project. It is NOT an APK and does not need to be uploaded for the website. Extract it separately and follow its README to build a test APK.
-
-Reconnect keeps the same room; the host must remain available or restore the saved match. Automatic retries are bounded; tap Reconnect to retry again. Saves stay in this browser/app installation. This does not provide a persistent multiplayer server or cloud accounts.
-
-3.9.1 adds an explicit Kasie draw when the same seed allocation repeats three times. See QA-REPORT.md. Standalone cross-phone WebRTC and Android APK/device verification remain pending.
+Android source is in android-project.zip. It is not an APK and does not need to be uploaded to GitHub Pages. Documentation and verification files are optional and are not needed for play.

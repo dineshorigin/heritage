@@ -1,10 +1,16 @@
-HERITAGE BOARD v3.10.0
-Upload ALL eight files into the same GitHub repository root:
-index.html, game.css, app.js, rules.js, guidance.js, locale.js, native-bridge.js, heritage-board.webp
+REFERENCE BOARD EDITION v3.11.0
 
-New: realistic compressed teak/elephant artwork, central collection bowls, cowrie default for fresh preferences, expanded playing board, compact controls. Existing saved material choices are preserved.
-Artwork: 133870 bytes. No new rendering dependencies. At most 20 shells rendered per cup; counts show actual totals.
+The interactive game now uses a close reconstruction of the supplied wooden Pallanguzhi board photograph: ivory elephant heads, green/red details, reddish wood, painted central flower, fourteen dark cups and two shallow collection bowls. Cowrie shells use one reusable transparent photographic sprite. No shells are baked into the board. Counts, turn highlights, locked cups, pickup/sowing/capture remain live game elements.
 
-Validation for this update: 26 unit/regression tests PASS; 800 deterministic engine matches (50131 moves) PASS; desktop and 393x851 portrait visual checks. Full prior UI matrix has not been rerun for this board update. Physical phone frame rate, touch ergonomics, internet multiplayer and Android APK remain unverified. No guaranteed FPS.
+The drawing is an approximation reconstructed from the angled photograph, not a 100% identical copy. The board is scaled to the largest size that fits its allotted stage without distorting its proportions. Landscape gives the largest cups. Static artwork uses cached compressed WebP files; no new graphics framework or game engine. Board and shell artwork together: 311130 bytes (~304 KiB). Maximum 20 visible shells per cup and 30 per store; numeric counts remain exact.
 
-Includes updated Android source as android-project.zip; no APK.
+VALIDATION ON THIS VERSION
+28 unit/regression tests passed.
+800 engine simulations, 50131 moves, zero failures.
+Six browser layouts: 320x568, 360x640, 393x851, 412x915, 740x360, 1024x768. Board/header/guide/footer do not overlap and there is no horizontal overflow. All 84 cup centers were unobstructed.
+At each size: image loads, legal sowing matches engine, seeds conserved, Hint/Undo, Pause/Resume, reversible language switch and all five themes passed.
+Eight complete local browser matches: 4/5 seeds, Pasu on/off, Single/Kasie; 610 moves, conservation and result dialogs passed. These use the Finish Move action to advance animations.
+Separate unskipped natural pickup/sow/four-shell capture passed, including turn change and flight sprite cleanup.
+Android source sync passed. No APK built.
+
+Not a full release certification. Phone FPS, actual touch ergonomics, physical-device audio/haptics, internet WebRTC and Android installation remain unverified. No network transport changes made for this board. No GitHub upload or deployment was performed.

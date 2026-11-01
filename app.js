@@ -1,6 +1,6 @@
-import { installLanguage, getLanguage } from './locale.js?v=3.10.0';
-import { turnGuidance, captureGuidance, boardSize, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.10.0';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.10.0';
+import { installLanguage, getLanguage } from './locale.js?v=3.11.0';
+import { turnGuidance, captureGuidance, boardSize, referenceCup, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.11.0';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.11.0';
 
 (() => {
   'use strict';
@@ -1185,6 +1185,9 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
         const slot = document.createElement('div'); slot.className='pit-slot';
         const pit = document.createElement('button');
         pit.type='button'; pit.className='pit'; pit.id='pit-'+index;
+        const point=referenceCup(index);
+        pit.style.setProperty('--cup-x',point.x+'%');
+        pit.style.setProperty('--cup-y',point.y+'%');
         pit.addEventListener('click', () => playPit(index));
         slot.append(pit); fragment.append(slot);
       }
@@ -1208,7 +1211,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     if(store){
       const radius=Math.sqrt((serial+.4)/28);
       el.style.left=(50+Math.cos(golden)*34*radius)+'%';
-      el.style.bottom=(8+Math.floor(serial/3)*6)+'%';
+      el.style.top=(50+Math.sin(golden)*30*radius)+'%';
     }else{
       const radius=Math.sqrt((serial+.7)/25)*34;
       el.style.left=(50+Math.cos(golden)*radius+jitter*2.3)+'%';
@@ -1356,7 +1359,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       layoutCenters.set('pit-'+i,{x:r.left+r.width/2,y:r.top+r.height/2});
     }
     for(const player of [1,2]){
-      const r=$('mc-'+player).getBoundingClientRect();
+      const r=$('mc-'+player).querySelector('.mother-cavity').getBoundingClientRect();
       layoutCenters.set('mc-'+player,{x:r.left+r.width/2,y:r.top+r.height/2});
     }
     layoutDirty=false;

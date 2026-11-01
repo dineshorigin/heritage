@@ -696,39 +696,40 @@ button{min-height:34px}
 .play-guide{max-height:90px}@media(max-width:700px){.play-guide{max-height:86px}.header-tools .stats-trigger{font-size:10px;padding:5px 6px}}
 .language-inline{display:block;margin-left:auto;font-size:11px;padding:5px 8px}
 
-/* Heritage relief board: static artwork, no runtime texture rendering. */
-#game-frame{gap:3px;padding-left:max(3px,env(safe-area-inset-left));padding-right:max(3px,env(safe-area-inset-right));padding-top:calc(env(safe-area-inset-top) + 3px);padding-bottom:calc(env(safe-area-inset-bottom) + 3px)}
-.arena-stage,.top-strip,.bottom-strip,.play-guide{max-width:1400px}
-.play-arena{display:block;border:3px solid #633816;border-radius:25px;background:#a66b35 url('heritage-board.webp') center/100% 100% no-repeat;box-shadow:inset 0 0 0 2px #dbac64,inset 0 -5px 9px #351709,0 3px 5px #0008;filter:none}
-.casket-wrapper{position:absolute;inset:5% 10%;display:flex;flex-direction:column;justify-content:space-between;gap:0}
-.plank,body.granite .plank{height:36%;padding:0;border:0;border-radius:0;background:none;box-shadow:none!important}
-.plank.active-side{border:0}
-.owner-bar{min-height:12px;height:12px;padding:0 3px;font-size:9px;color:#ffe4b4;text-shadow:0 1px 2px #321405}
-.owner-indicator{font-size:8px}
-.pits-row{gap:1.5%;align-items:center}
-.pit{max-width:none;width:min(100%,calc(var(--fit-height,300px)*.27));border:2px solid #b57c3d;background:radial-gradient(ellipse at 55% 75%,#8c5124 0%,#62300e 40%,#240d03 78%,#120601 100%);box-shadow:inset 0 6px 9px #000b,inset 0 -2px 3px #e1a15c55,0 1px 0 #f1c17c}
-.pit.playable{border-color:#e8b86b;outline:1px solid #f2d6a47a;box-shadow:inset 0 6px 9px #000b,0 1px 0 #f1c17c}
-.outer-mother-cup{position:absolute;top:39%;height:22%;width:35%;padding:0 3px;gap:1px;display:grid;grid-template-columns:1fr auto;grid-template-rows:1fr auto;border:0;border-radius:50%;background:none;box-shadow:none!important;z-index:2}
-#mc-2{left:10%}#mc-1{right:10%}
-.mother-cavity{grid-column:1/-1;grid-row:1;width:100%;height:100%;border-radius:50%;border:2px solid #a36c32;background:radial-gradient(ellipse at 50% 75%,#b87c3c,#75401a 55%,#311202 95%);box-shadow:inset 0 5px 9px #0009,0 1px 1px #ecc386}
-.mother-tag{grid-row:2;font-size:8px;line-height:1;white-space:nowrap;color:#fce0af}.store-count{grid-row:2;font-size:9px;padding:0 5px;line-height:1.1}
-.outer-mother-cup.active-owner .mother-cavity{border-color:#8fcab0}
-.board-seam{left:47%;right:47%;height:20%;top:50%;border:2px solid #d4a45c;border-radius:50%;background:repeating-conic-gradient(#c18b42 0deg 15deg,#714015 15deg 30deg);box-shadow:inset 0 0 0 4px #9a652c}
-.board-seam span{display:none}
-.seed-pit-cluster{inset:8%}
-.pit .tamarind-seed{width:clamp(10px,2.7vmin,23px);height:clamp(7px,1.9vmin,16px)}
-.pit-count{bottom:3px;left:auto;right:5px;transform:none;border-radius:10px;min-width:16px;padding:0 3px;background:#f4d9a2;color:#3c240e;text-shadow:none;font-size:11px;line-height:16px}
-.seed-cowrie{border-radius:48% 48% 45% 45%;background:radial-gradient(ellipse at 35% 22%,#fffef6,#f5e4bf 52%,#b99a69 95%)}
-.seed-cowrie::before{width:67%;height:26%;background:repeating-linear-gradient(90deg,#735337 0 1px,#e4d0ac 1px 3px);border-radius:50%;border-top:1px solid #644728;border-bottom:1px solid #644728}
-.play-guide{padding:3px 7px;border-radius:7px;max-height:58px}.play-guide p{font-size:10px;line-height:1.25}#capture-guide{margin-top:2px}
-.bottom-strip .status-message{display:none}
-.actions .action-btn{font-size:10px;min-height:30px;padding:4px 3px;border-radius:7px}
+/* Reference-photo board. Painted cups and carvings are in one cached image;
+   transparent interactive targets share its normalized coordinate system. */
+#game-frame{gap:3px;padding:calc(env(safe-area-inset-top) + 3px) max(3px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 3px) max(3px,env(safe-area-inset-left))}
+.arena-stage,.top-strip,.bottom-strip,.play-guide{max-width:1600px}
+body .play-arena{display:block;border:0;border-radius:0;background:transparent url('reference-board.webp?v=3.11.0') center/100% 100% no-repeat;box-shadow:none;filter:none}
+.casket-wrapper,.plank,body.granite .plank,.pits-row,.pit-slot{display:contents}
+body .play-arena .pit{position:absolute;left:var(--cup-x);top:var(--cup-y);width:8%;height:20.7%;max-width:none;aspect-ratio:auto;transform:translate(-50%,-50%);border:1px solid transparent;background:transparent;box-shadow:none;outline:0;overflow:visible;container-type:inline-size;transition:border-color .12s}
+body .play-arena .pit.playable{border-color:#f2d29a80;box-shadow:none;outline:none}
+body .play-arena .pit.playable:hover{transform:translate(-50%,-50%);background:#fce4b611;border-color:#f2d29a;box-shadow:none}
+body .play-arena .pit.pulse,body .play-arena .pit.hinted{border-color:#9df5cb!important;box-shadow:0 0 0 2px #6fe5bb!important}
+body .play-arena .pit.capture-pulse{border-color:#ffe5a2!important;box-shadow:0 0 0 2px #ffe5a2!important}
+body .play-arena .pit.kasie{background:#170d08a8;border-color:#514635;box-shadow:none}
+.seed-pit-cluster{inset:8%;overflow:hidden;border-radius:50%}
+.pit .tamarind-seed{width:clamp(10px,28cqw,36px);height:clamp(7px,21cqw,27px)}
+body .seed-cowrie{border:0;border-radius:0;background:transparent url('cowrie-shell.webp?v=3.11.0') center/contain no-repeat;box-shadow:none}
+body .seed-cowrie::before,body .seed-cowrie::after{display:none}
+.pit-count{top:0;right:0;left:auto;bottom:auto;transform:none;min-width:17px;border-radius:10px;padding:0 3px;font-size:11px;line-height:17px;text-align:center;color:#38200c;background:#fff0c8;text-shadow:none;box-shadow:0 1px 2px #0008}
+.owner-bar{position:absolute;left:20%;width:60%;height:12px;min-height:12px;padding:0 4px;font-size:9px;color:#fff0ce;text-shadow:0 1px 3px #000;pointer-events:none}
+#plank-top .owner-bar{top:5.5%}#plank-bottom .owner-bar{bottom:6.5%}.owner-indicator{font-size:8px}
+body .play-arena .outer-mother-cup{position:absolute;top:49%;width:23.8%;height:30%;transform:translate(-50%,-50%);padding:0;gap:0;display:block;border:0;border-radius:50%;background:transparent;box-shadow:none;z-index:2}
+#mc-2{left:31.3%;right:auto}#mc-1{left:65.8%;right:auto}
+body .play-arena .mother-cavity{position:absolute;inset:0;width:100%;height:100%;border:1px solid transparent;border-radius:50%;background:none;box-shadow:none;overflow:hidden}
+body .play-arena .active-owner .mother-cavity{border-color:#8fe3bd99}
+.mother-tag{position:absolute;top:100%;left:0;width:100%;font-size:8px;line-height:12px;white-space:nowrap;text-shadow:0 1px 2px #000;color:#fff2ce}
+.store-count{position:absolute;top:94%;right:3%;font-size:10px;padding:0 5px;line-height:14px;background:#301907;border:1px solid #e5c78f}
+.mother-pile{inset:9%;border-radius:50%;overflow:hidden}
+.mother-pile .tamarind-seed{width:clamp(11px,2.1vmin,25px);height:clamp(8px,1.6vmin,19px)}
+.board-seam{display:none}
+.play-guide{padding:3px 7px;border-radius:7px;max-height:58px}.play-guide p{font-size:11px;line-height:1.25}#capture-guide{margin-top:2px}
+.bottom-strip .status-message{display:none}.actions .action-btn{font-size:10px;min-height:30px;padding:4px 3px;border-radius:7px}
 @media(orientation:portrait) and (max-width:700px){
- .play-arena{gap:0;border-radius:22px}.outer-mother-cup{padding:0 2px}.pit{max-width:none}.mother-tag{font-size:7px}
+ .pit-count{transform:rotate(-90deg)}.mother-tag{font-size:8px}.store-count{transform:rotate(-90deg)}
  .brand{font-size:13px}.brand small{display:none}.top-strip{gap:2px 6px}.player-pod{min-height:24px;padding:2px 7px}.score-badge{padding:0 4px}
- .actions{gap:3px}.actions .action-btn{min-height:28px;font-size:9px;padding:3px 2px}.header-tools .action-btn,.header-tools .stats-trigger{min-height:27px;padding:3px 5px;font-size:9px}
+ .actions{gap:3px}.actions .action-btn{min-height:30px;font-size:10px;padding:3px 2px}.header-tools .action-btn,.header-tools .stats-trigger{min-height:28px;padding:3px 5px;font-size:10px}
 }
-@media(orientation:landscape) and (max-height:500px){.owner-bar{height:10px;min-height:10px;font-size:8px}.actions .action-btn{min-height:26px}.play-guide{max-height:32px}}
-.pit{container-type:inline-size}.pit .tamarind-seed{width:clamp(11px,24cqw,30px);height:clamp(8px,17cqw,21px)}
-.pit-count{top:13%;right:13%;bottom:auto}
-@media(orientation:portrait) and (max-width:700px){.pit-count{transform:rotate(-90deg)}}
+@media(orientation:landscape) and (max-height:500px){.owner-bar{height:10px;min-height:10px;font-size:8px}.actions .action-btn{min-height:26px}.play-guide{max-height:32px}.play-guide p{font-size:10px}}
+@media(prefers-reduced-motion:reduce){body .play-arena .pit{transition:none}}

@@ -4,12 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1b0d06">
-<title>பல்லாங்குழி • Heritage Edition (v3.10.0 • Reconnect & Bilingual Edition)</title>
+<title>பல்லாங்குழி • Heritage Edition (v3.11.0 • Reference Board Edition)</title>
 <!-- PeerJS is bundled locally; online play still uses external signaling. -->
-<link rel="stylesheet" href="game.css?v=3.10.0">
-<script id="peerjs-loader" defer src="native-bridge.js?v=3.10.0"></script>
+<link rel="preload" as="image" href="reference-board.webp?v=3.11.0">
+<link rel="stylesheet" href="game.css?v=3.11.0">
+<script id="peerjs-loader" defer src="native-bridge.js?v=3.11.0"></script>
 </head>
 <body>
+<!-- Board artwork is reconstructed from the supplied photograph; cups are interactive overlays. -->
 
 <main id="game-frame" aria-label="Pallanguzhi game">
   <header class="top-strip">
@@ -342,6 +344,6 @@
   </div>
 </div>
 
-<script type="module" src="app.js?v=3.10.0"></script>
+<script type="module" src="app.js?v=3.11.0"></script>
 </body>
 </html>

@@ -23,7 +23,9 @@ export function captureGuidance(name,count,pasu=false) {
 export function boardSize(stageWidth,stageHeight,portrait) {
   const w=Math.max(0,Math.floor(stageWidth)-12);
   const h=Math.max(0,Math.floor(stageHeight)-12);
-  return portrait ? {width:h,height:w} : {width:w,height:h};
+  const availableW=portrait?h:w,availableH=portrait?w:h;
+  const width=Math.min(availableW,availableH*(8/3));
+  return {width,height:width*(3/8)};
 }
 
 export function rematchView({online,connected,localReady,remoteReady}) {
@@ -51,4 +53,12 @@ export function shouldNotifyTurn(g) {
 export function pickupPattern(count) {
  const taps=Math.min(7,Math.max(2,Math.ceil(count/2)));
  return Array.from({length:taps},(_,i)=>({offset:i*.024,strength:.9-i*.065}));
+}
+
+// Coordinates measured against reference-board.webp (1600 x 600).
+// The offset between rows preserves the photographed carving.
+export function referenceCup(index){
+ if(!Number.isInteger(index)||index<0||index>13)throw new RangeError('Cup index must be 0..13');
+ const top=index>=7,column=top?13-index:index;
+ return {x:(top?22.7:17.95)+column*(top?9.23:9.35),y:top?20.8:77.4};
 }
