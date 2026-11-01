@@ -1,4 +1,4 @@
-export const MATS=Object.freeze(['emerald','burgundy','navy','sand','plum','slate']);
+export const MATS=Object.freeze(['emerald','burgundy','navy','sand','plum','slate','forest','teal','wine','saffron','charcoal','ivory','indigo','rose']);
 export function validMat(value){return MATS.includes(value)?value:'emerald';}
 export function materialProfile(material){
  return material==='cowrie'?{frequency:1540,duration:.095,noise:.58,decay:76,level:.68}:material==='colored'?{frequency:920,duration:.115,noise:.36,decay:52,level:.55}:{frequency:310,duration:.08,noise:.74,decay:100,level:.82};

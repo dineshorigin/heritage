@@ -1,0 +1,11 @@
+v3.15 manual acceptance checklist
+1. Start local two-player game in portrait/landscape and Fit. Confirm wood stores, natural carved eyes, spherical RGB beads, rim feedback and stable compact comments.
+2. Tools > Mat: try all fourteen. Reload to check selection retention.
+3. Learn to play: complete sowing, Pasu, capture and Kasie lessons; try Previous; close/reopen to check progress. Switch English/Tamil.
+4. Tools > Play & learn > Daily puzzle: choose a poor move then best move. Reload to check today's completion. Main match must remain unchanged.
+5. Play local/AI moves. Open Match replays; step/play/pause; close/reopen. Undo a turn and verify replay follows corrected path. No pre-update matches have recordings.
+6. Enable Explain AI moves; compare Easy/Medium/Hard/Expert. Confirm legal moves and responsive controls.
+7. Use TWO actual devices and the same version. Host/join room, alternate moves, disconnect/reconnect, resume. Tap twice rapidly; no duplicate turn should occur. Test online Undo/rematch.
+8. In Room chat, send each direction; check name, badge, message order, mute/unmute, disconnect/send failure and room leave clearing. Messages do not persist after reload.
+9. On Android Chrome open online, wait for caching, install from browser menu if supported, close/reopen in airplane mode. Test local AI, tutorial and puzzle. Online room/chat must not pretend connected offline.
+10. After updating installed game, close old tabs then reopen online; confirm latest version. Check actual touch layout, sound and motion on your phone.

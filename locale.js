@@ -1,5 +1,16 @@
 // English/Tamil UI translation; player names and input values remain unchanged.
 export const tamil = {
+"Previous lesson":"முந்தைய பாடம்",
+"Play & learn":"ஆடு & கற்றுக்கொள்",
+"Forest green":"காட்டு பச்சை",
+"Peacock teal":"மயில் பச்சை",
+"Deep wine":"அடர் செம்பழுப்பு",
+"Saffron":"குங்குமப்பூ",
+"Charcoal":"கரிச்சாம்பல்",
+"Ivory mat":"தந்த நிற விரிப்பு",
+"Indigo":"கருநீலம்",
+"Dusty rose":"மங்கிய ரோஜா",
+
   "☰ Tools": "☰ கருவிகள்",
   "Match tools": "ஆட்டக் கருவிகள்",
   "HERITAGE · READY TO PLAY": "பாரம்பரியம் · விளையாடத் தயார்",

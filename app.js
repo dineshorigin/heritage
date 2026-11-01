@@ -1,14 +1,17 @@
-import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.14.0';
-import {ballisticFlight} from './physics.js?v=3.14.0';
-import { installLanguage, getLanguage, translate } from './locale.js?v=3.14.0';
-import { turnGuidance, captureGuidance, boardSize, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.14.0';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.14.0';
+import {createFeatures} from './features.js?v=3.15.0';
+import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.15.0';
+import {ballisticFlight} from './physics.js?v=3.15.0';
+import { installLanguage, getLanguage, translate } from './locale.js?v=3.15.0';
+import { turnGuidance, captureGuidance, boardSize, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.15.0';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.15.0';
 
 (() => {
   'use strict';
   const recovery={timer:null,attempt:0,lastHeard:Date.now(),hidden:false,pendingSync:null,connectingUntil:0,pauseAfterToss:false};
   let lastTurnNotice=null;
   let fireworks=null;
+  let features=null,explainAI=false;
+  try{explainAI=localStorage.getItem('pallanguzhi.ai.explain')==='1';}catch{}
   const tournament={allocations:[],forcedDraw:false,endReason:''};
   const rematch={localReady:false,remoteReady:false};
   const N = 14, START_SEEDS = 5, TOTAL_SEEDS = 70, MAX_DROPS = 1600;
@@ -130,6 +133,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
 
   function handleSystemBack() {
+    if(isModalOpen('features-modal')){features?.close();return true;}
     if(isModalOpen('mat-modal')){$('mat-modal').classList.add('hidden');return true;}
     if (isModalOpen('coin-toss-modal')) {
       $('coin-toss-modal').classList.add('hidden');
@@ -384,7 +388,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
   function resetOnlineConnection({keepRoom=false}={}) {
     clearTimeout(recovery.timer);recovery.timer=null;
-    if(!keepRoom)recovery.attempt=0;
+    if(!keepRoom){recovery.attempt=0;features?.resetRoom();}
     recovery.pendingSync=null;recovery.connectingUntil=0;onlineState.remotePaused=false;
     rematch.localReady=false;rematch.remoteReady=false;
     onlineState.generation++;
@@ -475,6 +479,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     const ix=onlineState.pendingRemoteMoves.findIndex(m=>m.matchId===state.matchId&&m.round===state.round&&m.seq===state.metrics.moves&&m.player===state.turn&&owner(m.pit)===state.turn&&state.turn!==onlineState.myPlayerIndex);
     if(ix<0)return;
     const [m]=onlineState.pendingRemoteMoves.splice(ix,1);
+    if(m.position&&m.position!==positionFingerprint()){if(onlineState.isHost)sendAuthoritativeState();else{onlineState.awaitingSync=true;sendOnlinePacket({type:'STATE_REQUEST'});}return;}
     void playPit(m.pit,false,true);
   }
 
@@ -749,6 +754,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   function handleOnlineMessage(data){
     if(!options.online||!data||typeof data!=='object'||typeof data.type!=='string')return;
     recovery.lastHeard=Date.now();
+    if(data.type==='CHAT'){features?.receive(data);return;}
     if(data.type==='PING'){sendOnlinePacket({type:'PONG',matchId:state.matchId});return;}
     if(data.type==='PONG')return;
     if(data.type==='PLAYER_PAUSE'){
@@ -838,7 +844,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       if(data.round===state.round&&data.seq<state.metrics.moves)return;
       if(onlineState.pendingRemoteMoves.some(m=>m.matchId===data.matchId&&m.seq===data.seq&&m.round===data.round))return;
       if(onlineState.pendingRemoteMoves.length>=12)onlineState.pendingRemoteMoves.shift();
-      onlineState.pendingRemoteMoves.push({type:'MOVE',pit:data.pit,player:data.player,matchId:data.matchId,seq:data.seq,round:data.round,rev:data.rev});
+      onlineState.pendingRemoteMoves.push({type:'MOVE',position:typeof data.position==='string'?data.position.slice(0,500):null,pit:data.pit,player:data.player,matchId:data.matchId,seq:data.seq,round:data.round,rev:data.rev});
       processRemoteQueue();
     }else if(data.type==='NEXT_ROUND'){
       if(onlineState.isHost||!onlineState.connected||data.matchId!==state.matchId||data.rev!==onlineState.revision||!Number.isInteger(data.fromRound)||data.fromRound<state.round||data.fromRound>state.round+1||![1,2].includes(data.starter))return;
@@ -850,9 +856,10 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     }
   }
 
+  function positionFingerprint(){return [state.round,state.metrics.moves,state.turn,state.pits.join(','),state.banks.join(','),state.kasiePits.map(Number).join('')].join('|');}
   function sendOnlineMove(pit){
     if(options.online&&onlineState.connected)
-      sendOnlinePacket({type:'MOVE',pit,player:state.turn,round:state.round,seq:state.metrics.moves,matchId:state.matchId,rev:onlineState.revision});
+      sendOnlinePacket({type:'MOVE',position:positionFingerprint(),pit,player:state.turn,round:state.round,seq:state.metrics.moves,matchId:state.matchId,rev:onlineState.revision});
   }
 
   function showEmoteReaction(emoji, fromPlayer) {
@@ -1783,12 +1790,16 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     }
     const ordered=available.map(({pit,next})=>({pit,next,baseline:evaluatePosition(next.pits,next.banks,player,next.over)}))
       .sort((a,b)=>b.baseline-a.baseline || a.pit-b.pit);
-    let choice=ordered[0].pit, best=-Infinity;
-    for(const item of ordered){
-      if(explored>=maxNodes||performance.now()>deadline)break;
-      const score=depth===1?item.baseline:
-        search(item.next.pits,item.next.banks,other(player),depth-1,-Infinity,Infinity,item.next.over);
-      if(score>best){best=score;choice=item.pit;}
+    let choice=ordered[0].pit;
+    for(let iteration=1;iteration<=depth;iteration++){
+      let best=-Infinity,candidate=choice,complete=true;
+      for(const item of ordered){
+        if(explored>=maxNodes||performance.now()>deadline){complete=false;break;}
+        const score=iteration===1?item.baseline:search(item.next.pits,item.next.banks,other(player),iteration-1,-Infinity,Infinity,item.next.over);
+        if(iteration>1&&(explored>=maxNodes||performance.now()>deadline)){complete=false;break;}
+        if(score>best){best=score;candidate=item.pit;}
+      }
+      if(complete)choice=candidate;else break;
     }
     return choice;
   }
@@ -1996,6 +2007,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     state.over=false;state.roundPending=false;state.paused=false;state.started=true;
     $('round-brand-sub').textContent=options.format==='kasie'?`ROUND ${state.round} · KASIE TOURNAMENT`:'SINGLE MATCH';
     ['end-modal','round-modal','quit-modal'].forEach(id=>$(id).classList.add('hidden'));
+    features?.undo(state.round,state.metrics.moves);
     assertConservation('undo');
     render();saveStableMatch();
     setStatus(`↶ Turn restored. ${names[state.turn]}'s turn.`);
@@ -2016,6 +2028,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
           setStatus('No valid AI move. Open Match to change the rules.');
           return;
         }
+        if(explainAI){try{const prediction=simulateMove(state.pits,state.banks,2,pit);$('capture-guide').textContent=getLanguage()==='ta'?`கணினி குழி ${14-pit}: உடனடி பலன் ${prediction.banks[2]-state.banks[2]} விதைகள்; எதிர்வீரருக்கு ${prediction.banks[1]-state.banks[1]}.`:`AI cup ${14-pit}: immediate gain ${prediction.banks[2]-state.banks[2]} seeds; opponent gains ${prediction.banks[1]-state.banks[1]}.`;}catch{}}
         state.busy=false;
         await playPit(pit,true);
       }catch(error){
@@ -2046,6 +2059,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     updateSkipButton();
     hideHand();
     if(simulated){
+      features?.recordAfter();
       state.metrics.moves++;
       for(const e of simulated.events){
         if(e.kind==='pasu'&&e.player===1)state.metrics.p1Pasu++;
@@ -2102,6 +2116,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       state.history.push(snapshot());
       if(state.history.length>40)state.history.shift();
     }
+    features?.recordBefore(index,current,state);
     state.hintPit=null;
     hideHintExplanation();
     state.busy=true;
@@ -2257,7 +2272,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     tryStartRematch();
   }
 
-  function invalidateMatch(){fireworks?.stop();hideHintExplanation();state.epoch++;state.aiTicket++;state.busy=false;state.activeMove=null;state.hintPit=null;updateSkipButton();closeAnimations();clearTimeout(toastTimer);$('toast').classList.remove('visible');}
+  function invalidateMatch(){features?.discardPending();fireworks?.stop();hideHintExplanation();state.epoch++;state.aiTicket++;state.busy=false;state.activeMove=null;state.hintPit=null;updateSkipButton();closeAnimations();clearTimeout(toastTimer);$('toast').classList.remove('visible');}
   
   function startGame(broadcast=true,forcedStarter=null,remoteMatchId=null){
     recovery.pauseAfterToss=false;
@@ -2351,6 +2366,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     if(tutorial.pits.reduce((a,b)=>a+b,0)!==TOTAL_SEEDS)throw new Error('Tutorial model must have exactly 70 seeds');
     $('tut-hand').classList.remove('visible');
     $('tutorial-next').disabled=true;
+    $('tutorial-back').disabled=tutorial.step===0;
     tutorialDraw();
     tutorialFeedback(tutorialText().ready);
   }
@@ -2425,6 +2441,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       tutorial.running=false;tutorialFeedback('Tutorial playback mismatch. Press Replay.');return;
     }
     tutorial.running=false;tutorial.complete=true;tutorialDraw();
+    try{localStorage.setItem('pallanguzhi.lesson',String(Math.min(5,tutorial.step+1)));}catch{}
     $('tut-hand').classList.remove('visible');
     $('tutorial-next').disabled=false;
     tutorialFeedback(tutorialText().done);
@@ -2441,7 +2458,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   function tutorialOpen(){
     if(state.busy||state.activeMove){$('rules-modal').classList.add('hidden');toast('Finish the current move before opening the tutorial.',2300);return;}
     $('rules-modal').classList.add('hidden');
-    tutorial.open=true;tutorial.step=0;tutorialRebuild();
+    tutorial.open=true;try{tutorial.step=Math.min(5,Math.max(0,Number(localStorage.getItem('pallanguzhi.lesson')||0)||0));}catch{tutorial.step=0;}tutorialRebuild();
     $('tutorial-modal').classList.remove('hidden');
   }
   function tutorialClose(){
@@ -2473,6 +2490,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('tutorial-exit').addEventListener('click',tutorialClose);
     $('tutorial-replay').addEventListener('click',tutorialRebuild);
     $('tutorial-next').addEventListener('click',tutorialNext);
+    $('tutorial-back').addEventListener('click',()=>{if(!tutorial.running&&tutorial.step>0){tutorial.step--;tutorialRebuild();}});
     document.querySelectorAll('[data-tut-lang]').forEach(btn=>btn.addEventListener('click',()=>{if(getLanguage()!==btn.dataset.tutLang)$('language-btn').click();else tutorialSetLanguage(btn.dataset.tutLang);}));
     tutorialRebuild();
   }
@@ -2483,11 +2501,15 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     state.pits = Array(N).fill(options.seedsPerPit);
     createBoard();
     tutorialInit();
+    features=createFeatures({language:getLanguage,names:()=>names,state:()=>state,pasu:()=>options.pasu,toast,tutorial:tutorialOpen,send:sendOnlinePacket,network:()=>({connected:options.online&&onlineState.connected,player:onlineState.myPlayerIndex,matchId:state.matchId}),explanationEnabled:()=>explainAI,toggleExplanation:()=>{explainAI=!explainAI;try{localStorage.setItem('pallanguzhi.ai.explain',explainAI?'1':'0');}catch{}},chatBadge:n=>{$('features-btn').dataset.unread=n||'';}});
+    $('features-btn').addEventListener('click',()=>features.open());
+    if('serviceWorker' in navigator&&!window.PallanguzhiNative&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
+
     refreshResumePanel();
     initBackButtonHandler();
     installRecovery();
     installNativeLifecycle();
-    installLanguage(lang=>{document.querySelectorAll('#final-scores .result-player > span').forEach((el,i)=>el.textContent=displayName(i+1));tutorialSetLanguage(lang);refreshResumePanel();if(isModalOpen('stats-modal'))renderStats();if(isModalOpen('round-modal'))showRoundSummary();render();});
+    installLanguage(lang=>{features?.refresh();document.querySelectorAll('#final-scores .result-player > span').forEach((el,i)=>el.textContent=displayName(i+1));tutorialSetLanguage(lang);refreshResumePanel();if(isModalOpen('stats-modal'))renderStats();if(isModalOpen('round-modal'))showRoundSummary();render();});
     // Treat a direct room link as a guest, not a new host room.
     const incomingRoom=new URLSearchParams(window.location.search).get('room');
     if(incomingRoom&&/^[A-Z0-9]{5}$/i.test(incomingRoom)){

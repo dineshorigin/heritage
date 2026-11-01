@@ -1,5 +1,6 @@
-PALLANGUZHI v3.14.0
-Upload/replace all 14 files below in the ROOT of your repository, keeping filenames exactly:
+PALLANGUZHI v3.15.0
+
+Extract the ZIP. Upload/replace ALL NINETEEN files below in your heritage repository ROOT. Upload the extracted files, not the ZIP. Keep names exactly.
 
 index.html
 game.css
@@ -9,13 +10,18 @@ guidance.js
 locale.js
 physics.js
 presentation.js
+features.js
 native-bridge.js
 reference-board.webp
 royal-board.webp
 cowrie-shell.webp
 wood-bead.webp
 elephant-eye.webp
+sw.js
+manifest.webmanifest
+icon-192.png
+icon-512.png
 
-Commit the upload and wait for GitHub Pages to deploy. Refresh the page. No js/css folders needed. android-project.zip is optional Android SOURCE, not an APK.
+Commit and wait for GitHub Pages deployment. Reopen the game. The title/source should say v3.15.0. No js/css folders are needed.
 
-Manual check: two-player match, name/score/turn-only strips; engraved metal stores; ivory trunk edge; all three materials; visible drop/settle; RGB beads; portrait and Fit; language switching. See BOARD-UPDATE.txt for verification limits.
+For installed/offline copies: close all game tabs and reopen after deployment so a waiting worker can activate. Initial offline caching needs a complete online load. Android source archive is optional and is not an APK.

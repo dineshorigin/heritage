@@ -1,15 +1,20 @@
-PALLANGUZHI v3.14.0
+PALLANGUZHI v3.15.0 — PLAY & LEARN
 
-Changes:
-- Both player strips contain only name, score and turn status. Shared controls remain in the header and Tools.
-- Stainless steel appearance for both thaaikuli using inexpensive shaded/brushed CSS surfaces. Owner names are engraved inside; external Thaaikuli name labels removed. Custom player names remain unchanged across languages.
-- An ivory vector inlay covers the marked wooden strip beside the right elephant trunk, retaining the calibrated board geometry.
-- Saturated red/green/blue dyed bead colours retain the drilled wooden texture. Cowrie and tamarind styles are preserved.
-- Consistent directional contact shadows on all materials; airborne shadows grow/soften with height.
-- Longer visible gravity arcs and short damped settling on landing. All visual physics remain lightweight approximations, separate from authoritative game rules. Reduced-motion settings skip these animations.
+BOARD REFINEMENTS
+Wooden thaaikuli again uses the existing board cavity texture; engraved player names retained. Pit feedback uses the calibrated pit's exact ellipse without a separate expanding oval. Saturated RGB beads now use shaded round, undrilled surfaces rather than the button-hole sprite. Added photographic eye overlays removed; original carved eyes retained. Fixed comment area reduced to 38px (29px on short landscape screens) with overflow scrolling so messages do not shrink the board. Fourteen persistent mat choices, including eight new colours.
 
-Validation:
-36 unit/regression tests passed. 800 engine simulations, 50131 moves, zero errors or unfinished games. JavaScript syntax passed. Android source sync passed; no APK built.
-New visual changes have NOT been browser-verified. Automatic approval review previously rejected browser inspection because the session usage limit was reached. No alternate browser was used to bypass it. Physical-device motion, ivory alignment and sound still require manual assessment. This is not full release certification.
+FEATURES
+1. Guided first game: existing six interactive bilingual sowing/relay/Pasu/capture/Kasie lessons now remember lesson progress and include Previous lesson navigation. Available via setup Learn to play or Tools > Play & learn.
+2. Online reliability: existing room code, reconnect/backoff, state synchronization, revision and duplicate-move protection retained. New pre-move board fingerprint detects divergent state and requests authoritative synchronization. Mixed older room clients remain compatible when they omit this field. This improves recovery, but is not a server-authoritative anti-cheat system. Some networks need a TURN relay; none was newly provisioned.
+3. AI: four difficulty levels retained. Iterative deepening compares every root candidate before accepting a deeper search result, within existing 35/55ms and node budgets. Optional AI immediate-gain explanations in Play & learn; no claim of optimal play.
+4. Replays: local latest eight matches, at most 160 moves per match. Recorded while playing, with play/pause, forward/back event stepping and history deletion confirmation. Rules reconstruct move events, including Kasie/Pasu settings. Only one move is expanded at a time to bound memory. Undo truncates the recording. Existing matches played before this release do not have move recordings. Replays show move-by-move seed counts on a compact review board; final round settlement is shown in the main match/statistics, not as a sowing replay event. Recovery after remote state synchronization may leave a gap in the local recording.
+5. Daily capture puzzle: deterministic local-calendar board, independently simulated legal answers, best one-move score target and saved daily completion. Practice is separate from the live match and statistics.
+6. Install/offline: manifest, two small icons and a scoped service worker cache the local game files. On supported Android Chrome use browser menu Install app / Add to Home screen. Open online first and let initial caching finish. Close existing game tabs when updating an installed version; an active match is not forcibly reloaded. Local play, puzzles and tutorial can work offline; online rooms/chat still need internet. Native source retains the Capacitor path; no APK was built.
+7. Room chat: Tools > Play & learn > Room chat. Bounded 240-character messages, up to 80 visible messages, send/receive throttling, match/player validation, duplicate suppression, unread badge and opponent mute. Messages use the existing room transport, remain only in memory and clear when leaving the room. No public lobby, server message archive or persistent chat account system.
 
-No GitHub commit or live deployment was performed.
+PERFORMANCE AND REMOVALS
+No additional runtime dependencies, 3D engine or image-generation dependency. New menu features run on demand; replays and chat have bounded histories. Existing game modes, sound styles, settings and controls were preserved. No optional feature was removed without confirmation. The removed eye overlays and steel bowl styling were explicitly requested. Small old sprite files remain for compatibility; they are not used by the new bead/eye presentation.
+
+VALIDATION
+40 automated tests passed, including chat validation, 31 deterministic daily puzzles, replay end-state equivalence and Kasie/Pasu variants. 800 engine simulations, 50131 moves, zero errors/unfinished matches. Unique HTML IDs, local assets, module imports, syntax and Android source synchronization passed. Archive integrity passed.
+Browser/device testing remains outstanding. Automatic approval review previously rejected browser inspection due to the session usage limit; no alternate browser was used to bypass it. New visual layout, live two-device room/chat/reconnect behaviour, subjective sound, actual frame rate, fullscreen and offline installation are NOT certified by these unit tests. Use MANUAL-CHECKS.txt. No GitHub commit/deployment occurred.

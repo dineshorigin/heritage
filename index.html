@@ -4,12 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1b0d06">
-<title>Pallanguzhi • Heritage Edition (v3.14.0 • Reference Board Edition)</title>
+<title>Pallanguzhi • Heritage Edition (v3.15.0 • Reference Board Edition)</title>
 <!-- PeerJS is bundled locally; online play still uses external signaling. -->
-<link rel="preload" as="image" href="royal-board.webp?v=3.14.0">
-<link rel="preload" as="image" href="reference-board.webp?v=3.14.0">
-<link rel="stylesheet" href="game.css?v=3.14.0">
-<script id="peerjs-loader" defer src="native-bridge.js?v=3.14.0"></script>
+<link rel="preload" as="image" href="royal-board.webp?v=3.15.0">
+<link rel="preload" as="image" href="reference-board.webp?v=3.15.0">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#173e35">
+<link rel="stylesheet" href="game.css?v=3.15.0">
+<script id="peerjs-loader" defer src="native-bridge.js?v=3.15.0"></script>
 </head>
 <body>
 <!-- Board artwork is reconstructed from the supplied photograph; cups are interactive overlays. -->
@@ -26,7 +27,7 @@
   <div class="arena-stage">
     <div class="play-arena" id="arena">
       <svg class="ivory-edge" viewBox="0 0 1600 600" aria-hidden="true"><defs><linearGradient id="ivory-edge-light"><stop stop-color="#fdf3dc"/><stop offset=".55" stop-color="#ead6b1"/><stop offset="1" stop-color="#b89b71"/></linearGradient></defs><path d="M1410 132 Q1521 202 1554 310" fill="none" stroke="#644126" stroke-width="27" stroke-linecap="round"/><path d="M1410 132 Q1521 202 1554 310" fill="none" stroke="url(#ivory-edge-light)" stroke-width="22" stroke-linecap="round"/></svg>
-      <span class="elephant-eye eye-left" aria-hidden="true"></span><span class="elephant-eye eye-right" aria-hidden="true"></span>
+      
       <div class="side-highlight" id="side-highlight-2" aria-hidden="true"></div><div class="side-highlight" id="side-highlight-1" aria-hidden="true"></div>
       <section class="player-dock dock-2" aria-label="Player 2 score and turn">
         <span class="dock-name" id="dock-name-2" data-no-i18n></span><span class="dock-score" id="dock-score-2">0</span><span class="dock-turn" id="dock-turn-2"></span>
@@ -63,6 +64,7 @@
     <div class="status-message" id="status-text" aria-live="polite">Choose a game mode to start.</div>
     <button type="button" class="action-btn tools-toggle" id="tools-toggle" aria-expanded="false" aria-controls="tools-panel">☰ Tools</button>
     <div class="actions" id="tools-panel" role="group" aria-label="Match tools" hidden>
+      <button type="button" class="action-btn" id="features-btn">Play &amp; learn</button>
       <button type="button" class="action-btn assist-btn" id="hint-btn" aria-pressed="false" disabled title="Highlight a suggested cup">💡 Hint</button>
       <button type="button" class="action-btn assist-btn" id="undo-btn" disabled title="Undo your last move (and the AI reply, if any)">↶ Undo</button>
       <button type="button" class="action-btn" id="speed-btn" aria-pressed="false">🎞 Pace: Natural</button>
@@ -77,7 +79,7 @@
   </footer>
 </main>
 
-<div class="overlay hidden" id="mat-modal" role="dialog" aria-modal="true" aria-label="Choose a mat"><div class="modal-card"><h2>Choose a mat</h2><p>Change the table mat without restarting your match.</p><div class="mat-options"><button type="button" class="mat-choice" data-mat="emerald" aria-pressed="false"><span class="mat-swatch swatch-emerald" aria-hidden="true"></span>Emerald</button><button type="button" class="mat-choice" data-mat="burgundy" aria-pressed="false"><span class="mat-swatch swatch-burgundy" aria-hidden="true"></span>Burgundy</button><button type="button" class="mat-choice" data-mat="navy" aria-pressed="false"><span class="mat-swatch swatch-navy" aria-hidden="true"></span>Royal blue</button><button type="button" class="mat-choice" data-mat="sand" aria-pressed="false"><span class="mat-swatch swatch-sand" aria-hidden="true"></span>Sand</button><button type="button" class="mat-choice" data-mat="plum" aria-pressed="false"><span class="mat-swatch swatch-plum" aria-hidden="true"></span>Plum</button><button type="button" class="mat-choice" data-mat="slate" aria-pressed="false"><span class="mat-swatch swatch-slate" aria-hidden="true"></span>Slate</button></div><button type="button" class="primary-btn" id="close-mat">Back to game</button></div></div>
+<div class="overlay hidden" id="mat-modal" role="dialog" aria-modal="true" aria-label="Choose a mat"><div class="modal-card"><h2>Choose a mat</h2><p>Change the table mat without restarting your match.</p><div class="mat-options"><button type="button" class="mat-choice" data-mat="emerald" aria-pressed="false"><span class="mat-swatch swatch-emerald" aria-hidden="true"></span>Emerald</button><button type="button" class="mat-choice" data-mat="burgundy" aria-pressed="false"><span class="mat-swatch swatch-burgundy" aria-hidden="true"></span>Burgundy</button><button type="button" class="mat-choice" data-mat="navy" aria-pressed="false"><span class="mat-swatch swatch-navy" aria-hidden="true"></span>Royal blue</button><button type="button" class="mat-choice" data-mat="sand" aria-pressed="false"><span class="mat-swatch swatch-sand" aria-hidden="true"></span>Sand</button><button type="button" class="mat-choice" data-mat="plum" aria-pressed="false"><span class="mat-swatch swatch-plum" aria-hidden="true"></span>Plum</button><button type="button" class="mat-choice" data-mat="slate" aria-pressed="false"><span class="mat-swatch swatch-slate" aria-hidden="true"></span>Slate</button><button type="button" class="mat-choice" data-mat="forest" aria-pressed="false"><span class="mat-swatch swatch-forest" aria-hidden="true"></span>Forest green</button><button type="button" class="mat-choice" data-mat="teal" aria-pressed="false"><span class="mat-swatch swatch-teal" aria-hidden="true"></span>Peacock teal</button><button type="button" class="mat-choice" data-mat="wine" aria-pressed="false"><span class="mat-swatch swatch-wine" aria-hidden="true"></span>Deep wine</button><button type="button" class="mat-choice" data-mat="saffron" aria-pressed="false"><span class="mat-swatch swatch-saffron" aria-hidden="true"></span>Saffron</button><button type="button" class="mat-choice" data-mat="charcoal" aria-pressed="false"><span class="mat-swatch swatch-charcoal" aria-hidden="true"></span>Charcoal</button><button type="button" class="mat-choice" data-mat="ivory" aria-pressed="false"><span class="mat-swatch swatch-ivory" aria-hidden="true"></span>Ivory mat</button><button type="button" class="mat-choice" data-mat="indigo" aria-pressed="false"><span class="mat-swatch swatch-indigo" aria-hidden="true"></span>Indigo</button><button type="button" class="mat-choice" data-mat="rose" aria-pressed="false"><span class="mat-swatch swatch-rose" aria-hidden="true"></span>Dusty rose</button></div><button type="button" class="primary-btn" id="close-mat">Back to game</button></div></div>
 <div class="player-hand" id="player-hand" aria-hidden="true" data-facing="bottom">
  <svg viewBox="0 0 116 165" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -356,12 +358,13 @@
     </div>
     <div class="tutorial-actions">
       <button type="button" class="secondary-btn" id="tutorial-replay">↻ Replay</button>
+      <button type="button" class="secondary-btn" id="tutorial-back">Previous lesson</button>
       <button type="button" class="primary-btn" id="tutorial-next" disabled>Next lesson →</button>
     </div>
     <button type="button" class="tutorial-exit" id="tutorial-exit">Close tutorial</button>
   </div>
 </div>
 
-<script type="module" src="app.js?v=3.14.0"></script>
+<script type="module" src="app.js?v=3.15.0"></script>
 </body>
 </html>
