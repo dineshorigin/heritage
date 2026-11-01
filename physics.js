@@ -50,7 +50,7 @@ export function settledCowries(count,index=0,store=false){
 }
 export function ballisticFlight({dx,dy,duration,portrait=false,kind='drop',spin=30}){
  const seconds=Math.max(.001,duration/1000),impact=kind==='scoop'?1:.82;
- const fall=seconds*impact,gravity=9.81,pixelsPerMetre=180;
+ const fall=seconds*impact,gravity=9.81,pixelsPerMetre=950;
  const frames=[];
  for(let i=0;i<=12;i++){
   const p=i/12,progress=Math.min(1,p/impact);

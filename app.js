@@ -1,8 +1,8 @@
-import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.13.0';
-import {ballisticFlight} from './physics.js?v=3.13.0';
-import { installLanguage, getLanguage, translate } from './locale.js?v=3.13.0';
-import { turnGuidance, captureGuidance, boardSize, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.13.0';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.13.0';
+import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.14.0';
+import {ballisticFlight} from './physics.js?v=3.14.0';
+import { installLanguage, getLanguage, translate } from './locale.js?v=3.14.0';
+import { turnGuidance, captureGuidance, boardSize, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.14.0';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.14.0';
 
 (() => {
   'use strict';
@@ -937,7 +937,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     for(const p of [1,2]){
       $('p'+p+'-label').textContent=names[p];
       $('owner-'+p).textContent=names[p]+' • '+(p===1?'BOTTOM':'TOP');
-      $('mc-label-'+p).textContent=names[p]+' · Thaaikuli';
+      $('mc-label-'+p).textContent=names[p];
     }
   }
   function resumeMatch(){
@@ -1212,7 +1212,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   const pieceWord=()=>options.seedStyle==='cowrie'?'cowries':options.seedStyle==='colored'?'beads':'seeds';
   function getSeedClass(index, serial) {
     if(options.seedStyle === 'cowrie') return 'seed-cowrie';
-    if(options.seedStyle === 'colored') return 'seed-colored-' + ((index + serial) % 5);
+    if(options.seedStyle === 'colored') return 'seed-colored-' + ((index + serial) % 3);
     return 'seed-natural';
   }
 
@@ -1324,7 +1324,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       $('side-highlight-'+p).classList.toggle('active',active);
       document.querySelector('.dock-'+p).classList.toggle('active',active);
       $('mc-'+p).classList.toggle('current-thaaikuli',active);
-      $('mc-label-'+p).textContent=translate('Thaaikuli')+' · '+displayName(p);
+      $('mc-label-'+p).textContent=displayName(p);
       $('mc-label-'+p).title=displayName(p)+' · '+translate('Thaaikuli');
     }
   }
@@ -1378,11 +1378,11 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     layoutCenters.clear();
     for(let i=0;i<N;i++){
       const r=$('pit-'+i).getBoundingClientRect();
-      layoutCenters.set('pit-'+i,{x:r.left+r.width*(portraitBoard()?.46:.5),y:r.top+r.height*(portraitBoard()?.5:.54)});
+      layoutCenters.set('pit-'+i,{x:r.left+r.width*.5,y:r.top+r.height*.5});
     }
     for(const player of [1,2]){
       const r=$('mc-'+player).querySelector('.mother-cavity').getBoundingClientRect();
-      layoutCenters.set('mc-'+player,{x:r.left+r.width*(portraitBoard()?.46:.5),y:r.top+r.height*(portraitBoard()?.5:.54)});
+      layoutCenters.set('mc-'+player,{x:r.left+r.width*.5,y:r.top+r.height*.5});
     }
     layoutDirty=false;
   }
@@ -1522,7 +1522,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
 
   function motionTime(kind){
     if(reducedMotion())return 0;
-    const base={drop:163,scoop:112,capture:222}[kind]||163;
+    const base={drop:235,scoop:112,capture:255}[kind]||163;
     return Math.round(base*paceMultiplier());
   }
   async function fly(from,to,{kind='drop',index=0,serial=0,delay=0}={}){
@@ -1538,7 +1538,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     const dx=tx-sx,dy=ty-sy,dist=Math.hypot(dx,dy);
     const spin=(Math.random()>.5?1:-1)*(15+Math.random()*67);
     const frames=ballisticFlight({dx,dy,duration,portrait:portraitBoard(),kind,spin}).map(p=>({
-      offset:p.offset,transform:`translate3d(calc(-50% + ${p.x.toFixed(2)}px),calc(-50% + ${p.y.toFixed(2)}px),0) rotate(${p.angle.toFixed(2)}deg)`
+      offset:p.offset,filter:`drop-shadow(${(1+p.height*.13).toFixed(2)}px ${(2+p.height*.18).toFixed(2)}px ${(1+p.height*.07).toFixed(2)}px #0008)`,transform:`translate3d(calc(-50% + ${p.x.toFixed(2)}px),calc(-50% + ${p.y.toFixed(2)}px),0) rotate(${p.angle.toFixed(2)}deg)`
     }));
     el.style.left=sx+'px';el.style.top=sy+'px';document.body.append(el);
     let animation;

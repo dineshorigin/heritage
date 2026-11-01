@@ -1,77 +1,26 @@
 {
-  "version": "3.13.0",
-  "finalUnitTestsPassed": 36,
-  "engineSimulations": {
+  "version": "3.14.0",
+  "unitTestsPassed": 36,
+  "simulations": {
     "matches": 800,
     "moves": 50131,
-    "errors": 0
+    "errors": 0,
+    "unfinished": 0
   },
-  "browserFeatureChecksDuringDevelopment": {
-    "status": "PASS",
-    "results": [
-      {
-        "language": "en",
-        "materials": [
-          {
-            "material": "natural",
-            "pieces": 5
-          },
-          {
-            "material": "colored",
-            "pieces": 5
-          },
-          {
-            "material": "cowrie",
-            "pieces": 5
-          }
-        ],
-        "mats": 6,
-        "twoSidedControls": true,
-        "centredPiles": true,
-        "uniformCounts": true,
-        "fireworks": "PASS"
-      },
-      {
-        "language": "ta",
-        "materials": [
-          {
-            "material": "natural",
-            "pieces": 5
-          },
-          {
-            "material": "colored",
-            "pieces": 5
-          },
-          {
-            "material": "cowrie",
-            "pieces": 5
-          }
-        ],
-        "mats": 6,
-        "twoSidedControls": true,
-        "centredPiles": true,
-        "uniformCounts": true,
-        "fireworks": "PASS"
-      }
-    ],
-    "scopeNote": "Observed on a development revision before the final Stats shortcut and tutorial/share-language wiring. Final browser rerun blocked by automatic approval review usage limit."
-  },
-  "finalBrowserRerun": "BLOCKED: session usage limit",
-  "browserAudioInstrumentation": "NOT RUN: usage limit",
-  "finalSmallScreenBrowserChecks": "NOT RUN: usage limit",
-  "nativeSourceSync": "PASS; no APK",
+  "nativeSourceSync": "PASS, no APK built",
+  "browserVisualVerification": "NOT RUN: previous automatic approval review usage-limit rejection",
   "files": {
     "index.html": {
-      "bytes": 30168,
-      "sha256": "67872fa03dbd71d00d761d238e76a05610140633fd8c20664c379a9142809b01"
+      "bytes": 30132,
+      "sha256": "a8aef53f389a3ca51f5891893d8662cf0f62b12ab89fb858de2bb60157dadfa3"
     },
     "game.css": {
-      "bytes": 61131,
-      "sha256": "c132a3b5814da96e37c2156762870a827c64607da8caac7ed305569f6f638bdc"
+      "bytes": 62895,
+      "sha256": "2b17dfecf18f336442c33ad0d72ce46f52de90991a5e1e70f45d7e7c6551005f"
     },
     "app.js": {
-      "bytes": 144732,
-      "sha256": "00a44ff83b3970743759e152b388b1b3bf15e37e2849fae86663015957f6ef79"
+      "bytes": 144725,
+      "sha256": "b5abd8ed920300ec8e34d5137406b100ff4ba12335cfa1509f68e3d994f0c46f"
     },
     "rules.js": {
       "bytes": 3153,
@@ -79,7 +28,7 @@
     },
     "guidance.js": {
       "bytes": 4682,
-      "sha256": "332c2c264a1059ebe0ac3f7b873d982b1391839d99acf903f1c2cf3913f9a7c9"
+      "sha256": "928f31194d4fa3ed92b856018bc14c8e9040f77bfe8b88b2032e85aeff206a60"
     },
     "locale.js": {
       "bytes": 61819,
@@ -87,7 +36,7 @@
     },
     "physics.js": {
       "bytes": 3498,
-      "sha256": "7508b7cbd2814b9f49a390db08e88c5a035f8b3971b30a0d134ed69a48431bdd"
+      "sha256": "c2d2902c408bcb57cf75742e046da69f5c967a0a41b84bb942441bfda6ad2f04"
     },
     "presentation.js": {
       "bytes": 2248,
@@ -117,6 +66,5 @@
       "bytes": 7022,
       "sha256": "697a92c8038f1c3545dcfb4619b7f252ee665dceceb395d11410b47ef67b494b"
     }
-  },
-  "totalWebBytes": 718988
+  }
 }

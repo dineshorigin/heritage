@@ -1,26 +1,15 @@
-PLAYER COMFORT EDITION v3.13.0
+PALLANGUZHI v3.14.0
 
-IMPLEMENTED REQUESTS
-1. All fourteen cup centres and radii were calibrated against the visible board texture using radial edge fitting. Resting pile centres are exactly 50%,50% per layer, replacing the former downward offset. Bowl gravity, friction, contact constraints and cached projected stacks remain a lightweight visual approximation. Game seed counts and rules are independent of rendering.
-2. Coloured pieces are smaller muted dyed wooden beads with a real drilled-hole/grain sprite instead of glossy candy gradients. Cowrie/tamarind sprites were also reduced slightly. Existing saved material choices are preserved.
-3. Added small photoreal ivory/onyx elephant-eye insets, blended into the two existing carvings. No full-board regeneration or cup geometry drift.
-4. Tools > Mat offers Emerald, Burgundy, Royal blue, Sand, Plum and Slate. Selection changes only the mat, dismisses the chooser and persists locally without restarting play.
-5. Named compact player docks sit by their respective rows; the current player's dock and row receive a restrained gold highlight. Turn wording uses the existing authoritative local/online turn-state helper.
-6. Each store is explicitly labelled Thaaikuli / தாய்க்குழி with its owner. The current player's store label and count are highlighted.
-7. The result screen uses actual canvas fireworks: five timed bursts over about six seconds, normal real-time motion, capped pixel density and particle counts. No fireworks photo. Animation stops on Home/Rematch/background and respects reduced-motion preferences. The clock starts on the first rendered frame so delayed painting cannot consume the celebration before it appears.
-8. Tamarind, wooden beads and cowries use distinct, shorter, softer procedural material sounds. Eight sample variations per material and slight pitch/timing variation reduce repetition. The repeated electronic capture melody was removed. These are synthesized sounds, not field recordings. Subjective sound quality and fatigue require listening on the actual device.
-9. Pit count badges use identical horizontal anchors and fixed board-row baselines, calibrated independently of small differences in the painted hole positions.
-10. Both players have a name, score, turn label, Tools, language and Pause control near their edge. Stats and Mat are also available through Tools, for ten actions total. Opposite-player controls face that player in local two-player mode. Portrait tabletop controls/dialogs turn toward the left/right player; AI/online modes retain the ordinary device-facing view. Shared header controls remain neutral.
-11. English/Tamil captions are separate, including Pallanguzhi / பல்லாங்குழி, document title, setup, rules, statistics, achievements, results, mat choices and thaaikuli labels. Tutorial language selection now also changes global UI language. Invite/result share compositions follow the selected language. Player-entered names and room codes retain their identity.
+Changes:
+- Both player strips contain only name, score and turn status. Shared controls remain in the header and Tools.
+- Stainless steel appearance for both thaaikuli using inexpensive shaded/brushed CSS surfaces. Owner names are engraved inside; external Thaaikuli name labels removed. Custom player names remain unchanged across languages.
+- An ivory vector inlay covers the marked wooden strip beside the right elephant trunk, retaining the calibrated board geometry.
+- Saturated red/green/blue dyed bead colours retain the drilled wooden texture. Cowrie and tamarind styles are preserved.
+- Consistent directional contact shadows on all materials; airborne shadows grow/soften with height.
+- Longer visible gravity arcs and short damped settling on landing. All visual physics remain lightweight approximations, separate from authoritative game rules. Reduced-motion settings skip these animations.
 
-VALIDATION
-Final code: 36 unit/regression tests passed; 800 deterministic engine simulations (50131 moves), zero failures. JavaScript syntax, unique HTML IDs, exactly one result canvas, referenced assets and module imports passed. Android source sync passed; no APK built.
+Validation:
+36 unit/regression tests passed. 800 engine simulations, 50131 moves, zero errors or unfinished games. JavaScript syntax passed. Android source sync passed; no APK built.
+New visual changes have NOT been browser-verified. Automatic approval review previously rejected browser inspection because the session usage limit was reached. No alternate browser was used to bypass it. Physical-device motion, ivory alignment and sound still require manual assessment. This is not full release certification.
 
-During development of this update, browser feature checks passed in BOTH English and Tamil for: setup/match/pause/rules/statistics/results text, three materials with centred piles, six selectable/persistent mats, opposing player controls, row highlights, thaaikuli labels, aligned counts, and genuinely advancing fireworks frames with cleanup on Home.
-
-After that passing browser run, small final changes added the Stats shortcut inside Tools and unified tutorial/share language selection. A final browser rerun, final small-screen layout checks and the browser audio instrumentation test could not be completed: automatic approval review rejected further browser inspection because the session reached its usage limit. No alternate browser or indirect browser automation was used to bypass that restriction. Optional verification pages are included for reproduction.
-
-This is NOT a full release certification. Physical phone/tablet frame rate, touch ergonomics, subjective audio, OS fullscreen, real internet WebRTC, and Android installation remain device checks. No GitHub upload/deployment or messages were sent.
-
-PERFORMANCE
-No new graphics/physics dependencies. Small reusable WebP sprites, CSS mats, bounded cached physics and a short-lived fireworks loop only. Persistent identity/settings and prior game rules remain in place. The complete web source/assets total is recorded in QA-EVIDENCE.json.
+No GitHub commit or live deployment was performed.

@@ -1,6 +1,6 @@
-PLAYER COMFORT EDITION v3.13.0
+PALLANGUZHI v3.14.0
+Upload/replace all 14 files below in the ROOT of your repository, keeping filenames exactly:
 
-Upload/replace all FOURTEEN files below in your GitHub repository ROOT:
 index.html
 game.css
 app.js
@@ -16,8 +16,6 @@ cowrie-shell.webp
 wood-bead.webp
 elephant-eye.webp
 
-Keep every filename exactly. The new presentation.js, wood-bead.webp and elephant-eye.webp are required. Both reference-board.webp (silhouette) and royal-board.webp (visible wood) remain required. No js/css folders are needed for the web version.
+Commit the upload and wait for GitHub Pages to deploy. Refresh the page. No js/css folders needed. android-project.zip is optional Android SOURCE, not an APK.
 
-Commit the upload, wait for GitHub Pages deployment and refresh. Android source is inside android-project.zip; it is not an APK and is not required for Pages. Documentation/verification files are optional.
-
-Manual check: start a two-player match, open Tools from each player edge, choose Mat, try all materials through Match settings, switch languages, make a move and finish a match to see animated fireworks. Final browser rerun was blocked by the session usage limit; see BOARD-UPDATE.txt for exact validation status.
+Manual check: two-player match, name/score/turn-only strips; engraved metal stores; ivory trunk edge; all three materials; visible drop/settle; RGB beads; portrait and Fit; language switching. See BOARD-UPDATE.txt for verification limits.
