@@ -1,11 +1,12 @@
 {
-  "version": "3.17.0",
-  "unitTestsPassed": 53,
-  "engineSimulations": {
+  "version": "3.18.0",
+  "unitTestsPassed": 55,
+  "priorEngineSimulations": {
     "matches": 800,
     "moves": 50131,
     "errors": 0,
-    "unfinished": 0
+    "unfinished": 0,
+    "note": "Unchanged engine; carried from v3.17"
   },
   "nativeSourceSync": "PASS, no APK",
   "browserVerification": "NOT RUN: prior automatic approval review session usage limit",
@@ -13,28 +14,28 @@
   "requiredRootFiles": 21,
   "files": {
     "index.html": {
-      "bytes": 32692,
-      "sha256": "4c9bb4ce83c3e361df6d4b505aeb6404898d26f449e16c60fbd8e582300537d7"
+      "bytes": 32941,
+      "sha256": "275953c1b7c9966f93db72e432cd6e430c72d48e8d86dff8926e68574b572138"
     },
     "game.css": {
-      "bytes": 76815,
-      "sha256": "05f8efda057c2ec2d516f357025167f8d66bc8e50da426619c8d74b0336e89ae"
+      "bytes": 78081,
+      "sha256": "c75fb6ec71a551d88ea811d88081521b6b345f68e97dd623e7a3da1cd8e84d96"
     },
     "app.js": {
-      "bytes": 158059,
-      "sha256": "20f581d1b8c6cc286624aeb0270f9b46ab1ec9947bf48ffebdf79d707c6b6ec1"
+      "bytes": 159484,
+      "sha256": "e604b34ec8caed134c918ec12d72bb72a617f55726b95efc21a195b33a595666"
     },
     "rules.js": {
       "bytes": 3153,
       "sha256": "10c706a2cdd2562b1caacc1c4c268b4fa2fc8afc6915849426b44ba196f15267"
     },
     "guidance.js": {
-      "bytes": 4682,
-      "sha256": "78597cf3df5203f06f14766c3c6371b2c3af6ede50ad971fcbc8fcd03863c968"
+      "bytes": 5453,
+      "sha256": "6ac07d9c664bccb9da4367bc1c4bcd565e0f11c4097e99817c958cdd3f5a9a22"
     },
     "locale.js": {
-      "bytes": 65172,
-      "sha256": "bcc0172db91dfd03b8ebc9113478acf7cec33c6dd64c4aaeffb0492ac0707a65"
+      "bytes": 65338,
+      "sha256": "4c4d970ce4c5678483340085193bbe56dcd5b86b9dc7afbedc6550b99632cf02"
     },
     "physics.js": {
       "bytes": 3498,
@@ -46,7 +47,7 @@
     },
     "features.js": {
       "bytes": 16128,
-      "sha256": "6d16f7dccb2587b6a0b3182368db9219de06f52ec026ec0b9e4aedc9e5d635b4"
+      "sha256": "8c8096b2eea38eb9d0b7717c448ee8a4b58903fca5a9637449e0c8904f409db0"
     },
     "menu.js": {
       "bytes": 4393,
@@ -82,7 +83,7 @@
     },
     "sw.js": {
       "bytes": 1735,
-      "sha256": "97df222196cdd8ad0e2712e6e82fb1dcb8835b91c00d69edb368d15dbc6c5105"
+      "sha256": "253e4f9ab86626fc9c92024625ed69fc28092d7c51eb8c8db93e51cb561fa45e"
     },
     "manifest.webmanifest": {
       "bytes": 409,
@@ -97,5 +98,5 @@
       "sha256": "15ae23bb0131bd7f426593ca79a539f12fcb6b1a091cc1f0f19186cf57a53130"
     }
   },
-  "totalWebBytes": 949064
+  "totalWebBytes": 952941
 }

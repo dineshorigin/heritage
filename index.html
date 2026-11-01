@@ -4,28 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 
-<title>Pallanguzhi • Heritage Edition (v3.17.0 • Reference Board Edition)</title>
+<title>Pallanguzhi • Heritage Edition (v3.18.0 • Reference Board Edition)</title>
 <!-- PeerJS is bundled locally; online play still uses external signaling. -->
-<link rel="preload" as="image" href="royal-board.webp?v=3.17.0">
-<link rel="preload" as="image" href="reference-board.webp?v=3.17.0">
-<link rel="icon" type="image/png" href="icon-192.png?v=3.17.0"><link rel="apple-touch-icon" href="icon-192.png?v=3.17.0">
+<link rel="preload" as="image" href="royal-board.webp?v=3.18.0">
+<link rel="preload" as="image" href="reference-board.webp?v=3.18.0">
+<link rel="icon" type="image/png" href="icon-192.png?v=3.18.0"><link rel="apple-touch-icon" href="icon-192.png?v=3.18.0">
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#173e35">
-<link rel="stylesheet" href="game.css?v=3.17.0">
-<script id="peerjs-loader" defer src="native-bridge.js?v=3.17.0"></script>
+<link rel="stylesheet" href="game.css?v=3.18.0">
+<script id="peerjs-loader" defer src="native-bridge.js?v=3.18.0"></script>
 </head>
 <body>
 <!-- Board artwork is reconstructed from the supplied photograph; cups are interactive overlays. -->
 
 <main id="game-frame" aria-label="Pallanguzhi game">
   <header class="top-strip">
-    <div class="brand"><img class="brand-icon" src="icon-192.png?v=3.17.0" alt="" width="34" height="34"><span class="brand-title">Pallanguzhi</span><small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
+    <div class="brand"><img class="brand-icon" src="icon-192.png?v=3.18.0" alt="" width="34" height="34"><span class="brand-title">Pallanguzhi</span><small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
     <div class="header-tools"><button type="button" class="action-btn" id="language-btn" data-no-i18n data-language-toggle aria-label="Switch language">Language</button><button type="button" class="action-btn" id="pause-btn">Ⅱ Pause</button><button type="button" class="stats-trigger" id="stats-btn" aria-label="Open match statistics and achievements">📊 Stats</button></div>
     <div class="players-scoreboard">
       <div class="player-pod" id="p2-pod"><span class="player-name" id="p2-label" data-no-i18n>Azhagi (AI)</span><span class="score-badge" id="p2-score">0</span><span class="owner-indicator" id="ind-2" aria-live="polite"></span></div>
       <div class="player-pod active" id="p1-pod"><span class="player-name" id="p1-label" data-no-i18n>Player 1</span><span class="score-badge" id="p1-score">0</span><span class="owner-indicator" id="ind-1" aria-live="polite"></span></div>
     </div>
   </header>
-  <div class="arena-stage">
+  <div class="arena-stage"><div class="board-scroll" id="board-scroll" tabindex="0" aria-label="Board view"><div class="board-sizer" id="board-sizer">
     <div class="play-arena" id="arena"><span class="painted-pupil pupil-left" aria-hidden="true"></span><span class="painted-pupil pupil-right" aria-hidden="true"></span>
       <svg class="ivory-edge" viewBox="0 0 1600 600" aria-hidden="true"><defs><linearGradient id="ivory-edge-light"><stop stop-color="#fdf3dc"/><stop offset=".55" stop-color="#ead6b1"/><stop offset="1" stop-color="#b89b71"/></linearGradient></defs><path d="M1410 132 Q1521 202 1554 310" fill="none" stroke="#644126" stroke-width="27" stroke-linecap="round"/><path d="M1410 132 Q1521 202 1554 310" fill="none" stroke="url(#ivory-edge-light)" stroke-width="22" stroke-linecap="round"/></svg>
       
@@ -54,7 +54,7 @@
       <aside class="outer-mother-cup active-owner" id="mc-1" aria-label="Player 1 captured seeds">
         <div class="mother-tag" data-no-i18n id="mc-label-1">P1 STORE</div><div class="mother-cavity"><div class="mother-pile" id="mc-pile-1"></div></div><div class="store-count" id="mc-count-1">0</div>
       </aside>
-    </div>
+    </div></div></div>
   </div>
   <section class="play-guide" aria-label="Game guidance">
     <p id="turn-guide" role="status">Choose a mode, or try Quick Play against the computer.</p>
@@ -75,6 +75,7 @@
       <button type="button" class="action-btn" id="theme-btn">☀️ Theme</button>
       <button type="button" class="action-btn" id="rules-btn">📖 Rules</button>
       <button type="button" class="action-btn" id="match-btn">⚙️ Match</button>
+      <button type="button" class="action-btn" id="board-size-btn" aria-pressed="false">⤢ Bigger board</button>
       <button type="button" class="action-btn" id="fit-btn">⛶ Fit</button>
     </div>
   </footer>
@@ -165,7 +166,7 @@
 <div class="overlay" id="setup-modal" role="dialog" aria-modal="true" aria-label="Set up game">
 <div class="modal-card home-card lobby-home">
 <div class="home-top-actions"><button type="button" class="action-btn" id="setup-back" hidden>← Back</button><span id="setup-progress">Step 1 of 3</span><button type="button" class="action-btn" id="appearance-setup-btn">Dark mode</button><button type="button" class="action-btn" id="language-setup-btn" data-no-i18n data-language-toggle>Language</button></div>
-<div class="home-eyebrow">HERITAGE · STRATEGY · TRADITION</div><h1 class="home-game-title"><img class="brand-icon" src="icon-192.png?v=3.17.0" alt="" width="60" height="60"><span>Pallanguzhi</span></h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
+<div class="home-eyebrow">HERITAGE · STRATEGY · TRADITION</div><h1 class="home-game-title"><img class="brand-icon" src="icon-192.png?v=3.18.0" alt="" width="60" height="60"><span>Pallanguzhi</span></h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
 <section data-setup-step="1">    <section class="resume-panel" id="resume-panel" hidden aria-label="Continue saved match">
       <div class="resume-heading">💾 Continue your match?</div>
       <div class="resume-summary" id="resume-summary"></div>
@@ -350,6 +351,6 @@
   </div>
 </div>
 
-<script type="module" src="app.js?v=3.17.0"></script>
+<script type="module" src="app.js?v=3.18.0"></script>
 </body>
 </html>

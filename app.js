@@ -1,11 +1,11 @@
-import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.17.0';
-import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.17.0';
-import {createFeatures} from './features.js?v=3.17.0';
-import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.17.0';
-import {ballisticFlight} from './physics.js?v=3.17.0';
-import { installLanguage, getLanguage, translate } from './locale.js?v=3.17.0';
-import { turnGuidance, captureGuidance, boardSize, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.17.0';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.17.0';
+import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.18.0';
+import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.18.0';
+import {createFeatures} from './features.js?v=3.18.0';
+import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.18.0';
+import {ballisticFlight} from './physics.js?v=3.18.0';
+import { installLanguage, getLanguage, translate } from './locale.js?v=3.18.0';
+import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.18.0';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.18.0';
 
 (() => {
   'use strict';
@@ -110,6 +110,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   const paceMultiplier = () => options.pace==='fast' ? 0.58 : options.pace==='relaxed' ? 1.38 : 1;
   const layoutCenters = new Map();
   let layoutDirty = true;
+  let boardEnlarged=false;try{boardEnlarged=localStorage.getItem('pallanguzhi.board.enlarged')==='1';}catch{}
   const portraitBoard = () => matchMedia('(orientation: portrait) and (max-width:700px)').matches;
 
   function isModalOpen(id) {
@@ -1431,15 +1432,20 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     toastTimer=setTimeout(()=>el.classList.remove('visible'),ms);
   }
 
-  function fitBoard(){
+  function fitBoard(recenter=false){
     const stage=document.querySelector('.arena-stage');
     if(!stage)return;
-    const size=boardSize(stage.clientWidth,stage.clientHeight,portraitBoard());
-    const arena=$('arena');
+    const size=boardViewport(stage.clientWidth,stage.clientHeight,portraitBoard(),boardEnlarged);
+    const arena=$('arena'),canvas=$('board-sizer'),viewport=$('board-scroll');
     for(const key of ['width','height']){
       const value=size[key]+'px';
       if(arena.style.getPropertyValue('--fit-'+key)!==value)arena.style.setProperty('--fit-'+key,value);
     }
+    canvas.style.width=size.canvasWidth+'px';canvas.style.height=size.canvasHeight+'px';
+    viewport.classList.toggle('enlarged',boardEnlarged);
+    $('board-size-btn').textContent=boardEnlarged?'⤡ Whole board':'⤢ Bigger board';
+    $('board-size-btn').setAttribute('aria-pressed',String(boardEnlarged));
+    if(recenter){viewport.scrollLeft=Math.max(0,(size.canvasWidth-viewport.clientWidth)/2);viewport.scrollTop=Math.max(0,(size.canvasHeight-viewport.clientHeight)/2);}
     layoutDirty=true;
   }
   function invalidateLayout(){ fitBoard();layoutDirty=true; }
@@ -2732,6 +2738,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('rules-btn').addEventListener('click',()=>$('rules-modal').classList.remove('hidden'));
     $('close-rules').addEventListener('click',()=>$('rules-modal').classList.add('hidden'));
     $('fit-btn').addEventListener('click',fullscreen);
+    $('board-size-btn').addEventListener('click',()=>{if(state.busy){toast(getLanguage()==='ta'?'நகர்வு முடிந்ததும் பலகையின் அளவை மாற்றவும்':'Finish the move before changing board size',1600);return;}boardEnlarged=!boardEnlarged;try{localStorage.setItem('pallanguzhi.board.enlarged',boardEnlarged?'1':'0');}catch{}fitBoard(true);if(boardEnlarged)toast(getLanguage()==='ta'?'பெரிய பலகை · முழுவதையும் பார்க்க நகர்த்தவும்':'Bigger board · pan to see the whole board',2400);});
+    $('board-scroll').addEventListener('scroll',()=>{layoutDirty=true;lastHandPos=null;}, {passive:true});
 
     const toggleAppearance=()=>{options.uiTheme=options.uiTheme==='light'?'dark':'light';saveSettings();syncSetupModalUI();};
     $('theme-btn').addEventListener('click',toggleAppearance);$('appearance-setup-btn').addEventListener('click',toggleAppearance);
@@ -2770,7 +2778,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       boardObserver.observe(document.querySelector('.top-strip'));
       boardObserver.observe(document.querySelector('.bottom-strip'));
     }
-    fitBoard();
+    fitBoard(true);
     window.PallanguzhiTest={simulateMove,settleIfFinished,validMoves,owner,skipCurrentMove,undoMove,showHint,recommendMove,getSnapshot:()=>({pits:state.pits.slice(),banks:state.banks.slice(),turn:state.turn,over:state.over,busy:state.busy,epoch:state.epoch,handVisible:$('player-hand').classList.contains('visible'),activeMove:Boolean(state.activeMove),pace:options.pace,difficulty:options.difficulty,history:state.history.length,hintPit:state.hintPit,handFacing:$('player-hand').dataset.facing}),startGame,chooseAI,
       getClock:()=>({...clockView,turnSeconds:options.turnSeconds}),
       tutorialOpen,tutorialRebuild,tutorialNext,tutorialPlay,tutorialSetLanguage,

@@ -1,5 +1,8 @@
 // English/Tamil UI translation; player names and input values remain unchanged.
 export const tamil = {
+"Board view":"பலகைக் காட்சி",
+"⤢ Bigger board":"⤢ பெரிய பலகை",
+"⤡ Whole board":"⤡ முழுப் பலகை",
 "Player 2 name":"வீரர் 2 பெயர்",
 "Time to choose a cup":"குழியைத் தேர்ந்தெடுக்கும் நேரம்",
 "Off":"இல்லை",

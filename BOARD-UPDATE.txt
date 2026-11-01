@@ -1,30 +1,17 @@
-PALLANGUZHI v3.17.0 — APPEARANCE, IDENTITY & TURN CLOCK
+PALLANGUZHI v3.18.0 — PROPORTIONAL BOARD VIEW
 
-1. ONE LIGHT/DARK SETTING
-Home toolbar and gameplay Tools use the same persistent setting, action labels and pressed state. Browser theme colour follows it. Online opponents may choose their own appearance independently; rules/turns are unaffected.
+The portrait board was already limited by available screen height. With the complete original board visible, its aspect ratio necessarily leaves side space on this tall device. Filling both width and height simultaneously would distort or crop it.
 
-2. DARKER GAMEPLAY
-Dark mode dims the actual board texture, ivory edge, mat and resting pieces; it is no longer just a menu colour change. Counts, names and active-player feedback stay readable. Light mode restores normal material brightness. Transitions respect reduced-motion preferences.
+Changes:
+- More room for the default full-board view: smaller portrait header, guide row and Tools footer. The guide has fixed height/overflow, preventing messages from shrinking the board.
+- Tools > Bigger board uniformly enlarges both board dimensions. The enlarged board sits in a native scrollable viewport: pan to see both ends. Tools > Whole board returns to the complete board. No pit/board stretching, repainting, separate axis scaling, or permanent cropping.
+- The view preference is saved locally and does not affect the opponent's device or game rules.
+- Existing normalized cup centres and dimensions are retained, so artwork and hit targets use one scale. Scrolling invalidates cached screen positions for hand/seed destinations.
+- Enlargement is capped at 1.85 times the full-board fit. On a representative 393x630 CSS-pixel stage the portrait board width grows from about 232px to 381px; its added length is accessible by scrolling. This is sizing math, not a browser screenshot measurement.
+- Board-size switching waits for the current move to finish. Native scrolling remains available in enlarged view. There is no automatic camera tracking; pan manually. Use Whole board for an unobstructed view of every move.
+- Fit remains the existing fullscreen action, which can reclaim browser chrome when supported. No layout can reclaim the OS/browser bars without browser permission/fullscreen support.
 
-3. PASS N PLAY NAMES
-Both player names can now be edited in step 2. The second local name is remembered separately from AI/online identities. Computer opponent remains fixed Azhagi (AI); room opponent still comes from the other device. Default names localize; custom names remain as entered.
+Validation:
+55 automated tests passed, including uniform scaling at six portrait/landscape stage sizes, all fourteen cup targets and full scroll bounds. Syntax, balanced HTML, unique IDs and literal element references passed. Android source sync passed; no APK built. Archive integrity passed. Game rules are unchanged from v3.17; the existing 800-match simulation result is retained as historical engine evidence.
 
-4. LEFT PUPIL
-Measured the left carved eye from a close crop of the actual 1600x600 board texture. Black pupil moved from 8.7%,37.3% to 9.2%,35.7%, centred on the carved iris. Board artwork and cup calibration were not regenerated.
-
-5. TURN CLOCK
-Step 3 > Match rules offers Off, 30, 60 or 90 seconds. Default is 30 seconds to CHOOSE a starting cup, not to finish the sowing animation. Final ten seconds have one short tick per displayed second; last three ticks are higher. Mute/volume apply. In online games only the active local player device ticks or triggers timeout. AI thinking does not need a human countdown. Pass N Play uses the shared device sound.
-At zero, the first legal cup whose rule simulation finishes is chosen automatically. The normal move handler and online MOVE validation are used. No seeds/scores are removed. If no safely simulated cup can be found, a warning is shown rather than inventing a move.
-Clock pauses during sowing, explicit pause, backgrounding, disconnection, synchronization and round summaries. Local help/review overlays hold the clock. Opening the interactive tutorial pauses the match; Resume is available afterward. Online chat/review does not silently pause the opponent's match; use Pause when needed.
-Remaining local decision time is restored from stable saved progress and retained on same-turn state synchronization. Opponent countdown snapshots are informational and arrive about once per second. This is a friendly, active-client clock, NOT a server-enforced competitive timer or anti-cheat mechanism. Real network behaviour remains a device test. Both room clients must use v3.17 because timer settings participate in readiness signatures.
-
-6. PLAYER LABELS
-Each player name is now the upper line of its compact player strip, with score/turn/time below. In Pass N Play, the top player's whole strip faces that player. In Connect, the top strip remains readable from the device's viewing direction. The board is not automatically flipped for the guest. Hint lamp visibility and ownership are retained.
-
-7. GAME ICON
-A new generated walnut/ivory-cowrie/emerald icon appears beside Pallanguzhi on the menu and gameplay header, as browser favicon, touch icon and PWA launcher icon. Android source launcher images have also been replaced. Native source sync passed; no APK built. Installed-launcher icon refresh timing depends on the OS/browser. Small 192px/512px PNGs are used; full generation prompt is in ICON-NOTES.txt.
-
-VALIDATION
-53 automated tests passed (including eight new timer/name tests). 800 engine simulations, 50131 moves, zero errors/unfinished matches. Syntax, local assets, unique IDs and module/element references passed. Native source synchronization and archive integrity passed. No new runtime dependencies.
-
-Browser/device verification is outstanding. Automatic approval review previously rejected browser inspection because the session usage limit was reached; no alternate browser was used to bypass it. These checks do not certify visual placement, real ticking sounds, two-device countdown/reconnect behaviour, physical performance, or Android installation. Follow MANUAL-CHECKS.txt. No live deployment or GitHub commit was performed.
+Browser/device visual verification is outstanding. Automatic approval review previously rejected browser inspection due to the session usage limit. No alternate browser was used to bypass it. Normal-view size gain, enlarged touch panning and animation appearance while panning require manual checks. No full release certification, GitHub commit or live deployment is claimed.

@@ -1,4 +1,4 @@
-import {settledCowries} from './physics.js?v=3.17.0';
+import {settledCowries} from './physics.js?v=3.18.0';
 export const BOARD_ASPECT=8/3;
 // Plain-text feedback shared by the interface and its tests.
 export function turnGuidance(g) {
@@ -28,6 +28,18 @@ export function boardSize(stageWidth,stageHeight,portrait) {
   const aw=portrait?h:w,ah=portrait?w:h;
   const width=Math.min(aw,ah*BOARD_ASPECT);
   return {width,height:width/BOARD_ASPECT};
+}
+
+
+// Every board coordinate uses the same uniform scale. Bigger view scrolls rather than stretching.
+export function boardViewport(stageWidth,stageHeight,portrait,enlarged=false){
+ const fit=boardSize(stageWidth,stageHeight,portrait);
+ if(!fit.width||!fit.height)return {...fit,canvasWidth:0,canvasHeight:0,scale:1};
+ const visibleW=portrait?fit.height:fit.width,visibleH=portrait?fit.width:fit.height;
+ const cover=Math.max(Math.max(0,stageWidth-12)/visibleW,Math.max(0,stageHeight-12)/visibleH);
+ const scale=enlarged?Math.min(1.85,Math.max(1.25,cover)):1;
+ const width=fit.width*scale,height=fit.height*scale;
+ return {width,height,scale,canvasWidth:Math.max(0,stageWidth,(portrait?height:width)+12),canvasHeight:Math.max(0,stageHeight,(portrait?width:height)+12)};
 }
 
 export function rematchView({online,connected,localReady,remoteReady}) {

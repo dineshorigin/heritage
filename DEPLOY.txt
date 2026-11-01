@@ -1,6 +1,6 @@
-PALLANGUZHI v3.17.0
+PALLANGUZHI v3.18.0
 
-Extract the archive; upload/replace all TWENTY-ONE game files below in your heritage repository ROOT. Keep names exactly. No js/css folders. Upload the extracted files, not this ZIP.
+Extract and upload/replace all TWENTY-ONE files below in the heritage repository ROOT. No js/css folders. Upload the files, not the ZIP.
 
 index.html
 game.css
@@ -24,9 +24,8 @@ manifest.webmanifest
 icon-192.png
 icon-512.png
 
-Commit and wait for Pages deployment. Close old game tabs, then reopen online. BOTH room players need v3.17 for the shared timer/readiness signature. Installed offline copies may need all old tabs closed before the new service worker activates.
+Commit and wait for Pages deployment. Close old tabs and reopen online so the updated service worker can activate.
 
-New timer: step 3 > Match rules. Default 30s, options 60s/90s/Off. At zero a legal starting cup is automatically selected.
-Pass N Play: edit both names in step 2. Appearance: home toolbar or gameplay Tools.
+Default portrait controls are more compact. Tools > Bigger board enlarges proportionally; pan to see both ends. Tools > Whole board returns to full visibility. Tools > Fit is fullscreen.
 
-Optional Android project archive is source, not an APK. Browser/device checks remain pending; see MANUAL-CHECKS.txt.
+Android archive is optional source, not an APK. See BOARD-UPDATE.txt for verification limits.

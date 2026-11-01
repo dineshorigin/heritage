@@ -1,9 +1,7 @@
-v3.17 device acceptance checklist
-1. From home switch Light/Dark. Start a match, open Tools; appearance toggle must agree. Dark must visibly dim board, mat and pieces while labels stay clear. Return home and reload; preference persists.
-2. Pass N Play: enter two different names. Start, check correct names by correct rows; top player name is above their score/turn in their own reading direction. Switch to AI: Azhagi fixed. Connect: opponent auto-supplied, never editable.
-3. Check left eye black dot is in the carved iris in portrait, landscape and Fit. Verify no hit-target drift.
-4. Step 3 choose 30s. Human turn: count down from 30, ticks at 10..1, legal auto-selection at zero. Start a cup early: timer stops through sowing and restarts for the next human decision. Repeat 60, 90 and Off. Mute and volume respected.
-5. Pause at 17s, wait, resume: roughly 17s should remain. Background and return; no unexpected timeout. Save/reload/continue. Open local Rules/Mat/replay/puzzle: local clock should hold. Tutorial pauses match; Resume afterward.
-6. TWO devices both v3.17: host chooses timer before Ready; guest cannot change it. Timer changes invalidate readiness. Both Ready -> host starts. Active local device alone ticks. Observer receives approximate countdown. Test actual timed-out MOVE, manual tap near expiry, reconnect and Undo/rematch; boards must agree.
-7. Check icon next to title in home and gameplay, browser tab and installed shortcut. OS may retain a previously installed icon until it refreshes. Android native icon changes require building/installing the new source (no APK included).
-8. Recheck counter placement, lamp ownership, all materials/mats, six tutorial lessons, daily puzzles, replays, chat, Kasie round progression, saved matches and fireworks. Test Tamil/English. This release has automated tests but no final browser/device certification.
+v3.18 manual acceptance checks
+1. Portrait phone: default view should retain both elephant ends and all fourteen cups with compact header/guide/footer. Pit circles must remain round.
+2. Tools > Bigger board: board becomes wider, swipe along its length to inspect both ends. Tap cups after scrolling; chosen cup, hand and seeds should align. Scrollbars/mouse wheel can be used on desktop.
+3. Whole board returns to full visibility. Reload to check the selected view preference. Toggle only after a move finishes.
+4. Rotate device and use Fit/fullscreen; board proportions must stay constant. Read long capture feedback without board-size changes.
+5. Check local/AI/online moves, cup counts, labels, timers, hints, Undo, materials, dark/light appearance and chat. Panning during animation is a manual visual check; no automatic camera tracking is implemented.
+6. This update was checked with automated geometry/rules tests and source synchronization, not a final browser/device run.
