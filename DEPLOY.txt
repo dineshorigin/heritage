@@ -1,6 +1,6 @@
-REFERENCE BOARD EDITION v3.11.0
+BOARD POLISH v3.11.1
 
-Extract this ZIP. Upload these NINE files to your GitHub repository root, keeping their names:
+Upload these NINE files into your GitHub repository root, keeping their names:
 index.html
 game.css
 app.js
@@ -11,6 +11,6 @@ native-bridge.js
 reference-board.webp
 cowrie-shell.webp
 
-Commit the upload, wait for GitHub Pages deployment, then refresh the game. Both .webp images are required. The old heritage-board.webp is no longer used. No js/css folders required for the web version.
+Both WebP image files must be present. No js/css folders are needed for this web version. Commit, wait for GitHub Pages deployment, then refresh.
 
-Android source is in android-project.zip. It is not an APK and does not need to be uploaded to GitHub Pages. Documentation and verification files are optional and are not needed for play.
+android-project.zip is source, not an APK, and is not required for GitHub Pages. Documentation and verification files are optional.

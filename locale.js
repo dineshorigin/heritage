@@ -269,7 +269,7 @@ export function translate(text,lang=language){
   [/^Game over — (.+) \((\d+) – (\d+)\)$/,(_,n,a,b)=>`ஆட்டம் முடிந்தது — ${n} (${a} – ${b})`],
   [/^\d+%$/,m=>m],
 
-  [/^(.+)'s turn — tap a highlighted cup on the (left|right|bottom|top) side\.$/,(_,n,side)=>`${n}: ${{left:'இடது',right:'வலது',bottom:'கீழ்',top:'மேல்'}[side]} பக்கத்தில் ஒளிரும் குழியைத் தொடவும்.`],
+  [/^(.+)'s turn — tap a (?:highlighted )?cup on the (left|right|bottom|top) side\.$/,(_,n,side)=>`${n}: ${{left:'இடது',right:'வலது',bottom:'கீழ்',top:'மேல்'}[side]} பக்கத்தில் ஒரு குழியைத் தொடவும்.`],
   [/^(.+)'s turn\.$/,(_,n)=>`${n}: உங்கள் வாய்ப்பு.`],
   [/^(.+)'s turn$/,(_,n)=>`${n}: வாய்ப்பு`],
   [/^(.+), your turn · (left|right|bottom|top) side$/,(_,n,side)=>`${n}, உங்கள் வாய்ப்பு · ${{left:'இடது',right:'வலது',bottom:'கீழ்',top:'மேல்'}[side]} பக்கம்`],

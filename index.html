@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1b0d06">
-<title>பல்லாங்குழி • Heritage Edition (v3.11.0 • Reference Board Edition)</title>
+<title>பல்லாங்குழி • Heritage Edition (v3.11.1 • Reference Board Edition)</title>
 <!-- PeerJS is bundled locally; online play still uses external signaling. -->
-<link rel="preload" as="image" href="reference-board.webp?v=3.11.0">
-<link rel="stylesheet" href="game.css?v=3.11.0">
-<script id="peerjs-loader" defer src="native-bridge.js?v=3.11.0"></script>
+<link rel="preload" as="image" href="reference-board.webp?v=3.11.1">
+<link rel="stylesheet" href="game.css?v=3.11.1">
+<script id="peerjs-loader" defer src="native-bridge.js?v=3.11.1"></script>
 </head>
 <body>
 <!-- Board artwork is reconstructed from the supplied photograph; cups are interactive overlays. -->
@@ -18,8 +18,8 @@
     <div class="brand">பல்லாங்குழி<small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
     <div class="header-tools"><button type="button" class="action-btn" id="language-btn" data-no-i18n data-language-toggle aria-label="Switch language">தமிழ்</button><button type="button" class="action-btn" id="pause-btn">Ⅱ Pause</button><button type="button" class="stats-trigger" id="stats-btn" aria-label="Open match statistics and achievements">📊 Stats</button></div>
     <div class="players-scoreboard">
-      <div class="player-pod" id="p2-pod"><span class="player-name" id="p2-label" data-no-i18n>Azhagi (AI)</span><span class="score-badge" id="p2-score">0</span></div>
-      <div class="player-pod active" id="p1-pod"><span class="player-name" id="p1-label" data-no-i18n>Player 1</span><span class="score-badge" id="p1-score">0</span></div>
+      <div class="player-pod" id="p2-pod"><span class="player-name" id="p2-label" data-no-i18n>Azhagi (AI)</span><span class="score-badge" id="p2-score">0</span><span class="owner-indicator" id="ind-2" aria-live="polite"></span></div>
+      <div class="player-pod active" id="p1-pod"><span class="player-name" id="p1-label" data-no-i18n>Player 1</span><span class="score-badge" id="p1-score">0</span><span class="owner-indicator" id="ind-1" aria-live="polite"></span></div>
     </div>
   </header>
   <div class="arena-stage">
@@ -29,13 +29,13 @@
       </aside>
       <div class="casket-wrapper">
         <section class="plank" id="plank-top" aria-label="Player 2's pits">
-          <div class="owner-bar"><span class="owner-name" id="owner-2">PLAYER 2 • TOP</span><span class="owner-indicator" id="ind-2" aria-live="polite"></span></div>
+          <div class="owner-bar"><span class="owner-name" id="owner-2">PLAYER 2 • TOP</span></div>
           <div class="pits-row" id="row-top"></div>
         </section>
         <div class="board-seam" aria-hidden="true"><span></span><span></span><span></span></div>
         <section class="plank active-side" id="plank-bottom" aria-label="Player 1's pits">
           <div class="pits-row" id="row-bottom"></div>
-          <div class="owner-bar"><span class="owner-name" id="owner-1">PLAYER 1 • BOTTOM</span><span class="owner-indicator" id="ind-1" aria-live="polite"></span></div>
+          <div class="owner-bar"><span class="owner-name" id="owner-1">PLAYER 1 • BOTTOM</span></div>
         </section>
       </div>
       <aside class="outer-mother-cup active-owner" id="mc-1" aria-label="Player 1 captured seeds">
@@ -344,6 +344,6 @@
   </div>
 </div>
 
-<script type="module" src="app.js?v=3.11.0"></script>
+<script type="module" src="app.js?v=3.11.1"></script>
 </body>
 </html>

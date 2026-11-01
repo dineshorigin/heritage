@@ -1,16 +1,18 @@
-REFERENCE BOARD EDITION v3.11.0
+BOARD POLISH v3.11.1
 
-The interactive game now uses a close reconstruction of the supplied wooden Pallanguzhi board photograph: ivory elephant heads, green/red details, reddish wood, painted central flower, fourteen dark cups and two shallow collection bowls. Cowrie shells use one reusable transparent photographic sprite. No shells are baked into the board. Counts, turn highlights, locked cups, pickup/sowing/capture remain live game elements.
+Changes requested:
+1. Names and turn/waiting status now live in the upright header. Redundant rotated TOP/BOTTOM and store-name labels are hidden. Store numbers and cup counts remain upright in portrait.
+2. Darker wood with a static, subtle epoxy-style reflection. This assumes “epoch” meant epoxy. The existing reference image is reused; no new texture download or graphics dependency.
+3. Cowrie sprites enlarged (cup shell width from 28% to 38% of cup width, with bounded sizes).
+4. Small handfuls now settle into compact piles near the low central region (50%,58%) instead of spreading to the rim. Larger piles remain bounded; store piles also settle centrally. Counts remain exact. This is a visual arrangement, not a physics engine.
+5. Board now fills both dimensions of its available stage. On 393x851 preview it measures 375x672, compared with 257x685 in the previous fixed-aspect layout. The artwork adapts to the stage proportions; it is no longer constrained to its original 8:3 ratio.
+6. Warm, dark textured background matches the wood. Removed persistent playable outlines, hint/sowing/capture rings, store outlines, and landing rings. Hint uses a small star; active player status stays in the header. Locked Kasie badges remain visible without an extra circular outline.
 
-The drawing is an approximation reconstructed from the angled photograph, not a 100% identical copy. The board is scaled to the largest size that fits its allotted stage without distorting its proportions. Landscape gives the largest cups. Static artwork uses cached compressed WebP files; no new graphics framework or game engine. Board and shell artwork together: 311130 bytes (~304 KiB). Maximum 20 visible shells per cup and 30 per store; numeric counts remain exact.
+Validation on this version:
+29 unit/regression tests passed, including bounded shell piles and board stage filling.
+Six browser viewports passed: 320x568, 360x640, 393x851, 412x915, 740x360, 1024x768.
+All 84 cup centers were unobstructed. Header, board, guidance and footer did not overlap; no horizontal overflow.
+At each viewport: artwork loads, upright turn status is inside player cards, inverted row labels are hidden, cup border width is zero and shadow absent, cowrie size check, legal sowing matches rules engine, seed conservation, Hint/Undo, Pause/Resume, language round trip and all five themes passed.
+Android source sync passed; no APK built.
 
-VALIDATION ON THIS VERSION
-28 unit/regression tests passed.
-800 engine simulations, 50131 moves, zero failures.
-Six browser layouts: 320x568, 360x640, 393x851, 412x915, 740x360, 1024x768. Board/header/guide/footer do not overlap and there is no horizontal overflow. All 84 cup centers were unobstructed.
-At each size: image loads, legal sowing matches engine, seeds conserved, Hint/Undo, Pause/Resume, reversible language switch and all five themes passed.
-Eight complete local browser matches: 4/5 seeds, Pasu on/off, Single/Kasie; 610 moves, conservation and result dialogs passed. These use the Finish Move action to advance animations.
-Separate unskipped natural pickup/sow/four-shell capture passed, including turn change and flight sprite cleanup.
-Android source sync passed. No APK built.
-
-Not a full release certification. Phone FPS, actual touch ergonomics, physical-device audio/haptics, internet WebRTC and Android installation remain unverified. No network transport changes made for this board. No GitHub upload or deployment was performed.
+The earlier version's eight full local matches and 800 simulations were not rerun for this presentation-only update. Physical phone frame rate, touch ergonomics, real internet multiplayer and native installation remain unverified. No GitHub upload or deployment was performed.

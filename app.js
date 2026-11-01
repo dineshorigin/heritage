@@ -1,6 +1,6 @@
-import { installLanguage, getLanguage } from './locale.js?v=3.11.0';
-import { turnGuidance, captureGuidance, boardSize, referenceCup, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.11.0';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.11.0';
+import { installLanguage, getLanguage } from './locale.js?v=3.11.1';
+import { turnGuidance, captureGuidance, boardSize, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.11.1';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.11.1';
 
 (() => {
   'use strict';
@@ -1206,17 +1206,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     const el=document.createElement('span');
     const color=getSeedClass(index, serial);
     el.className='tamarind-seed '+color;
-    const golden=serial*2.39996323+index*.31;
-    const jitter=Math.sin((serial+1)*53.63+index*12.1);
-    if(store){
-      const radius=Math.sqrt((serial+.4)/28);
-      el.style.left=(50+Math.cos(golden)*34*radius)+'%';
-      el.style.top=(50+Math.sin(golden)*30*radius)+'%';
-    }else{
-      const radius=Math.sqrt((serial+.7)/25)*34;
-      el.style.left=(50+Math.cos(golden)*radius+jitter*2.3)+'%';
-      el.style.top=(50+Math.sin(golden)*radius*.78+Math.cos(serial*3.1)*2)+'%';
-    }
+    const point=shellPosition(index,serial,store?30:20,store);
+    el.style.left=point.x+'%';el.style.top=point.y+'%';
     const rotation=((serial*53+index*17)%105-50)+'deg';
     el.style.setProperty('--rot',rotation);
     el.style.transform='translate(-50%,-50%) rotate('+rotation+')';
@@ -1260,11 +1251,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       cluster.append(bead);
     }
     Array.from(cluster.children).forEach((bead,j)=>{
-      // Spread a small handful across the cup; bound drawing to 20 shells.
-      const angle=j*2.39996323+index*.31;
-      const radius=Math.sqrt((j+.5)/Math.max(1,target))*34;
-      bead.style.left=(50+Math.cos(angle)*radius)+'%';
-      bead.style.top=(50+Math.sin(angle)*radius*.85)+'%';
+      const point=shellPosition(index,j,target);
+      bead.style.left=point.x+'%';bead.style.top=point.y+'%';
       const color=getSeedClass(index, j);
       if(!bead.classList.contains(color)){
         bead.className='tamarind-seed '+color;
@@ -1301,6 +1289,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       bank.append(bead);
     }
     Array.from(bank.children).forEach((bead,j)=>{
+      const point=shellPosition(player,j,visible,true);
+      bead.style.left=point.x+'%';bead.style.top=point.y+'%';
       const color=getSeedClass(player, j);
       if(!bead.classList.contains(color))bead.className='tamarind-seed '+color;
     });

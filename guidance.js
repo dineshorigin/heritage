@@ -11,7 +11,7 @@ export function turnGuidance(g) {
   if (g.ai && g.turn === 2) return 'The computer is choosing a cup. Your turn is next.';
   if (g.online && g.turn !== g.myPlayer) return `Waiting for ${g.name} to play.`;
   const side = g.portrait ? (g.turn===1?'left':'right') : (g.turn===1?'bottom':'top');
-  return `${g.name}'s turn — tap a highlighted cup on the ${side} side.`;
+  return `${g.name}'s turn — tap a cup on the ${side} side.`;
 }
 export function captureGuidance(name,count,pasu=false) {
   return pasu
@@ -23,9 +23,7 @@ export function captureGuidance(name,count,pasu=false) {
 export function boardSize(stageWidth,stageHeight,portrait) {
   const w=Math.max(0,Math.floor(stageWidth)-12);
   const h=Math.max(0,Math.floor(stageHeight)-12);
-  const availableW=portrait?h:w,availableH=portrait?w:h;
-  const width=Math.min(availableW,availableH*(8/3));
-  return {width,height:width*(3/8)};
+  return portrait ? {width:h,height:w} : {width:w,height:h};
 }
 
 export function rematchView({online,connected,localReady,remoteReady}) {
@@ -61,4 +59,16 @@ export function referenceCup(index){
  if(!Number.isInteger(index)||index<0||index>13)throw new RangeError('Cup index must be 0..13');
  const top=index>=7,column=top?13-index:index;
  return {x:(top?22.7:17.95)+column*(top?9.23:9.35),y:top?20.8:77.4};
+}
+
+// A settled handful stays near the low central region of a carved bowl.
+// This is a bounded visual pile, not a per-frame physics simulation.
+export function shellPosition(index,serial,count,store=false){
+ const n=Math.max(1,Math.min(store?30:20,Math.floor(count)||1));
+ const j=Math.max(0,Math.min(n-1,Math.floor(serial)||0));
+ if(n===1)return {x:50,y:58};
+ const angle=j*2.39996323+index*.31;
+ const spread=store?Math.min(28,10+Math.sqrt(n)*2.6):Math.min(24,10+Math.sqrt(n)*2.1);
+ const radius=Math.sqrt((j+.5)/n)*spread;
+ return {x:50+Math.cos(angle)*radius,y:58+Math.sin(angle)*radius*.68};
 }

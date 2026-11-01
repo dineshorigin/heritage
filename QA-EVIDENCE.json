@@ -1,186 +1,115 @@
 {
-  "version": "3.11.0",
-  "unitTests": 28,
-  "engineSimulations": {
-    "matches": 800,
-    "moves": 50131,
-    "errors": 0
-  },
+  "version": "3.11.1",
+  "unitTestsPassed": 29,
   "browser": {
-    "layouts": {
-      "status": "PASS",
-      "checks": "6 layouts; all 84 cup centers unobstructed; artwork loaded; legal sowing matches engine; seed conservation; hint; undo; pause/resume; languages; 5 themes",
-      "results": [
-        {
-          "viewport": [
-            320,
-            568
-          ],
-          "board": {
-            "width": 145.875,
-            "height": 389
-          },
-          "cups": 14,
-          "result": "PASS"
+    "status": "PASS",
+    "checks": "6 layouts; all 84 cup centers unobstructed; artwork loaded; legal sowing matches engine; seed conservation; hint; undo; pause/resume; languages; 5 themes",
+    "results": [
+      {
+        "viewport": [
+          320,
+          568
+        ],
+        "board": {
+          "width": 302,
+          "height": 376
         },
-        {
-          "viewport": [
-            360,
-            640
-          ],
-          "board": {
-            "width": 177.75,
-            "height": 474
-          },
-          "cups": 14,
-          "result": "PASS"
+        "cups": 14,
+        "result": "PASS"
+      },
+      {
+        "viewport": [
+          360,
+          640
+        ],
+        "board": {
+          "width": 342,
+          "height": 461
         },
-        {
-          "viewport": [
-            393,
-            851
-          ],
-          "board": {
-            "width": 256.875,
-            "height": 685
-          },
-          "cups": 14,
-          "result": "PASS"
+        "cups": 14,
+        "result": "PASS"
+      },
+      {
+        "viewport": [
+          393,
+          851
+        ],
+        "board": {
+          "width": 375,
+          "height": 672
         },
-        {
-          "viewport": [
-            412,
-            915
-          ],
-          "board": {
-            "width": 280.875,
-            "height": 749
-          },
-          "cups": 14,
-          "result": "PASS"
+        "cups": 14,
+        "result": "PASS"
+      },
+      {
+        "viewport": [
+          412,
+          915
+        ],
+        "board": {
+          "width": 394,
+          "height": 736
         },
-        {
-          "viewport": [
-            740,
-            360
-          ],
-          "board": {
-            "width": 634.65625,
-            "height": 238
-          },
-          "cups": 14,
-          "result": "PASS"
+        "cups": 14,
+        "result": "PASS"
+      },
+      {
+        "viewport": [
+          740,
+          360
+        ],
+        "board": {
+          "width": 722,
+          "height": 240
         },
-        {
-          "viewport": [
-            1024,
-            768
-          ],
-          "board": {
-            "width": 1006,
-            "height": 377.25
-          },
-          "cups": 14,
-          "result": "PASS"
-        }
-      ]
-    },
-    "matches": {
-      "status": "PASS",
-      "matches": [
-        {
-          "seeds": "4",
-          "pasu": "on",
-          "format": "single",
-          "moves": 3,
-          "result": "PASS"
+        "cups": 14,
+        "result": "PASS"
+      },
+      {
+        "viewport": [
+          1024,
+          768
+        ],
+        "board": {
+          "width": 1006,
+          "height": 640
         },
-        {
-          "seeds": "4",
-          "pasu": "on",
-          "format": "kasie",
-          "moves": 44,
-          "result": "PASS"
-        },
-        {
-          "seeds": "4",
-          "pasu": "off",
-          "format": "single",
-          "moves": 40,
-          "result": "PASS"
-        },
-        {
-          "seeds": "4",
-          "pasu": "off",
-          "format": "kasie",
-          "moves": 163,
-          "result": "PASS"
-        },
-        {
-          "seeds": "5",
-          "pasu": "on",
-          "format": "single",
-          "moves": 17,
-          "result": "PASS"
-        },
-        {
-          "seeds": "5",
-          "pasu": "on",
-          "format": "kasie",
-          "moves": 145,
-          "result": "PASS"
-        },
-        {
-          "seeds": "5",
-          "pasu": "off",
-          "format": "single",
-          "moves": 52,
-          "result": "PASS"
-        },
-        {
-          "seeds": "5",
-          "pasu": "off",
-          "format": "kasie",
-          "moves": 146,
-          "result": "PASS"
-        }
-      ]
-    },
-    "animation": {
-      "status": "PASS",
-      "checks": "Actual unskipped pickup, sowing, four-shell capture, turn change and flight sprite cleanup",
-      "durationMs": 15484,
-      "banks": [
-        0,
-        36,
-        32
-      ]
-    }
+        "cups": 14,
+        "result": "PASS"
+      }
+    ]
   },
+  "extraBrowserAssertions": [
+    "Board fills available stage",
+    "Turn labels in upright player cards",
+    "Rotated owner bars hidden",
+    "No cup border/shadow",
+    "Enlarged cowries"
+  ],
   "files": {
     "index.html": {
       "bytes": 28305,
-      "sha256": "9a475f1579671d043596f1982e0bd08d63e793f3db0d465d71f45f07d8d1a577"
+      "sha256": "056e6dbd3b6f0ea711162829b32cfc9123745a9ede0a4790b8b1cb19da210de3"
     },
     "game.css": {
-      "bytes": 48542,
-      "sha256": "303ea63c59bf1efc304b93f7aa1afb954deb2cad45e244a216bc812bbf3febc5"
+      "bytes": 51199,
+      "sha256": "a056b3cd84eea01a954472ca478053916cc19c95ff460175d4f55f14c1d57c58"
     },
     "app.js": {
-      "bytes": 140066,
-      "sha256": "a9d960e91e40fd15eecc2fd7df89364f6bb05289df63185de920216dd437e977"
+      "bytes": 139651,
+      "sha256": "b021c046a8b256f6cec7d3f5a5a9970afa2dad647fc08d1ad4b3ca46a1490484"
     },
     "rules.js": {
       "bytes": 3153,
       "sha256": "10c706a2cdd2562b1caacc1c4c268b4fa2fc8afc6915849426b44ba196f15267"
     },
     "guidance.js": {
-      "bytes": 3843,
-      "sha256": "5d3dc3b61f1a6cf4baa9a7d50e1d230211c674739587eadaf61b8f8139129517"
+      "bytes": 4344,
+      "sha256": "91085ac00c458e8835152bcc671b7a2fa82c99fa6284b62a6dc3fcacf525aaf7"
     },
     "locale.js": {
-      "bytes": 50099,
-      "sha256": "7aade422ff0a2a085d84587b8b0b73848f2064fe0379b12771c494108dd00bf8"
+      "bytes": 50092,
+      "sha256": "d1553c83c836618e93e96940bfc6184a235ed3624d9fb8cb5f3fd3002c65ca2e"
     },
     "native-bridge.js": {
       "bytes": 97491,
