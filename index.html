@@ -4,20 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1b0d06">
-<title>பல்லாங்குழி • Heritage Edition (v3.12.0 • Reference Board Edition)</title>
+<title>Pallanguzhi • Heritage Edition (v3.13.0 • Reference Board Edition)</title>
 <!-- PeerJS is bundled locally; online play still uses external signaling. -->
-<link rel="preload" as="image" href="royal-board.webp?v=3.12.0">
-<link rel="preload" as="image" href="reference-board.webp?v=3.12.0">
-<link rel="stylesheet" href="game.css?v=3.12.0">
-<script id="peerjs-loader" defer src="native-bridge.js?v=3.12.0"></script>
+<link rel="preload" as="image" href="royal-board.webp?v=3.13.0">
+<link rel="preload" as="image" href="reference-board.webp?v=3.13.0">
+<link rel="stylesheet" href="game.css?v=3.13.0">
+<script id="peerjs-loader" defer src="native-bridge.js?v=3.13.0"></script>
 </head>
 <body>
 <!-- Board artwork is reconstructed from the supplied photograph; cups are interactive overlays. -->
 
 <main id="game-frame" aria-label="Pallanguzhi game">
   <header class="top-strip">
-    <div class="brand">பல்லாங்குழி<small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
-    <div class="header-tools"><button type="button" class="action-btn" id="language-btn" data-no-i18n data-language-toggle aria-label="Switch language">தமிழ்</button><button type="button" class="action-btn" id="pause-btn">Ⅱ Pause</button><button type="button" class="stats-trigger" id="stats-btn" aria-label="Open match statistics and achievements">📊 Stats</button></div>
+    <div class="brand">Pallanguzhi<small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
+    <div class="header-tools"><button type="button" class="action-btn" id="language-btn" data-no-i18n data-language-toggle aria-label="Switch language">Language</button><button type="button" class="action-btn" id="pause-btn">Ⅱ Pause</button><button type="button" class="stats-trigger" id="stats-btn" aria-label="Open match statistics and achievements">📊 Stats</button></div>
     <div class="players-scoreboard">
       <div class="player-pod" id="p2-pod"><span class="player-name" id="p2-label" data-no-i18n>Azhagi (AI)</span><span class="score-badge" id="p2-score">0</span><span class="owner-indicator" id="ind-2" aria-live="polite"></span></div>
       <div class="player-pod active" id="p1-pod"><span class="player-name" id="p1-label" data-no-i18n>Player 1</span><span class="score-badge" id="p1-score">0</span><span class="owner-indicator" id="ind-1" aria-live="polite"></span></div>
@@ -25,6 +25,17 @@
   </header>
   <div class="arena-stage">
     <div class="play-arena" id="arena">
+      <span class="elephant-eye eye-left" aria-hidden="true"></span><span class="elephant-eye eye-right" aria-hidden="true"></span>
+      <div class="side-highlight" id="side-highlight-2" aria-hidden="true"></div><div class="side-highlight" id="side-highlight-1" aria-hidden="true"></div>
+      <section class="player-dock dock-2" aria-label="Player 2 controls">
+        <span class="dock-name" id="dock-name-2" data-no-i18n></span><span class="dock-score" id="dock-score-2">0</span><span class="dock-turn" id="dock-turn-2"></span>
+        <button type="button" class="dock-button" data-side-tools="2">☰ Tools</button><button type="button" class="dock-button" data-no-i18n data-language-toggle data-side-owner="2">Language</button><button type="button" class="dock-button" data-side-pause="2">Ⅱ Pause</button>
+      </section>
+      <section class="player-dock dock-1" aria-label="Player 1 controls">
+        <span class="dock-name" id="dock-name-1" data-no-i18n></span><span class="dock-score" id="dock-score-1">0</span><span class="dock-turn" id="dock-turn-1"></span>
+        <button type="button" class="dock-button" data-side-tools="1">☰ Tools</button><button type="button" class="dock-button" data-no-i18n data-language-toggle data-side-owner="1">Language</button><button type="button" class="dock-button" data-side-pause="1">Ⅱ Pause</button>
+      </section>
+
       <aside class="outer-mother-cup" id="mc-2" aria-label="Player 2 captured seeds">
         <div class="mother-tag" id="mc-label-2">P2 STORE</div><div class="mother-cavity"><div class="mother-pile" id="mc-pile-2"></div></div><div class="store-count" id="mc-count-2">0</div>
       </aside>
@@ -57,6 +68,8 @@
       <button type="button" class="action-btn assist-btn" id="undo-btn" disabled title="Undo your last move (and the AI reply, if any)">↶ Undo</button>
       <button type="button" class="action-btn" id="speed-btn" aria-pressed="false">🎞 Pace: Natural</button>
       <button type="button" class="action-btn" id="sound-btn" aria-pressed="true" title="Wooden seed taps and bead-on-wood clacks (procedurally rendered)">🔊 Sound</button>
+      <button type="button" class="action-btn" id="tool-stats-btn">📊 Stats</button>
+      <button type="button" class="action-btn" id="mat-btn">▧ Mat</button>
       <button type="button" class="action-btn" id="theme-btn">☀️ Theme</button>
       <button type="button" class="action-btn" id="rules-btn">📖 Rules</button>
       <button type="button" class="action-btn" id="match-btn">⚙️ Match</button>
@@ -65,6 +78,7 @@
   </footer>
 </main>
 
+<div class="overlay hidden" id="mat-modal" role="dialog" aria-modal="true" aria-label="Choose a mat"><div class="modal-card"><h2>Choose a mat</h2><p>Change the table mat without restarting your match.</p><div class="mat-options"><button type="button" class="mat-choice" data-mat="emerald" aria-pressed="false"><span class="mat-swatch swatch-emerald" aria-hidden="true"></span>Emerald</button><button type="button" class="mat-choice" data-mat="burgundy" aria-pressed="false"><span class="mat-swatch swatch-burgundy" aria-hidden="true"></span>Burgundy</button><button type="button" class="mat-choice" data-mat="navy" aria-pressed="false"><span class="mat-swatch swatch-navy" aria-hidden="true"></span>Royal blue</button><button type="button" class="mat-choice" data-mat="sand" aria-pressed="false"><span class="mat-swatch swatch-sand" aria-hidden="true"></span>Sand</button><button type="button" class="mat-choice" data-mat="plum" aria-pressed="false"><span class="mat-swatch swatch-plum" aria-hidden="true"></span>Plum</button><button type="button" class="mat-choice" data-mat="slate" aria-pressed="false"><span class="mat-swatch swatch-slate" aria-hidden="true"></span>Slate</button></div><button type="button" class="primary-btn" id="close-mat">Back to game</button></div></div>
 <div class="player-hand" id="player-hand" aria-hidden="true" data-facing="bottom">
  <svg viewBox="0 0 116 165" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -95,14 +109,14 @@
 <!-- Pause & Quit Confirmation Dialog for Android Back Navigation -->
 <div class="overlay hidden" id="quit-modal" role="dialog" aria-modal="true" aria-label="Pause or Quit match">
   <div class="modal-card" style="max-width:390px; text-align:center;">
-    <h2 style="font-size:20px; margin-bottom:6px; color:#ffe1a4;">⏸ ஆட்ட இடைநிறுத்தம்</h2>
+    <h2 style="font-size:20px; margin-bottom:6px; color:#ffe1a4;">⏸ Game paused</h2>
     <p class="sub" style="margin-bottom:16px;">MATCH PAUSED</p>
     <p style="font-size:13px; line-height:1.55; color:#ecd8bf; margin-bottom:20px;">
       Do you want to continue playing or return to the main menu? Your match progress is saved automatically.
     </p>
     <div style="display:flex; flex-direction:column; gap:9px;">
-      <button type="button" class="primary-btn" id="quit-resume-btn" style="margin-top:0;">▶ Resume Game · தொடர்ந்து ஆடு</button>
-      <button type="button" class="secondary-btn" id="quit-menu-btn" style="margin-top:0;">⚙️ Main Menu · முதன்மைப் பக்கம்</button>
+      <button type="button" class="primary-btn" id="quit-resume-btn" style="margin-top:0;">▶ Resume Game</button>
+      <button type="button" class="secondary-btn" id="quit-menu-btn" style="margin-top:0;">⚙️ Main Menu</button>
     </div>
   </div>
 </div>
@@ -110,46 +124,47 @@
 <!-- Coin Toss 3D Modal -->
 <div class="overlay hidden" id="coin-toss-modal" role="dialog" aria-modal="true" aria-label="Coin Toss">
   <div class="modal-card" style="max-width:380px; text-align:center;">
-    <h2 style="font-size:21px; margin-bottom:4px; color:#ffe1a4;">🪙 நாணயச் சுழற்சி</h2>
+    <h2 style="font-size:21px; margin-bottom:4px; color:#ffe1a4;">🪙 Coin toss</h2>
     <p class="sub" style="margin-bottom:12px;">COIN TOSS · WHO MOVES FIRST?</p>
     <div class="coin-stage">
       <div class="brass-coin" id="toss-coin">
         <div class="coin-face coin-front">
           <span class="coin-symbol">👑</span>
-          <span class="coin-text">அரசன்</span>
+          <span class="coin-text">Heads</span>
         </div>
         <div class="coin-face coin-back">
           <span class="coin-symbol">🌾</span>
-          <span class="coin-text">பூ</span>
+          <span class="coin-text">Tails</span>
         </div>
       </div>
     </div>
     <div id="toss-result-text" style="font-size:14px; font-weight:800; color:#b5f7d2; min-height:38px; line-height:1.4;">
       Flipping brass coin…
     </div>
-    <button type="button" class="primary-btn" id="toss-start-btn" style="margin-top:14px;" disabled>START SOWING • ஆடுவோம்</button>
+    <button type="button" class="primary-btn" id="toss-start-btn" style="margin-top:14px;" disabled>START SOWING</button>
   </div>
 </div>
 
 <!-- Kasie Round Transition Modal -->
 <div class="overlay hidden" id="round-modal" role="dialog" aria-modal="true" aria-label="Round Summary">
   <div class="modal-card" style="max-width:440px;">
+    
     <div class="victory-emblem" style="font-size:36px; line-height:1;">🏆</div>
-    <h2 id="round-modal-title" style="text-align:center; font-size:22px; margin-bottom:3px; color:#ffe1a4;">சுற்று 1 முடிந்தது!</h2>
+    <h2 id="round-modal-title" style="text-align:center; font-size:22px; margin-bottom:3px; color:#ffe1a4;">Round 1 complete!</h2>
     <p class="sub" id="round-modal-sub" style="text-align:center; margin-bottom:14px;">KASIE ALLOCATION · REFILLING CUPS</p>
     <div id="round-details" style="font-size:12px; line-height:1.6; color:#eedcc6; background:rgba(0,0,0,0.35); border:1px solid #755434; border-radius:12px; padding:12px; margin-bottom:14px;"></div>
     <p style="font-size:11px; color:#f6d289; line-height:1.45; margin-bottom:14px;">
-      💡 <b>காசி விதி (Kasie Rule):</b> Pits that could not be filled with seeds are locked (🔒 காசி). Seeds dropped into locked pits cannot be scooped and will be claimed at the round's end!
+      💡 <b>Kasie rule:</b> Pits that could not be filled with seeds are locked (🔒 Kasie). Seeds dropped into locked pits cannot be scooped and will be claimed at the round's end!
     </p>
-    <button type="button" class="primary-btn" id="next-round-btn" style="margin-top:0;">START NEXT ROUND • அடுத்த சுற்று</button>
+    <button type="button" class="primary-btn" id="next-round-btn" style="margin-top:0;">START NEXT ROUND</button>
   </div>
 </div>
 
 <div class="overlay" id="setup-modal" role="dialog" aria-modal="true" aria-label="Set up game">
   <div class="modal-card home-card">
-    <button type="button" class="action-btn language-inline" id="language-setup-btn" data-no-i18n data-language-toggle>தமிழ்</button>
+    <button type="button" class="action-btn language-inline" id="language-setup-btn" data-no-i18n data-language-toggle>Language</button>
     <div class="home-eyebrow">PALLANGUZHI · HERITAGE</div>
-    <h1>பல்லாங்குழி</h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
+    <h1>Pallanguzhi</h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
     <p class="home-intro">Play a timeless Tamil board game.</p>
     <section class="resume-panel" id="resume-panel" hidden aria-label="Continue saved match">
       <div class="resume-heading">💾 Continue your match?</div>
@@ -168,7 +183,7 @@
 
     <!-- Online P2P Card -->
     <div id="online-panel" class="online-box" hidden>
-      <div style="font-size:13px; font-weight:850; color:#ffd700; margin-bottom:8px;">🌐 Online Two-Phone Link • இருவர் இணைப்பு</div>
+      <div style="font-size:13px; font-weight:850; color:#ffd700; margin-bottom:8px;">🌐 Online two-device link</div>
       <div id="online-host-section">
         <div style="font-size:11px; color:#e2cbba;">Share this room code with your friend. Online play needs an internet connection:</div>
         <div class="online-code-display" id="online-room-code">......</div>
@@ -195,7 +210,7 @@
     
     <details class="home-settings">
       <summary>Match rules <span>Single Match recommended · Kasie is a longer tournament</span></summary>
-    <span class="field-label">First move · முதல் வாய்ப்பு</span>
+    <span class="field-label">First move</span>
     <div class="button-grid" style="grid-template-columns: repeat(4, 1fr);">
       <button type="button" class="option active" data-toss="coin">🪙 Toss</button>
       <button type="button" class="option" data-toss="p1">⬇️ P1</button>
@@ -203,27 +218,27 @@
       <button type="button" class="option" data-toss="alt">🔄 Alt</button>
     </div>
 
-    <span class="field-label">Tournament format · ஆட்ட முறை</span>
+    <span class="field-label">Tournament format</span>
     <div class="button-grid">
-      <button type="button" class="option" data-format="kasie">🏆 Kasie Multi-Round (காசி)</button>
-      <button type="button" class="option active" data-format="single">⚡ Single Match (ஒற்றைச் சுற்று)</button>
+      <button type="button" class="option" data-format="kasie">🏆 Kasie Multi-Round</button>
+      <button type="button" class="option active" data-format="single">⚡ Single Match</button>
     </div>
 
-    <span class="field-label">Seeds per cup · விதை எண்ணிக்கை</span>
+    <span class="field-label">Seeds per cup</span>
     <div class="button-grid">
-      <button type="button" class="option active" data-seedscount="5">5 Seeds (ஐந்து - Classic)</button>
-      <button type="button" class="option" data-seedscount="4">4 Seeds (நான்கு - Thinnai)</button>
+      <button type="button" class="option active" data-seedscount="5">5 Seeds (Classic)</button>
+      <button type="button" class="option" data-seedscount="4">4 Seeds (Thinnai)</button>
     </div>
 
-    <span class="field-label">Pasu rule (4 seeds) · பசு விதி</span>
+    <span class="field-label">Pasu rule (4 seeds)</span>
     <div class="button-grid">
-      <button type="button" class="option active" data-pasu="on">🔔 Enabled (4 விதைகள் பசு)</button>
-      <button type="button" class="option" data-pasu="off">✕ Disabled (தூய விதைத்தல்)</button>
+      <button type="button" class="option active" data-pasu="on">🔔 Enabled</button>
+      <button type="button" class="option" data-pasu="off">✕ Disabled</button>
     </div>
 
     </details>
     <div class="difficulty-chooser" id="difficulty-picker">
-      <span class="field-label">Computer difficulty · திறன் நிலை</span>
+      <span class="field-label">Computer difficulty</span>
       <div class="button-grid">
         <button type="button" class="option" data-difficulty="easy" aria-pressed="false">🌱 Easy</button>
         <button type="button" class="option active" data-difficulty="medium" aria-pressed="true">🪴 Medium</button>
@@ -234,7 +249,7 @@
     </div>
     <details class="home-settings">
       <summary>Make it yours <span>Board, names &amp; sound</span></summary>
-    <span class="field-label">Board design · பலகை வடிவமைப்பு</span>
+    <span class="field-label">Board design</span>
     <div class="button-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
       <button type="button" class="option active" data-theme="bright">☀️ Warm Teak</button>
       <button type="button" class="option" data-theme="dark">🌙 Rosewood</button>
@@ -242,7 +257,7 @@
       <button type="button" class="option" data-theme="granite">🛕 Granite</button>
       <button type="button" class="option" data-theme="sandalwood">🌿 Sandalwood</button>
     </div>
-    <span class="field-label">Counter style · விதைகள் / சோழிகள்</span>
+    <span class="field-label">Counter style</span>
     <div class="button-grid" style="grid-template-columns: repeat(3, 1fr);">
       <button type="button" class="option active" data-seeds="natural">🌰 Tamarind</button>
       <button type="button" class="option" data-seeds="cowrie">🐚 Cowrie</button>
@@ -250,44 +265,46 @@
     </div>
     <div class="input-group"><label for="p1-input">Player 1 · bottom</label><input id="p1-input" maxlength="18" value="Player 1" autocomplete="off"></div>
     <div class="input-group"><label for="p2-input">Player 2 · top</label><input id="p2-input" maxlength="18" value="Azhagi (AI)" autocomplete="off"></div>
-    <span class="field-label">Sound volume · ஒலி அளவு</span>
+    <span class="field-label">Sound volume</span>
     <label class="slider-line" for="volume-input">🔊 <input type="range" id="volume-input" min="0" max="100" value="65" step="5"><output id="volume-display">65%</output></label>
     </details>
 
-    <button type="button" class="secondary-btn tutorial-launch" id="tutorial-setup-btn">🎓 Learn to play · கற்றுக்கொள்வோம்</button>
+    <button type="button" class="secondary-btn tutorial-launch" id="tutorial-setup-btn">🎓 Learn to play</button>
 
     <div class="home-play"><button type="button" class="primary-btn quick-play" id="quick-play-btn">QUICK PLAY · vs computer</button>
     <p class="quick-note">One round · Easy AI · 5 seeds · You start</p>
-    <button type="button" class="primary-btn" id="start-btn">PLAY SELECTED SETTINGS · ஆடுவோம்</button>
+    <button type="button" class="primary-btn" id="start-btn">PLAY SELECTED SETTINGS</button>
     <p id="start-online-help" style="font-size:11px;color:#f2cf9c;text-align:center;line-height:1.4" hidden>Share the room code, then wait for your opponent to connect.</p></div>
   </div>
 </div>
 
 <div class="overlay hidden" id="rules-modal" role="dialog" aria-modal="true" aria-label="Rules">
   <div class="modal-card">
-    <h2>📖 How to play · விதிகள்</h2>
+    <h2>📖 How to play</h2>
     <div class="rules">
       <p><strong>1. Board:</strong> Each player owns 7 cups. Every cup starts with 4 or 5 seeds (56 or 70 total), depending on setup. The outer cups store captured seeds and are <em>not</em> part of the sowing path.</p>
-      <p><strong>2. Your move · விதைத்தல்:</strong> Select a nonempty cup from <em>your own</em> row. Pick up all its seeds and sow one into each next cup, counter-clockwise. You may sow into both rows.</p>
-      <p><strong>3. Keep sowing · தொடர் சுழற்சி:</strong> When your hand becomes empty, examine the <em>next</em> cup. If it has seeds, pick them up and continue from the following cup.</p>
-      <p><strong>4. Capture · துடைத்தல்:</strong> If that next cup is empty, your turn ends. Capture all seeds in the cup immediately after the empty one, if any. They go to the current player's store.</p>
-      <p><strong>5. Pasu · பசு:</strong> Whenever sowing makes a cup contain exactly 4 seeds, its owner immediately collects those 4 seeds into their store, even during an opponent's move.</p>
+      <p><strong>2. Your move:</strong> Select a nonempty cup from <em>your own</em> row. Pick up all its seeds and sow one into each next cup, counter-clockwise. You may sow into both rows.</p>
+      <p><strong>3. Keep sowing:</strong> When your hand becomes empty, examine the <em>next</em> cup. If it has seeds, pick them up and continue from the following cup.</p>
+      <p><strong>4. Capture:</strong> If that next cup is empty, your turn ends. Capture all seeds in the cup immediately after the empty one, if any. They go to the current player's store.</p>
+      <p><strong>5. Pasu:</strong> Whenever sowing makes a cup contain exactly 4 seeds, its owner immediately collects those 4 seeds into their store, even during an opponent's move.</p>
       <p><strong>6. Match end:</strong> When either player has no playable cup, the round ends and remaining playable seeds return to their owner. In Single Match, most seeds wins; in Kasie Tournament, remaining seeds refill as many cups as possible, with unfilled cups locked next round. If the same seed allocation repeats three times, the tournament ends as a draw.</p>
       <p><strong>7. Smart play:</strong> Choose Easy, Medium, Hard, or Expert when facing the computer. Tap 💡 Hint on your turn for a suggested cup; the suggestion does not play for you. Tap ↶ Undo to restore the previous human decision (including the computer's reply in AI mode). Undo also works during an animation.</p>
-      <p><strong>8. Interactive lessons:</strong> Open Learn from Match settings or Rules for six bilingual practice lessons, now including the traditional Kasie (காசி) tournament rules.</p>
+      <p><strong>8. Interactive lessons:</strong> Open Learn from Match settings or Rules for six bilingual practice lessons, now including the traditional Kasie tournament rules.</p>
       <p><strong>9. Save &amp; resume:</strong> The game saves after completed moves. Calls, screen locks and app switches pause play and finish any active sowing safely. Tap Resume to continue; use Continue on the home screen after reopening.</p>
       <p><strong>10. Online multi-device:</strong> Two devices can connect by room code using PeerJS signaling and WebRTC. Internet access and a hosted HTTPS game are recommended. Connection is network-dependent; play locally if unavailable.</p>
     </div>
-    <button type="button" class="secondary-btn tutorial-launch" id="tutorial-rules-btn">🎓 Try the interactive tutorial · பயிற்சி</button>
+    <button type="button" class="secondary-btn tutorial-launch" id="tutorial-rules-btn">🎓 Try the interactive tutorial</button>
     <button type="button" class="primary-btn" id="close-rules">Back to game</button>
   </div>
 </div>
 
 <div class="overlay hidden" id="end-modal" role="dialog" aria-modal="true" aria-label="Game result">
   <div class="modal-card results-card">
-    <button type="button" class="action-btn language-inline" data-no-i18n data-language-toggle>தமிழ்</button>
+    <canvas id="fireworks-canvas" aria-hidden="true" hidden></canvas>
+    <button type="button" class="action-btn language-inline" data-no-i18n data-language-toggle>Language</button>
+    
     <div class="victory-emblem" aria-hidden="true">🏆</div>
-    <h1 id="result-heading">ஆட்டம் முடிந்தது!</h1><p class="sub" id="result-subtitle">A BEAUTIFUL MATCH</p>
+    <h1 id="result-heading">Match complete!</h1><p class="sub" id="result-subtitle">A BEAUTIFUL MATCH</p>
     <div class="winner-line" id="winner-text"></div>
     <p class="result-message" id="result-message"></p>
     <p id="result-match-info" class="result-match-info"></p>
@@ -297,7 +314,7 @@
     <button type="button" class="primary-btn" id="again-btn">↻ Rematch</button>
     <p id="rematch-status" role="status" class="rematch-status"></p>
     <button type="button" class="secondary-btn" id="change-btn">⌂ Home &amp; match settings</button>
-    <button type="button" class="secondary-btn" id="result-wa-btn" style="background:#135d38; border-color:#22c55e; color:#bbf7d0;">📲 Share Result on WhatsApp · பகிருங்கள்</button>
+    <button type="button" class="secondary-btn" id="result-wa-btn" style="background:#135d38; border-color:#22c55e; color:#bbf7d0;">📲 Share Result on WhatsApp</button>
     <button type="button" class="secondary-btn" id="result-stats-btn">📊 Match history & achievements</button>
     <button type="button" class="secondary-btn" id="undo-end-btn" hidden>↶ Undo last move</button>
   </div>
@@ -305,7 +322,7 @@
 
 <div class="overlay hidden" id="stats-modal" role="dialog" aria-modal="true" aria-label="Match statistics and achievements">
   <div class="modal-card">
-    <h2>📊 Heritage Journey · சாதனைகள்</h2>
+    <h2>📊 Heritage Journey</h2>
     <p class="difficulty-note">These results are for the bottom player (Player 1), across all game modes. Saved on this device only.</p>
     <div class="stats-grid" id="stats-grid"></div>
     <div class="stats-section-title">🏅 Achievements</div>
@@ -324,7 +341,7 @@
       <span class="tutorial-kicker">🎓 <span id="tutorial-progress">LESSON 1 / 6</span></span>
       <div class="tutorial-languages" role="group" aria-label="Tutorial language">
         <button type="button" class="tut-lang active" data-tut-lang="en" aria-pressed="true">English</button>
-        <button type="button" class="tut-lang" data-tut-lang="ta" aria-pressed="false">தமிழ்</button>
+        <button type="button" class="tut-lang" data-tut-lang="ta" aria-pressed="false">Language</button>
       </div>
     </div>
     <h2 id="tutorial-title">Learn to sow</h2>
@@ -342,10 +359,10 @@
       <button type="button" class="secondary-btn" id="tutorial-replay">↻ Replay</button>
       <button type="button" class="primary-btn" id="tutorial-next" disabled>Next lesson →</button>
     </div>
-    <button type="button" class="tutorial-exit" id="tutorial-exit">Close tutorial · பயிற்சியை மூடு</button>
+    <button type="button" class="tutorial-exit" id="tutorial-exit">Close tutorial</button>
   </div>
 </div>
 
-<script type="module" src="app.js?v=3.12.0"></script>
+<script type="module" src="app.js?v=3.13.0"></script>
 </body>
 </html>

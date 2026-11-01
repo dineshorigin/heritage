@@ -9,14 +9,14 @@ export function settledCowries(count,index=0,store=false){
  const particles=[];
  for(let i=0;i<n;i++){
   const angle=i*2.39996323+index*.31;
-  particles.push({x:Math.cos(angle)*.48,y:.12+Math.sin(angle)*.38,vx:0,vy:0,layer:Math.floor(i/BOWL_PHYSICS.capacity)});
+  particles.push({x:Math.cos(angle)*.48,y:Math.sin(angle)*.38,vx:0,vy:0,layer:Math.floor(i/BOWL_PHYSICS.capacity)});
  }
  const {dt,gravity,friction,restitution}=BOWL_PHYSICS;
  for(let step=0;step<BOWL_PHYSICS.steps;step++){
   for(const p of particles){
    // Tangential component of gravity on a concave parabolic bowl, with friction.
    p.vx+=(-gravity*p.x-friction*p.vx)*dt;
-   p.vy+=(-gravity*(p.y-.12)-friction*p.vy)*dt;
+   p.vy+=(-gravity*p.y-friction*p.vy)*dt;
    p.x+=p.vx*dt;p.y+=p.vy*dt;
   }
   for(let pass=0;pass<2;pass++){
@@ -34,11 +34,17 @@ export function settledCowries(count,index=0,store=false){
    }
    for(const p of particles){
     const radius=Math.hypot(p.x,p.y-.12),limit=.77-p.layer*.025;
-    if(radius>limit){const nx=p.x/radius,ny=(p.y-.12)/radius;p.x=nx*limit;p.y=.12+ny*limit;const vn=p.vx*nx+p.vy*ny;if(vn>0){p.vx-=(1+restitution)*vn*nx;p.vy-=(1+restitution)*vn*ny;}}
+    if(radius>limit){const nx=p.x/radius,ny=p.y/radius;p.x=nx*limit;p.y=ny*limit;const vn=p.vx*nx+p.vy*ny;if(vn>0){p.vx-=(1+restitution)*vn*nx;p.vy-=(1+restitution)*vn*ny;}}
    }
   }
  }
- const result=Object.freeze(particles.map((p,i)=>Object.freeze({x:50+p.x*(store?37:34),y:51+p.y*31-p.layer*2,layer:p.layer,rotation:((i*53+index*17)%105-50)})));
+ // Centre each resting layer exactly on the measured bowl floor.
+ for(let layer=0;layer<=Math.floor((n-1)/BOWL_PHYSICS.capacity);layer++){
+  const group=particles.filter(p=>p.layer===layer);const mx=group.reduce((v,p)=>v+p.x,0)/group.length,my=group.reduce((v,p)=>v+p.y,0)/group.length;
+  for(const p of group){p.x-=mx;p.y-=my;}
+  const max=Math.max(...group.map(p=>Math.hypot(p.x,p.y)));if(max>.77)for(const p of group){p.x*=.77/max;p.y*=.77/max;}
+ }
+ const result=Object.freeze(particles.map((p,i)=>Object.freeze({x:50+p.x*(store?37:34),y:50+p.y*31,layer:p.layer,rotation:((i*53+index*17)%105-50)})));
  if(cache.size>=256)cache.delete(cache.keys().next().value);
  cache.set(key,result);return result;
 }

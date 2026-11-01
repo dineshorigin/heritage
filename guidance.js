@@ -1,4 +1,4 @@
-import {settledCowries} from './physics.js?v=3.12.0';
+import {settledCowries} from './physics.js?v=3.13.0';
 export const BOARD_ASPECT=8/3;
 // Plain-text feedback shared by the interface and its tests.
 export function turnGuidance(g) {
@@ -59,10 +59,12 @@ export function pickupPattern(count) {
 
 // Coordinates measured against reference-board.webp (1600 x 600).
 // The offset between rows preserves the photographed carving.
+const CUP_CENTRES=[[[22.5171, 20.7482, 61.14], [31.5207, 20.4799, 62.88], [40.6008, 21.0475, 62.59], [49.7899, 20.8134, 64.36], [59.0436, 20.4496, 63.38], [68.2025, 21.0155, 62.79], [77.419, 20.2545, 64.37]], [[18.0781, 77.0332, 65.05], [27.5321, 77.1563, 64.7], [36.8774, 76.75, 64.12], [46.0729, 76.8107, 63.56], [55.3111, 76.7838, 64.1], [64.6372, 77.125, 65.05], [74.1272, 76.5231, 65.81]]];
 export function referenceCup(index){
  if(!Number.isInteger(index)||index<0||index>13)throw new RangeError('Cup index must be 0..13');
  const top=index>=7,column=top?13-index:index;
- return {x:(top?23.8:17.9)+column*(top?9.18:9.40),y:top?21.3:77.1};
+ const [x,y,radius]=CUP_CENTRES[top?0:1][column];
+ return {x,y,width:radius/8,height:radius/3};
 }
 
 // A settled handful stays near the low central region of a carved bowl.

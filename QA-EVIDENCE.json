@@ -1,224 +1,97 @@
 {
-  "version": "3.12.0",
-  "unitTestsPassed": 32,
+  "version": "3.13.0",
+  "finalUnitTestsPassed": 36,
   "engineSimulations": {
     "matches": 800,
     "moves": 50131,
-    "failures": 0
+    "errors": 0
   },
-  "browser": {
-    "layouts": {
-      "status": "PASS",
-      "checks": "6 layouts; all 84 cup centers unobstructed; artwork loaded; legal sowing matches engine; seed conservation; hint; undo; pause/resume; languages; 5 themes",
-      "results": [
-        {
-          "viewport": [
-            320,
-            568
-          ],
-          "board": {
-            "width": 139.875,
-            "height": 373
+  "browserFeatureChecksDuringDevelopment": {
+    "status": "PASS",
+    "results": [
+      {
+        "language": "en",
+        "materials": [
+          {
+            "material": "natural",
+            "pieces": 5
           },
-          "cups": 14,
-          "result": "PASS"
-        },
-        {
-          "viewport": [
-            360,
-            640
-          ],
-          "board": {
-            "width": 166.875,
-            "height": 445
+          {
+            "material": "colored",
+            "pieces": 5
           },
-          "cups": 14,
-          "result": "PASS"
-        },
-        {
-          "viewport": [
-            393,
-            851
-          ],
-          "board": {
-            "width": 246,
-            "height": 656
+          {
+            "material": "cowrie",
+            "pieces": 5
+          }
+        ],
+        "mats": 6,
+        "twoSidedControls": true,
+        "centredPiles": true,
+        "uniformCounts": true,
+        "fireworks": "PASS"
+      },
+      {
+        "language": "ta",
+        "materials": [
+          {
+            "material": "natural",
+            "pieces": 5
           },
-          "cups": 14,
-          "result": "PASS"
-        },
-        {
-          "viewport": [
-            412,
-            915
-          ],
-          "board": {
-            "width": 270,
-            "height": 720
+          {
+            "material": "colored",
+            "pieces": 5
           },
-          "cups": 14,
-          "result": "PASS"
-        },
-        {
-          "viewport": [
-            740,
-            360
-          ],
-          "board": {
-            "width": 589.328125,
-            "height": 221
-          },
-          "cups": 14,
-          "result": "PASS"
-        },
-        {
-          "viewport": [
-            1024,
-            768
-          ],
-          "board": {
-            "width": 1006,
-            "height": 377.25
-          },
-          "cups": 14,
-          "result": "PASS"
-        }
-      ]
-    },
-    "matches": {
-      "status": "PASS",
-      "matches": [
-        {
-          "seeds": "4",
-          "pasu": "on",
-          "format": "single",
-          "moves": 3,
-          "result": "PASS"
-        },
-        {
-          "seeds": "4",
-          "pasu": "on",
-          "format": "kasie",
-          "moves": 44,
-          "result": "PASS"
-        },
-        {
-          "seeds": "4",
-          "pasu": "off",
-          "format": "single",
-          "moves": 40,
-          "result": "PASS"
-        },
-        {
-          "seeds": "4",
-          "pasu": "off",
-          "format": "kasie",
-          "moves": 163,
-          "result": "PASS"
-        },
-        {
-          "seeds": "5",
-          "pasu": "on",
-          "format": "single",
-          "moves": 17,
-          "result": "PASS"
-        },
-        {
-          "seeds": "5",
-          "pasu": "on",
-          "format": "kasie",
-          "moves": 145,
-          "result": "PASS"
-        },
-        {
-          "seeds": "5",
-          "pasu": "off",
-          "format": "single",
-          "moves": 52,
-          "result": "PASS"
-        },
-        {
-          "seeds": "5",
-          "pasu": "off",
-          "format": "kasie",
-          "moves": 146,
-          "result": "PASS"
-        }
-      ]
-    },
-    "animation": {
-      "status": "PASS",
-      "checks": "Actual unskipped pickup, sowing, four-shell capture, turn change and flight sprite cleanup",
-      "durationMs": 12538,
-      "banks": [
-        0,
-        36,
-        32
-      ]
-    },
-    "liveResize": {
-      "status": "PASS",
-      "liveResizes": [
-        {
-          "width": 851,
-          "height": 393,
-          "ratio": 2.6666666666666665
-        },
-        {
-          "width": 393,
-          "height": 851,
-          "ratio": 2.6666666666666665
-        },
-        {
-          "width": 1280,
-          "height": 720,
-          "ratio": 2.6666666666666665
-        },
-        {
-          "width": 1920,
-          "height": 1080,
-          "ratio": 2.6666666666666665
-        }
-      ]
-    },
-    "fullscreenEntry": {
-      "supported": false,
-      "message": "Fullscreen is unavailable in this browser."
-    }
+          {
+            "material": "cowrie",
+            "pieces": 5
+          }
+        ],
+        "mats": 6,
+        "twoSidedControls": true,
+        "centredPiles": true,
+        "uniformCounts": true,
+        "fireworks": "PASS"
+      }
+    ],
+    "scopeNote": "Observed on a development revision before the final Stats shortcut and tutorial/share-language wiring. Final browser rerun blocked by automatic approval review usage limit."
   },
-  "extraBrowserAssertions": [
-    "Fixed guide height under long capture/reconnect messages",
-    "Eight tools in collapsed overlay; action and Escape dismissal",
-    "Invariant board aspect across all sizes"
-  ],
+  "finalBrowserRerun": "BLOCKED: session usage limit",
+  "browserAudioInstrumentation": "NOT RUN: usage limit",
+  "finalSmallScreenBrowserChecks": "NOT RUN: usage limit",
+  "nativeSourceSync": "PASS; no APK",
   "files": {
     "index.html": {
-      "bytes": 28577,
-      "sha256": "866bfe5af235319f207914e90b420f7ade2ce026bc4c1685586feadcdd99eefc"
+      "bytes": 30168,
+      "sha256": "67872fa03dbd71d00d761d238e76a05610140633fd8c20664c379a9142809b01"
     },
     "game.css": {
-      "bytes": 54150,
-      "sha256": "aa50f47d8b558cbb8987758cba8ad21065f82773b16dd27e345a10358ccf2d11"
+      "bytes": 61131,
+      "sha256": "c132a3b5814da96e37c2156762870a827c64607da8caac7ed305569f6f638bdc"
     },
     "app.js": {
-      "bytes": 140424,
-      "sha256": "6515aaf82cb0a9b4b817526ac82db01055f1a604d86f90b92dae13016be83010"
+      "bytes": 144732,
+      "sha256": "00a44ff83b3970743759e152b388b1b3bf15e37e2849fae86663015957f6ef79"
     },
     "rules.js": {
       "bytes": 3153,
       "sha256": "10c706a2cdd2562b1caacc1c4c268b4fa2fc8afc6915849426b44ba196f15267"
     },
     "guidance.js": {
-      "bytes": 4258,
-      "sha256": "8b3d2b233ac84cae29224c4b8e6fa5cd59b291c0becce44864f8d35b58a1a8a9"
+      "bytes": 4682,
+      "sha256": "332c2c264a1059ebe0ac3f7b873d982b1391839d99acf903f1c2cf3913f9a7c9"
     },
     "locale.js": {
-      "bytes": 50203,
-      "sha256": "1f6516115ca72f638ab2380b4e90f3392216d6e815291ab230cc29d66fa17f29"
+      "bytes": 61819,
+      "sha256": "c722d94810822e4b7e790dda966dc32c923393f9c65b2aea41f569fcbaf9be30"
     },
     "physics.js": {
-      "bytes": 3075,
-      "sha256": "fd3e68df9ef1aeaea2c2f72a0afd2bc3c4b3aced900c3b2932f7d07036eb125c"
+      "bytes": 3498,
+      "sha256": "7508b7cbd2814b9f49a390db08e88c5a035f8b3971b30a0d134ed69a48431bdd"
+    },
+    "presentation.js": {
+      "bytes": 2248,
+      "sha256": "d1f44b23795ac914827ee45d4dc05917deb88befe9b680921f3b54bcdff1fe58"
     },
     "native-bridge.js": {
       "bytes": 97491,
@@ -235,6 +108,15 @@
     "cowrie-shell.webp": {
       "bytes": 2784,
       "sha256": "27efd7d3ee441ac0461048a74d7dd01db8ff12f1a386652492266cc4b6497ad5"
+    },
+    "wood-bead.webp": {
+      "bytes": 5710,
+      "sha256": "63b89de6f59b769518ffc2d01f169fad52319cef350987bac21f916270e98c2e"
+    },
+    "elephant-eye.webp": {
+      "bytes": 7022,
+      "sha256": "697a92c8038f1c3545dcfb4619b7f252ee665dceceb395d11410b47ef67b494b"
     }
-  }
+  },
+  "totalWebBytes": 718988
 }

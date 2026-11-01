@@ -238,13 +238,40 @@ export const tamil = {
 };
 Object.assign(tamil,{'Kasie tournament drawn — repeated position':'காசி ஆட்டம் சமநிலை — ஒரே நிலை மீண்டும் வந்தது','Kasie draw: the same seed allocation repeated three times. The tournament is declared a draw to prevent an endless cycle.':'ஒரே விதை ஒதுக்கீடு மூன்று முறை வந்ததால் காசி ஆட்டம் சமநிலையில் முடிந்தது. ஆட்டம் முன்னேறவில்லை.'});
 Object.assign(tamil,{'🟢 Connected through local browser channel':'🟢 உள்ளூர் உலாவி வழியாக இணைக்கப்பட்டது'});
+
+const captionAliases={"Pallanguzhi": "பல்லாங்குழி", "⏸ Game paused": "⏸ ஆட்ட இடைநிறுத்தம்", "🪙 Coin toss": "🪙 நாணயச் சுழற்சி", "Heads": "அரசன்", "Tails": "பூ", "Round 1 complete!": "சுற்று 1 முடிந்தது!", "▶ Resume Game": "▶ Resume Game · தொடர்ந்து ஆடு", "⚙️ Main Menu": "⚙️ Main Menu · முதன்மைப் பக்கம்", "START SOWING": "START SOWING • ஆடுவோம்", "START NEXT ROUND": "START NEXT ROUND • அடுத்த சுற்று", "Kasie rule:": "காசி விதி (Kasie Rule):", "🌐 Online two-device link": "🌐 Online Two-Phone Link • இருவர் இணைப்பு", "First move": "First move · முதல் வாய்ப்பு", "Tournament format": "Tournament format · ஆட்ட முறை", "🏆 Kasie Multi-Round": "🏆 Kasie Multi-Round (காசி)", "⚡ Single Match": "⚡ Single Match (ஒற்றைச் சுற்று)", "Seeds per cup": "Seeds per cup · விதை எண்ணிக்கை", "5 Seeds (Classic)": "5 Seeds (ஐந்து - Classic)", "4 Seeds (Thinnai)": "4 Seeds (நான்கு - Thinnai)", "Pasu rule (4 seeds)": "Pasu rule (4 seeds) · பசு விதி", "🔔 Enabled": "🔔 Enabled (4 விதைகள் பசு)", "✕ Disabled": "✕ Disabled (தூய விதைத்தல்)", "Computer difficulty": "Computer difficulty · திறன் நிலை", "Board design": "Board design · பலகை வடிவமைப்பு", "Counter style": "Counter style · விதைகள் / சோழிகள்", "Sound volume": "Sound volume · ஒலி அளவு", "🎓 Learn to play": "🎓 Learn to play · கற்றுக்கொள்வோம்", "PLAY SELECTED SETTINGS": "PLAY SELECTED SETTINGS · ஆடுவோம்", "📖 How to play": "📖 How to play · விதிகள்", "Your move": "Your move · விதைத்தல்", "Keep sowing": "Keep sowing · தொடர் சுழற்சி", "Capture": "Capture · துடைத்தல்", "Pasu": "Pasu · பசு", "Kasie": "Kasie (காசி)", "🎓 Try the interactive tutorial": "🎓 Try the interactive tutorial · பயிற்சி", "Match complete!": "ஆட்டம் முடிந்தது!", "📲 Share Result on WhatsApp": "📲 Share Result on WhatsApp · பகிருங்கள்", "📊 Heritage Journey": "📊 Heritage Journey · சாதனைகள்", "Close tutorial": "Close tutorial · பயிற்சியை மூடு"};
+for(const [canonical,old] of Object.entries(captionAliases))if(tamil[old]&&!tamil[canonical])tamil[canonical]=tamil[old];
+Object.assign(tamil,{"Pallanguzhi": "பல்லாங்குழி", "Pallanguzhi game": "பல்லாங்குழி ஆட்டம்", "Language": "மொழி", "Tamil": "தமிழ்", "English": "ஆங்கிலம்", "Your turn": "உங்கள் வாய்ப்பு", "Waiting": "காத்திருக்கிறது", "Thaaikuli": "தாய்க்குழி", "▧ Mat": "▧ விரிப்பு", "Choose a mat": "விரிப்பைத் தேர்ந்தெடுக்கவும்", "Change the table mat without restarting your match.": "ஆட்டத்தை மீண்டும் தொடங்காமல் விரிப்பை மாற்றலாம்.", "Emerald": "மரகதம்", "Burgundy": "செம்பவளம்", "Royal blue": "அரச நீலம்", "Sand": "மணல்", "Plum": "ஊதா", "Slate": "கருஞ்சாம்பல்", "Azhagi (AI)": "அழகி (கணினி)", "Draw!": "சமநிலை!", "Congratulations!": "வாழ்த்துகள்!", "Match complete!": "ஆட்டம் முடிந்தது!", "Player 1 controls": "வீரர் 1 கருவிகள்", "Player 2 controls": "வீரர் 2 கருவிகள்", "Heads": "தலை", "Tails": "பூ", "Round 1 complete!": "சுற்று 1 முடிந்தது!", "5 Seeds (Classic)": "5 விதைகள் (பாரம்பரியம்)", "4 Seeds (Thinnai)": "4 விதைகள் (திண்ணை)", "START SOWING": "விதைக்கத் தொடங்கு", "START NEXT ROUND": "அடுத்த சுற்றைத் தொடங்கு", "Kasie rule:": "காசி விதி:", "▶ Resume Game": "▶ ஆட்டத்தைத் தொடர்க", "⚙️ Main Menu": "⚙️ முதன்மைப் பக்கம்", "⏸ Game paused": "⏸ ஆட்ட இடைநிறுத்தம்", "🪙 Coin toss": "🪙 நாணயச் சுழற்சி", "🌐 Online two-device link": "🌐 இணைய இருவர் இணைப்பு", "🔔 Enabled": "🔔 இயக்கு", "✕ Disabled": "✕ நிறுத்து", "First move": "முதல் வாய்ப்பு", "Tournament format": "ஆட்ட முறை", "Seeds per cup": "குழிக்கு விதைகள்", "Pasu rule (4 seeds)": "பசு விதி (4 விதைகள்)", "Computer difficulty": "கணினி திறன்", "Board design": "பலகை வடிவமைப்பு", "Counter style": "விதை வகை", "Sound volume": "ஒலி அளவு", "PLAY SELECTED SETTINGS": "தேர்ந்தெடுத்த அமைப்பில் ஆடு", "📖 How to play": "📖 ஆடும் முறை", "2. Your move:": "2. உங்கள் நகர்வு:", "3. Keep sowing:": "3. தொடர் விதைத்தல்:", "4. Capture:": "4. கைப்பற்றுதல்:", "5. Pasu:": "5. பசு:", "🏆 Kasie Multi-Round": "🏆 காசி தொடர் ஆட்டம்", "⚡ Single Match": "⚡ ஒற்றைச் சுற்று", "📊 Heritage Journey": "📊 பாரம்பரியப் பயணம்", "📲 Share Result on WhatsApp": "📲 முடிவைப் பகிர்"});
+
+Object.assign(tamil,{
+'🎓 Learn to play':'🎓 கற்றுக்கொள்வோம்','🎓 Try the interactive tutorial':'🎓 பயிற்சியை முயற்சி செய்','START ONLINE MATCH':'இணைய ஆட்டத்தைத் தொடங்கு','Open match statistics and achievements':'ஆட்டப் புள்ளிவிவரங்களையும் சாதனைகளையும் திற','Continue saved match':'சேமித்த ஆட்டத்தைத் தொடர்க','Pasu! +4':'பசு! +4','Round Summary':'சுற்றுச் சுருக்கம்','Switch to Tamil':'தமிழுக்கு மாற்று'
+});
+Object.assign(tamil,{"Highlight a suggested cup": "பரிந்துரைக்கப்படும் குழியைக் காட்டு", "Undo your last move (and the AI reply, if any)": "முந்தைய நகர்வையும் கணினியின் பதிலையும் மீட்டெடு", "Wooden seed taps and bead-on-wood clacks (procedurally rendered)": "விதை வகைக்கேற்ற இயற்கையான தட்டும் ஒலிகள்", "Dismiss hint explanation": "குறிப்பு விளக்கத்தை மூடு", "Finish the current move without waiting for animations": "விதைக்கும் காட்சிக்குக் காத்திருக்காமல் நகர்வை முடி", "Pause or Quit match": "ஆட்டத்தை இடைநிறுத்து அல்லது வெளியேறு", "Coin Toss": "நாணயச் சுழற்சி", "Send a reaction": "உணர்ச்சிக் குறியீடு அனுப்பு", "Share of captured seeds": "சேகரித்த விதைகளின் பங்கு", "Interactive Pallanguzhi tutorial": "பல்லாங்குழி செயல்வழிப் பயிற்சி", "Tutorial language": "பயிற்சி மொழி", "Practice board with fourteen interactive cups": "பதினான்கு குழிகள் கொண்ட பயிற்சிப் பலகை", "Top row": "மேல் வரிசை", "Bottom row": "கீழ் வரிசை", "Pits that could not be filled with seeds are locked (🔒 Kasie). Seeds dropped into locked pits cannot be scooped and will be claimed at the round's end!": "நிரப்ப முடியாத குழிகள் காசியாக மூடப்படும். அவற்றில் விழும் விதைகளை எடுக்க முடியாது; சுற்று முடிவில் அவை கணக்கிடப்படும்!"});
+function localNames(s){return s.replace(/Player 1/g,'வீரர் 1').replace(/Player 2/g,'வீரர் 2').replace(/Azhagi \(AI\)/g,'அழகி (கணினி)').replace(/\bAM\b/g,'காலை').replace(/\bPM\b/g,'மாலை');}
 let language='en';
 export function getLanguage(){return language;}
 export function translate(text,lang=language){
- if(lang!=='ta'||!text)return text;
+ if(!text)return text;
+ if(lang!=='ta'){const value=String(text);const key=value.trim();const canonical=captionAliases[key];return canonical?value.replace(key,key):({'வாழ்த்துகள்!':'Congratulations!','சமநிலை!':'Draw!','ஆட்டம் முடிந்தது!':'Match complete!','பல்லாங்குழி':'Pallanguzhi'}[key]||value);}
  const raw=String(text),s=raw.trim();
- if(tamil[s])return raw.replace(s,tamil[s]);
+ if(tamil[s])return localNames(raw.replace(s,tamil[s]));
  const patterns=[
+  [/^(.+) · Unlocked ✓$/,(_,name)=>translate(name,'ta')+' · சாதனை பெற்றது ✓'],
+
+  [/^🏅 Achievement unlocked: (.+)$/,(_,all)=>'🏅 புதிய சாதனை: '+all.split(' · ').map(s=>s.replace(/([A-Za-z][A-Za-z ]+)$/,v=>translate(v,'ta'))).join(' · ')],
+
+  [/^Round (\d+) complete!$/,(_,r)=>`சுற்று ${r} முடிந்தது!`],
+  [/^Round (\d+) started! (.+)'s turn.$/,(_,r,n)=>`சுற்று ${r} தொடங்கியது! ${n}: வாய்ப்பு.`],
+
+  [/^(.+) · Thaaikuli$/,(_,n)=>`${n} · தாய்க்குழி`],
+  [/^Player (\d+) cup (\d+), (\d+) (seeds|beads|cowries)(.*)$/,(_,p,c,n,m,t)=>`வீரர் ${p}, குழி ${c}, ${n} விதைகள்${t.includes('locked')?', காசி':''}${t.includes('tap to play')?', ஆடத் தொடவும்':''}`],
+  [/^Player (\d+) captured seeds$/,(_,p)=>`வீரர் ${p} தாய்க்குழி`],
+  [/^Player (\d+)'s pits$/,(_,p)=>`வீரர் ${p} குழிகள்`],
+  [/^(.+) scoops (\d+) (seeds|beads|cowries)…$/,(_,n,c)=>`${n} ${c} விதைகளை எடுக்கிறார்…`],
+  [/^Pasu! (.+) \+(\d+) (seeds|beads|cowries)$/,(_,n,c)=>`பசு! ${n} +${c} விதைகள்`],
+  [/^(.+) captured (\d+) (seeds|beads|cowries)!$/,(_,n,c)=>`${n} ${c} விதைகளைச் சேகரித்தார்!`],
+  [/^Gameplay pace: (natural|relaxed|fast). Tap to change.$/,(_,p)=>`ஆட்ட வேகம்: ${{natural:'இயல்பு',relaxed:'மெதுவாக',fast:'விரைவாக'}[p]}. மாற்றத் தொடவும்.`],
+
   [/^(.+) · (\d+\/\d+)$/,(_,phrase,progress)=>`${translate(phrase,'ta')} · ${progress}`],
   [/^💡 Suggested cup (\d+)\.$/,(_,n)=>`💡 பரிந்துரைக்கப்படும் குழி ${n}.`],
   [/^(.+?) vs (.+?) · (.+) · Turn: (.+) · (.+)\.$/,(_,a,b,mode,n,date)=>`${a} எதிர் ${b} · ${translate(mode,'ta')} · வாய்ப்பு: ${n} · ${date}.`],
@@ -296,10 +323,8 @@ export function translate(text,lang=language){
   [/^Waiting for host to start…$/,()=> 'அறையை உருவாக்கியவர் தொடங்கக் காத்திருக்கிறது…'],
   [/^⏳ Waiting for host to begin next round…$/,()=> '⏳ அடுத்த சுற்றுக்குக் காத்திருக்கிறது…']
  ];
- for(const [re,replace] of patterns)if(re.test(s))return raw.replace(s,s.replace(re,replace));
- // Existing bilingual captions already carry an authoritative Tamil label.
- if(/[\u0B80-\u0BFF]/.test(s)&&s.includes(' · ')){const parts=s.split(' · ');if(/[\u0B80-\u0BFF]/.test(parts.at(-1)))return parts.at(-1);}
- return raw;
+ for(const [re,replace] of patterns)if(re.test(s))return localNames(raw.replace(s,s.replace(re,replace)));
+ return localNames(raw);
 }
 export function installLanguage(onChange=()=>{}){
  try{language=localStorage.getItem('pallanguzhi.ui.language')==='ta'?'ta':'en';}catch{}
@@ -308,9 +333,10 @@ export function installLanguage(onChange=()=>{}){
  const textCache=new WeakMap(),attrCache=new WeakMap();
  let queued=false;
  function refresh(){
-  queued=false;document.documentElement.lang=language;
+  queued=false;document.documentElement.lang=language;document.title=language==='ta'?'பல்லாங்குழி · பாரம்பரிய ஆட்டம்':'Pallanguzhi · Heritage Game';
   for(const block of ruleBlocks)if(block.lang!==language){block.lang=language;if(language==='ta'){block.el.dataset.noI18n='';block.el.textContent=block.ta;}else{delete block.el.dataset.noI18n;block.el.innerHTML=block.html;}}
-  for(const button of document.querySelectorAll('[data-language-toggle]')){const label=language==='ta'?'English':'தமிழ்',aria=language==='ta'?'Switch to English':'தமிழுக்கு மாற்று';if(button.textContent!==label)button.textContent=label;if(button.getAttribute('aria-label')!==aria)button.setAttribute('aria-label',aria);}
+  for(const button of document.querySelectorAll('[data-language-toggle]')){const label=language==='ta'?'மொழி':'Language',aria=language==='ta'?'ஆங்கிலத்திற்கு மாற்று':'Switch to Tamil';if(button.textContent!==label)button.textContent=label;if(button.getAttribute('aria-label')!==aria)button.setAttribute('aria-label',aria);}
+  document.querySelectorAll('[data-tut-lang]').forEach(b=>{const label=language==='ta'?(b.dataset.tutLang==='en'?'ஆங்கிலம்':'தமிழ்'):(b.dataset.tutLang==='en'?'English':'Tamil');if(b.textContent!==label)b.textContent=label;});
   const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let node;
   while(node=walker.nextNode()){
    if(node.parentElement?.closest('script,style,input,textarea,[data-no-i18n]'))continue;

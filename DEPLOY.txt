@@ -1,6 +1,6 @@
-ROYAL BOARD EDITION v3.12.0
+PLAYER COMFORT EDITION v3.13.0
 
-Replace/upload these ELEVEN files into your GitHub repository root:
+Upload/replace all FOURTEEN files below in your GitHub repository ROOT:
 index.html
 game.css
 app.js
@@ -8,11 +8,16 @@ rules.js
 guidance.js
 locale.js
 physics.js
+presentation.js
 native-bridge.js
 reference-board.webp
 royal-board.webp
 cowrie-shell.webp
+wood-bead.webp
+elephant-eye.webp
 
-Keep filenames exactly, including all three WebP images. reference-board.webp is now the cutout mask; royal-board.webp is the visible polished board; cowrie-shell.webp is the shared shell sprite. physics.js is required.
+Keep every filename exactly. The new presentation.js, wood-bead.webp and elephant-eye.webp are required. Both reference-board.webp (silhouette) and royal-board.webp (visible wood) remain required. No js/css folders are needed for the web version.
 
-No js/css folders for this web version. Commit, wait for GitHub Pages deployment, then refresh. Android source is inside android-project.zip; this is not an APK and is not required for Pages. Documentation and verification files are optional.
+Commit the upload, wait for GitHub Pages deployment and refresh. Android source is inside android-project.zip; it is not an APK and is not required for Pages. Documentation/verification files are optional.
+
+Manual check: start a two-player match, open Tools from each player edge, choose Mat, try all materials through Match settings, switch languages, make a move and finish a match to see animated fireworks. Final browser rerun was blocked by the session usage limit; see BOARD-UPDATE.txt for exact validation status.

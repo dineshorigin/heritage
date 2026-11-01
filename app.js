@@ -1,12 +1,14 @@
-import {ballisticFlight} from './physics.js?v=3.12.0';
-import { installLanguage, getLanguage } from './locale.js?v=3.12.0';
-import { turnGuidance, captureGuidance, boardSize, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.12.0';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.12.0';
+import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.13.0';
+import {ballisticFlight} from './physics.js?v=3.13.0';
+import { installLanguage, getLanguage, translate } from './locale.js?v=3.13.0';
+import { turnGuidance, captureGuidance, boardSize, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.13.0';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.13.0';
 
 (() => {
   'use strict';
   const recovery={timer:null,attempt:0,lastHeard:Date.now(),hidden:false,pendingSync:null,connectingUntil:0,pauseAfterToss:false};
   let lastTurnNotice=null;
+  let fireworks=null;
   const tournament={allocations:[],forcedDraw:false,endReason:''};
   const rematch={localReady:false,remoteReady:false};
   const N = 14, START_SEEDS = 5, TOTAL_SEEDS = 70, MAX_DROPS = 1600;
@@ -23,6 +25,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     online: false,
     difficulty: 'medium',
     theme: 'bright',
+    mat: 'emerald',
     seedStyle: 'cowrie',
     fast: false,
     pace: 'natural',
@@ -127,6 +130,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
 
   function handleSystemBack() {
+    if(isModalOpen('mat-modal')){$('mat-modal').classList.add('hidden');return true;}
     if (isModalOpen('coin-toss-modal')) {
       $('coin-toss-modal').classList.add('hidden');
       showSetup();
@@ -226,6 +230,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       online: options.online,
       difficulty: options.difficulty,
       theme: options.theme,
+      mat: options.mat,
       seedStyle: options.seedStyle,
       pace: options.pace,
       sound: options.sound,
@@ -248,6 +253,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       if (typeof data.online === 'boolean') options.online = data.online;
       if (['easy','medium','hard','expert'].includes(data.difficulty)) options.difficulty = data.difficulty;
       if (['bright','dark','chettinad','granite','sandalwood'].includes(data.theme)) options.theme = data.theme;
+      options.mat=validMat(data.mat);
       if (['natural','colored','cowrie'].includes(data.seedStyle)) options.seedStyle = data.seedStyle;
       if (['natural','relaxed','fast'].includes(data.pace)) {
         options.pace = data.pace;
@@ -294,6 +300,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('volume-input').value=Math.round(options.volume*100);
     $('volume-display').textContent=Math.round(options.volume*100)+'%';
     document.body.className=options.theme==='bright'?'':options.theme;
+    document.body.classList.toggle('table-facing',!options.ai&&!options.online);
+    document.body.dataset.mat=validMat(options.mat);
     const labels={bright:'☀️ Teak',dark:'🌙 Rosewood',chettinad:'👑 Chettinad',granite:'🛕 Granite',sandalwood:'🌿 Sandalwood'};
     $('theme-btn').textContent=labels[options.theme]||'☀️ Theme';
     updatePaceUI();
@@ -304,6 +312,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
 
   function showSetup(){
+    fireworks?.stop();
     recovery.pauseAfterToss=false;
     $('capture-guide').textContent='';
     invalidateMatch();
@@ -360,10 +369,10 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   function updateOnlineControls() {
     const start=$('start-btn');
     if(!start)return;
-    if(!options.online){start.disabled=false;start.textContent='PLAY SELECTED SETTINGS · ஆடுவோம்';}
+    if(!options.online){start.disabled=false;start.textContent='PLAY SELECTED SETTINGS';}
     else {
       start.disabled=!onlineState.isHost||!onlineState.connected;
-      start.textContent=onlineState.isHost?'START ONLINE MATCH · ஆடுவோம்':'Waiting for host to start…';
+      start.textContent=onlineState.isHost?'START ONLINE MATCH':'Waiting for host to start…';
     }
     if($('start-online-help'))$('start-online-help').hidden=!options.online;
     if($('online-reactions'))$('online-reactions').hidden=!options.online||!onlineState.connected;
@@ -694,6 +703,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     if(recovery.pauseAfterToss||document.hidden){recovery.pauseAfterToss=false;state.paused=true;$('quit-modal').classList.remove('hidden');if(options.online)sendOnlinePacket({type:'PLAYER_PAUSE',matchId:state.matchId,paused:true});}
   }
   function suspendMatch(){
+    fireworks?.stop();
     if(tutorial.open)tutorialClose();
     if(audio)void audio.suspend().catch(()=>{});
     if(!state.started||state.over)return;
@@ -927,7 +937,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     for(const p of [1,2]){
       $('p'+p+'-label').textContent=names[p];
       $('owner-'+p).textContent=names[p]+' • '+(p===1?'BOTTOM':'TOP');
-      $('mc-label-'+p).textContent=names[p].slice(0,6)+'\nSTORE';
+      $('mc-label-'+p).textContent=names[p]+' · Thaaikuli';
     }
   }
   function resumeMatch(){
@@ -1185,10 +1195,12 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       for (const index of indices) {
         const slot = document.createElement('div'); slot.className='pit-slot';
         const pit = document.createElement('button');
-        pit.type='button'; pit.className='pit'; pit.id='pit-'+index;
+        pit.type='button'; pit.className='pit'; pit.id='pit-'+index;pit.dataset.owner=String(owner(index));
         const point=referenceCup(index);
         pit.style.setProperty('--cup-x',point.x+'%');
         pit.style.setProperty('--cup-y',point.y+'%');
+        pit.style.setProperty('--cup-w',point.width+'%');pit.style.setProperty('--cup-h',point.height+'%');
+        const badgeY=index<7?68.4:12.5;pit.style.setProperty('--count-y',((badgeY-point.y+point.height/2)/point.height*100)+'%');
         pit.addEventListener('click', () => playPit(index));
         slot.append(pit); fragment.append(slot);
       }
@@ -1197,6 +1209,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     render();
   }
 
+  const pieceWord=()=>options.seedStyle==='cowrie'?'cowries':options.seedStyle==='colored'?'beads':'seeds';
   function getSeedClass(index, serial) {
     if(options.seedStyle === 'cowrie') return 'seed-cowrie';
     if(options.seedStyle === 'colored') return 'seed-colored-' + ((index + serial) % 5);
@@ -1272,7 +1285,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     const playable=state.started&&!state.busy&&!state.over&&!state.paused&&!onlineState.remotePaused&&!state.awaitingToss&&!isKasie&&count>0&&owner(index)===state.turn&&!(options.ai&&state.turn===2)&&isMyTurnOnline;
     el.disabled=!playable;el.classList.toggle('playable',playable);
     el.classList.toggle('hinted',state.hintPit===index && playable);
-    el.setAttribute('aria-label',`Player ${owner(index)} cup ${index<7?index+1:14-index}, ${count} ${options.seedStyle==='natural'?'seeds':'beads'}${isKasie?', locked as Kasie':''}${playable?', tap to play':''}`);
+    el.setAttribute('aria-label',`Player ${owner(index)} cup ${index<7?index+1:14-index}, ${count} ${pieceWord()}${isKasie?', locked as Kasie':''}${playable?', tap to play':''}`);
   }
 
   function paintBank(player,newlyAdded=0){
@@ -1300,6 +1313,21 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('mc-count-'+player).textContent=total;$('p'+player+'-score').textContent=total;
   }
 
+  function displayName(p){return ['Player 1','Player 2','Azhagi (AI)'].includes(names[p])?translate(names[p]):names[p];}
+  function updatePlayerDocks(){
+    document.body.classList.toggle('table-facing',!options.ai&&!options.online);
+    for(const p of [1,2]){
+      const active=state.started&&!state.over&&!state.paused&&!onlineState.remotePaused&&state.turn===p&&!state.awaitingToss&&!state.roundPending&&(!options.online||(onlineState.connected&&!onlineState.awaitingSync&&!onlineState.undoPending));
+      $('dock-name-'+p).textContent=displayName(p);$('dock-score-'+p).textContent=String(state.banks[p]);
+      $('dock-turn-'+p).textContent=p===state.turn&&active?'Your turn':'Waiting';
+      $('p'+p+'-label').textContent=displayName(p);
+      $('side-highlight-'+p).classList.toggle('active',active);
+      document.querySelector('.dock-'+p).classList.toggle('active',active);
+      $('mc-'+p).classList.toggle('current-thaaikuli',active);
+      $('mc-label-'+p).textContent=translate('Thaaikuli')+' · '+displayName(p);
+      $('mc-label-'+p).title=displayName(p)+' · '+translate('Thaaikuli');
+    }
+  }
   function render() {
     for(let i=0;i<N;i++) paintPit(i);
     for(let p=1;p<=2;p++) {
@@ -1308,8 +1336,9 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       $('mc-'+p).classList.toggle('active-owner',state.started&&state.turn===p&&!state.over&&!state.paused&&!state.awaitingToss);
       $(p===1?'plank-bottom':'plank-top').classList.toggle('active-side',state.started&&state.turn===p&&!state.over&&!state.paused&&!state.awaitingToss);
     }
+    updatePlayerDocks();
     const turnState={started:state.started,over:state.over,paused:state.paused||onlineState.remotePaused,awaitingToss:state.awaitingToss,roundPending:state.roundPending,busy:state.busy,turn:state.turn,ai:options.ai,online:options.online,connected:onlineState.connected,awaitingSync:onlineState.awaitingSync,undoPending:onlineState.undoPending,myPlayer:onlineState.myPlayerIndex,names};
-    for(const player of [1,2])$('ind-'+player).textContent=playerTurnLabel(turnState,player);
+    for(const player of [1,2]){const label=playerTurnLabel(turnState,player);$('ind-'+player).textContent=label;$('dock-turn-'+player).textContent=label;}
     if(shouldNotifyTurn(turnState)){
       const key=`${state.matchId}|${state.round}|${state.metrics.moves}|${state.turn}`;
       if(key!==lastTurnNotice){
@@ -1462,7 +1491,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     const pos=center('mc-'+player);
     const badge=document.createElement('span');
     badge.className='gain-float'+(pasu?' pasu':'');
-    badge.textContent=pasu?'🌰 பசு! +4':'+'+amount+' 🌰';
+    badge.textContent=pasu?'Pasu! +4':'+'+amount+' 🌰';
     badge.style.left=Math.min(innerWidth-35,Math.max(35,pos.x))+'px';
     badge.style.top=Math.max(55,Math.min(innerHeight-110,pos.y))+'px';
     document.body.append(badge);
@@ -1527,7 +1556,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     const sampleRate=ctx.sampleRate;
     const isCowrie = material === 'cowrie';
     const isGlass = material === 'colored';
-    const duration = isGlass ? .18 : isCowrie ? .13 : .105;
+    const profile=materialProfile(material);
+    const duration=profile.duration;
     const length = Math.ceil(duration * sampleRate);
     const buf = ctx.createBuffer(1, length, sampleRate);
     const values = buf.getChannelData(0);
@@ -1538,12 +1568,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       return ((random >>> 0) / 2147483648) - 1;
     };
 
-    const baseFreq = isGlass 
-      ? (1380 + variation * 115) 
-      : isCowrie 
-        ? (2850 + variation * 180) 
-        : (290 + variation * 32);
-
+    const baseFreq=profile.frequency*(.93+variation*.021);
     const harmonics = isGlass
       ? [1, 2.14, 3.42, 4.88]
       : isCowrie
@@ -1562,9 +1587,9 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     for (let i = 0; i < length; i++) {
       const t = i / sampleRate;
       const raw = nextNoise();
-      filteredNoise = filteredNoise * 0.15 + raw * 0.85;
+      filteredNoise = filteredNoise * .68 + raw * .32;
       const decayRate = isGlass ? 140 : isCowrie ? 190 : 210;
-      const initialSnap = Math.exp(-t * decayRate) * filteredNoise * 0.8;
+      const initialSnap = Math.exp(-t * decayRate) * filteredNoise * profile.noise;
 
       let resonance = 0;
       for (let p = 0; p < harmonics.length; p++) {
@@ -1580,7 +1605,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
         ? Math.exp(-dt * 185) * (nextNoise() * 0.18 + Math.sin(twoPi * baseFreq * 0.92 * dt) * 0.2)
         : 0;
 
-      values[i] = Math.tanh((initialSnap + resonance * 0.55 + woodenCavity + bounce) * 0.82);
+      values[i] = Math.tanh((initialSnap + resonance * .28 + woodenCavity * .8 + bounce * .55) * profile.level);
     }
     return buf;
   }
@@ -1602,7 +1627,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       }
       const material=options.seedStyle||'natural';
       if(!audio.pallanguzhiSamples[material])
-        audio.pallanguzhiSamples[material]=Array.from({length:4},(_,i)=>makeImpactBuffer(audio,material,i));
+        audio.pallanguzhiSamples[material]=Array.from({length:8},(_,i)=>makeImpactBuffer(audio,material,i));
       if(audio.state==='suspended')void audio.resume().catch(()=>{});
       return audio;
     }catch{return null;}
@@ -1615,7 +1640,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       const samples = ctx.pallanguzhiSamples[style] || ctx.pallanguzhiSamples.natural;
       const source=ctx.createBufferSource();
       source.buffer=samples[Math.floor(Math.random()*samples.length)];
-      source.playbackRate.value=0.92+Math.random()*.16;
+      source.playbackRate.value=.96+Math.random()*.08;
       const gain=ctx.createGain();
       const typeFactor=kind==='pickup'?.55:kind==='bank'?.82:1;
       const level=Math.min(1,Math.max(.005,.55*strength*typeFactor));
@@ -1651,8 +1676,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
   function captureSound(count=4){
     const taps=Math.min(6,Math.max(3,Math.ceil(count/3)));
-    for(let i=0;i<taps;i++)beadImpact('bank',1-i*.11,i*.030);
-    softNotes([587.33,739.99,880],.048);
+    for(let i=0;i<taps;i++)beadImpact('bank',1-i*.11,i*.034+(i%2)*.009);
+    // Material clatter carries the reward; no repeated electronic capture melody.
     if(options.sound&&options.volume>0){try{navigator.vibrate?.(18);}catch{}}
   }
 
@@ -1810,13 +1835,13 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     saveStableMatch();
     const fill1=Math.min(7,Math.floor(s1/S)),fill2=Math.min(7,Math.floor(s2/S));
     const rem1=s1-fill1*S,rem2=s2-fill2*S;
-    $('round-modal-title').textContent=`சுற்று ${state.round} முடிந்தது! (Round ${state.round} Complete)`;
+    $('round-modal-title').textContent=getLanguage()==='ta'?`சுற்று ${state.round} முடிந்தது!`:`Round ${state.round} complete!`;
     $('round-details').innerHTML=`<div style="margin-bottom:8px;font-weight:850;color:#ffd700">${ta?'சுற்று':'Round'} ${state.round} ${ta?'விதைகள்':'score'}</div>
        <div style="display:flex;justify-content:space-between;gap:8px"><span>${escapeMarkup(names[1])}: <b>${s1} ${ta?'விதைகள்':'seeds'}</b></span><span>${escapeMarkup(names[2])}: <b>${s2} ${ta?'விதைகள்':'seeds'}</b></span></div>
        <div style="margin-top:9px;border-top:1px dashed #644525;padding-top:8px"><div>${escapeMarkup(names[1])}: ${fill1} ${ta?'நிரப்பிய குழிகள்':'filled'}, ${7-fill1} ${ta?'காசி':'Kasie'} 🔒 (${rem1} ${ta?'மீதி விதைகள்':'surplus'})</div><div>${escapeMarkup(names[2])}: ${fill2} ${ta?'நிரப்பிய குழிகள்':'filled'}, ${7-fill2} ${ta?'காசி':'Kasie'} 🔒 (${rem2} ${ta?'மீதி விதைகள்':'surplus'})</div></div>`;
     const button=$('next-round-btn');
     button.disabled=options.online&&!onlineState.isHost;
-    button.textContent=options.online&&!onlineState.isHost?'⏳ Waiting for host to begin next round…':'START NEXT ROUND • அடுத்த சுற்று';
+    button.textContent=options.online&&!onlineState.isHost?'⏳ Waiting for host to begin next round…':'START NEXT ROUND';
     button.onclick=()=>{
       if(!state.roundPending||(options.online&&!onlineState.isHost))return;
       $('round-modal').classList.add('hidden');setupNextRound(fill1,fill2,S,true);
@@ -1882,7 +1907,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
         if(onlineState.syncPending)sendAuthoritativeState();
         processRemoteQueue();
         saveStableMatch();
-        toast(`சுற்று ${state.round} தொடங்கியது! ${names[state.turn]}'s turn.`, 1800);
+        toast(`Round ${state.round} started! ${names[state.turn]}'s turn.`, 1800);
         if (options.ai && state.turn === 2) scheduleAiTurn(() => state.started && !state.over);
       }, nextStarter);
     } else {
@@ -1893,7 +1918,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       if(onlineState.syncPending)sendAuthoritativeState();
       processRemoteQueue();
       saveStableMatch();
-      toast(`சுற்று ${state.round} தொடங்கியது! ${names[state.turn]}'s turn.`, 1800);
+      toast(`Round ${state.round} started! ${names[state.turn]}'s turn.`, 1800);
       if (options.ai && state.turn === 2) scheduleAiTurn(() => state.started && !state.over);
     }
   }
@@ -2092,7 +2117,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
           hand=state.pits[event.pit];
           source=center('pit-'+event.pit);
           highlightPit(event.pit,'pulse',options.fast?130:340);
-          setStatus(`${names[current]} scoops ${hand} ${options.seedStyle==='natural'?'seeds':'beads'}…`);
+          setStatus(`${names[current]} scoops ${hand} ${pieceWord()}…`);
           await animateScoop(event.pit,hand,current,live);
           if(!live())return;
           state.pits[event.pit]=0;
@@ -2119,7 +2144,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
         }else if(event.kind==='pasu'){
           $('capture-guide').textContent=captureGuidance(names[event.player],4,true);
           highlightPit(event.pit,'capture-pulse',500);
-          toast(`பசு! ${names[event.player]} +4 ${options.seedStyle==='natural'?'seeds':'beads'}`,options.fast?750:1600);
+          toast(`Pasu! ${names[event.player]} +4 ${pieceWord()}`,options.fast?750:1600);
           setStatus(`Pasu! ${names[event.player]} wins 4.`);
           await animateCapture(event.pit,event.player,4,live);
           if(!live())return;
@@ -2131,7 +2156,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
         }else if(event.kind==='capture'){
           $('capture-guide').textContent=captureGuidance(names[event.player],event.count,false);
           highlightPit(event.pit,'capture-pulse',520);
-          toast(`${names[event.player]} captured ${event.count} ${options.seedStyle==='natural'?'seeds':'beads'}!`,options.fast?900:1800);
+          toast(`${names[event.player]} captured ${event.count} ${pieceWord()}!`,options.fast?900:1800);
           setStatus(`${names[event.player]} collects ${event.count} from the next cup.`);
           await animateCapture(event.pit,event.player,event.count,live);
           if(!live())return;
@@ -2201,9 +2226,10 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     const score1=state.banks[1],score2=state.banks[2];
     const tied=tournament.forcedDraw||score1===score2;
     const winner=score1>score2?1:2;
+    document.body.dataset.dialogOwner=String(tied?1:winner);
     const text=tournament.forcedDraw?'Kasie tournament drawn — repeated position':tied?'A beautiful draw! 🤝':`${names[winner]} wins!`;
     $('winner-text').textContent=text;
-    $('result-heading').textContent=tied?'சமநிலை!':'வாழ்த்துகள்!';
+    $('result-heading').textContent=tied?'Draw!':'Congratulations!';
     $('result-subtitle').textContent=tied?'A MATCH WELL PLAYED':'HERITAGE CHAMPION';
     $('result-message').textContent=tournament.forcedDraw?tournament.endReason:tied
       ? 'Both players collected the same number of seeds. Ready for a rematch?'
@@ -2211,7 +2237,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('final-scores').replaceChildren();
     for(const p of [1,2]){
       const box=document.createElement('div');box.className='result-player';
-      const playerName=document.createElement('span');playerName.dataset.noI18n='';playerName.textContent=names[p];
+      const playerName=document.createElement('span');playerName.dataset.noI18n='';playerName.textContent=displayName(p);
       const score=document.createElement('strong');score.textContent=state.banks[p];
       const label=document.createElement('small');label.textContent='seeds collected';
       if(!tied&&p===winner)box.classList.add('result-winner');
@@ -2224,13 +2250,14 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('result-match-info').textContent=`${options.format==='kasie'?'Kasie tournament · '+state.round+' rounds':'Single Match'} · ${state.metrics.moves} moves`;
     updateRematchUI();
     $('end-modal').classList.remove('hidden');
+    if(!tied)fireworks?.start();
     $('again-btn').focus({preventScroll:true});
     playVictoryChime();
     if(options.online&&onlineState.isHost){sendUndoAvailability();if(onlineState.syncPending)sendAuthoritativeState();}
     tryStartRematch();
   }
 
-  function invalidateMatch(){hideHintExplanation();state.epoch++;state.aiTicket++;state.busy=false;state.activeMove=null;state.hintPit=null;updateSkipButton();closeAnimations();clearTimeout(toastTimer);$('toast').classList.remove('visible');}
+  function invalidateMatch(){fireworks?.stop();hideHintExplanation();state.epoch++;state.aiTicket++;state.busy=false;state.activeMove=null;state.hintPit=null;updateSkipButton();closeAnimations();clearTimeout(toastTimer);$('toast').classList.remove('visible');}
   
   function startGame(broadcast=true,forcedStarter=null,remoteMatchId=null){
     recovery.pauseAfterToss=false;
@@ -2299,18 +2326,18 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       en:{title:'2. Keep sowing',copy:'After the first 2 seeds are placed, the next cup has seeds. The hand picks them up and continues.',ready:'Tap the highlighted cup with 2 seeds.',done:'Great! When the next cup contains seeds, sowing continues.'},
       ta:{title:'2. தொடர் விதைத்தல்',copy:'முதல் 2 விதைகள் தீர்ந்ததும் அடுத்த குழியில் விதைகள் இருந்தால் அவற்றையும் எடுத்துத் தொடர வேண்டும்.',ready:'ஒளிரும் 2 விதைகள் உள்ள குழியைத் தொடுங்கள்.',done:'நன்று! அடுத்த குழியில் விதைகள் இருந்ததால் தொடர்ந்து விதைத்தோம்.'}},
     {id:'pasu',selected:0,pits:[1,3,0,0,7,7,7,7,7,7,7,7,5,5],
-      en:{title:'3. Pasu · பசு',copy:'The next cup already has 3 seeds. Drop one more to make exactly 4: its owner wins all four!',ready:'Tap the highlighted cup to trigger Pasu.',done:'பசு! Four seeds moved into the owner’s store.'},
+      en:{title:'3. Pasu',copy:'The next cup already has 3 seeds. Drop one more to make exactly 4: its owner wins all four!',ready:'Tap the highlighted cup to trigger Pasu.',done:'Pasu! Four seeds moved into the owner’s store.'},
       ta:{title:'3. பசு · நான்கு விதைகள்',copy:'அடுத்த குழியில் 3 விதைகள் உள்ளன. மேலும் 1 விதை விழுந்தால் 4 விதைகளும் அந்தக் குழியின் உரிமையாளருக்குச் சேரும்.',ready:'பசு பெற ஒளிரும் குழியைத் தொடுங்கள்.',done:'பசு! நான்கு விதைகளும் உரிமையாளரின் தாய்க்குழியில் சேர்ந்தன.'}},
     {id:'capture',selected:0,pits:[1,0,0,6,7,7,7,7,7,7,7,7,4,3],
-      en:{title:'4. Capture · துடைத்தல்',copy:'After your last seed lands, if the next cup is empty, you collect seeds from the cup after that.',ready:'Tap the glowing cup to make a capture.',done:'You did it! Six seeds were captured. You’re ready for a real match!'},
+      en:{title:'4. Capture',copy:'After your last seed lands, if the next cup is empty, you collect seeds from the cup after that.',ready:'Tap the glowing cup to make a capture.',done:'You did it! Six seeds were captured. You’re ready for a real match!'},
       ta:{title:'4. விதைகளைக் கைப்பற்றுதல்',copy:'கையில் விதைகள் முடிந்ததும் அடுத்த குழி காலியாக இருந்தால், அதற்கு அடுத்த குழியின் விதைகளை எடுத்துக்கொள்ளலாம்.',ready:'விதைகளைக் கைப்பற்ற ஒளிரும் குழியைத் தொடுங்கள்.',done:'சூப்பர்! ஆறு விதைகள் கைப்பற்றப்பட்டன. இப்போது ஆடத் தயாராகிவிட்டீர்கள்!'}},
     {id:'kasie_lock',selected:0,pits:[5,5,5,5,5,0,0, 5,5,5,5,5,10,10],
       kasie:[false,false,false,false,false,true,true, false,false,false,false,false,false,false],
-      en:{title:'5. Kasie Pit Lock · காசி அடைப்பு',copy:'When a player cannot fill all 7 cups after a round, unfilled cups are locked as Kasie (🔒 காசி). You cannot scoop from locked cups!',ready:'Tap the highlighted cup 1 to sow into the board.',done:'Notice that seeds can land into locked cups, but the owner cannot scoop them!'},
+      en:{title:'5. Kasie Pit Lock',copy:'When a player cannot fill all 7 cups after a round, unfilled cups are locked as Kasie (locked). You cannot scoop from locked cups!',ready:'Tap the highlighted cup 1 to sow into the board.',done:'Notice that seeds can land into locked cups, but the owner cannot scoop them!'},
       ta:{title:'5. காசி அடைப்பு · பூட்டிய குழிகள்',copy:'சுற்றின் முடிவில் போதிய விதைகள் இன்றி நிரப்ப முடியாத குழிகள் "காசி" என பூட்டப்படும் (🔒). பூட்டிய குழியிலிருந்து விதைகளை எடுக்க முடியாது!',ready:'ஒளிரும் குழி 1-ஐத் தொட்டு விதைத்துப் பாருங்கள்.',done:'விதைகள் காசி குழிக்குள் விழலாம், ஆனால் அதன் உரிமையாளர் அவற்றை எடுக்க முடியாது!'}},
     {id:'kasie_roadblock',selected:0,pits:[1,0,2,6,7,7,7, 7,7,7,7,7,5,0],
       kasie:[false,false,true,false,false,false,false, false,false,false,false,false,false,false],
-      en:{title:'6. Kasie Roadblock · காசி உத்தி',copy:'Locked Kasie cups cannot be picked up to continue sowing—they act as a stop, letting you capture the cup right after them!',ready:'Tap the glowing cup to capture 6 seeds across the Kasie roadblock.',done:'Brilliant! You are now a master of both Single Match and Traditional Kasie Tournaments!'},
+      en:{title:'6. Kasie Roadblock',copy:'Locked Kasie cups cannot be picked up to continue sowing—they act as a stop, letting you capture the cup right after them!',ready:'Tap the glowing cup to capture 6 seeds across the Kasie roadblock.',done:'Brilliant! You are now a master of both Single Match and Traditional Kasie Tournaments!'},
       ta:{title:'6. காசி உத்தி & அறுவடை',copy:'கையில் விதை முடிந்ததும் அடுத்த குழி காசியாக (🔒) இருந்தால் தொடர் விதைப்பு நின்று, அதற்கடுத்த குழியின் விதைகளைக் கைப்பற்றலாம்!',ready:'ஒளிரும் குழியைத் தொட்டு காசி ஆட்ட உத்தியைப் பாருங்கள்.',done:'அற்புதம்! ஒற்றைச் சுற்று மற்றும் பாரம்பரிய காசி ஆட்ட விதிகளை முழுமையாகக் கற்றுக்கொண்டீர்கள்!'}}
   ];
   const tutorial={open:false,step:0,lang:'en',pits:[],banks:[0,0,0],kasiePits:Array(N).fill(false),running:false,complete:false,ticket:0};
@@ -2446,7 +2473,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('tutorial-exit').addEventListener('click',tutorialClose);
     $('tutorial-replay').addEventListener('click',tutorialRebuild);
     $('tutorial-next').addEventListener('click',tutorialNext);
-    document.querySelectorAll('[data-tut-lang]').forEach(btn=>btn.addEventListener('click',()=>tutorialSetLanguage(btn.dataset.tutLang)));
+    document.querySelectorAll('[data-tut-lang]').forEach(btn=>btn.addEventListener('click',()=>{if(getLanguage()!==btn.dataset.tutLang)$('language-btn').click();else tutorialSetLanguage(btn.dataset.tutLang);}));
     tutorialRebuild();
   }
 
@@ -2460,7 +2487,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     initBackButtonHandler();
     installRecovery();
     installNativeLifecycle();
-    installLanguage(lang=>{tutorialSetLanguage(lang);refreshResumePanel();if(isModalOpen('stats-modal'))renderStats();render();});
+    installLanguage(lang=>{document.querySelectorAll('#final-scores .result-player > span').forEach((el,i)=>el.textContent=displayName(i+1));tutorialSetLanguage(lang);refreshResumePanel();if(isModalOpen('stats-modal'))renderStats();if(isModalOpen('round-modal'))showRoundSummary();render();});
     // Treat a direct room link as a guest, not a new host room.
     const incomingRoom=new URLSearchParams(window.location.search).get('room');
     if(incomingRoom&&/^[A-Z0-9]{5}$/i.test(incomingRoom)){
@@ -2518,7 +2545,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('copy-room-btn').addEventListener('click', async () => {
       const code = ensureRoomCode();
       const shareUrl = getShareableGameUrl(code);
-      const payload = shareUrl ? `${shareUrl} (Room Code: ${code})` : `Pallanguzhi Room Code: ${code}`;
+      const payload = getLanguage()==='ta'?(shareUrl?`${shareUrl} (அறைக் குறியீடு: ${code})`:`பல்லாங்குழி அறைக் குறியீடு: ${code}`):(shareUrl ? `${shareUrl} (Room Code: ${code})` : `Pallanguzhi Room Code: ${code}`);
       const ok = await copyTextSafe(payload);
       toast(ok ? '📋 Room invite copied to clipboard!' : `Room Code: ${code}`, 1800);
     });
@@ -2526,9 +2553,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('wa-share-btn').addEventListener('click', () => {
       const code = ensureRoomCode();
       const shareUrl = getShareableGameUrl(code);
-      const text = shareUrl
-        ? `🎲 Play Tamil Pallanguzhi (பல்லாங்குழி) with me!\n🔑 Room Code: *${code}*\n👉 Tap to join: ${shareUrl}`
-        : `🎲 Play Tamil Pallanguzhi (பல்லாங்குழி) with me!\n🔑 Enter Room Code: *${code}* in Online P2P mode!`;
+      const ta=getLanguage()==='ta';
+      const text=ta?`🎲 என்னுடன் பல்லாங்குழி ஆடுங்கள்!\n🔑 அறைக் குறியீடு: *${code}*${shareUrl?'\n👉 இணையுங்கள்: '+shareUrl:''}`:`🎲 Play Pallanguzhi with me!\n🔑 Room Code: *${code}*${shareUrl?'\n👉 Tap to join: '+shareUrl:''}`;
       void shareToWhatsApp(text);
     });
 
@@ -2539,7 +2565,9 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       const summary = tournament.forcedDraw || s1 === s2
         ? `🤝 Draw match (${s1}–${s2})`
         : `${s1 > s2 ? names[1] : names[2]} won with ${Math.max(s1, s2)}/${total} seeds!`;
-      const text = `🏆 பல்லாங்குழி • Pallanguzhi Heritage\n${summary}\n${names[1]}: ${s1} | ${names[2]}: ${s2}${shareUrl ? '\n👉 Play here: ' + shareUrl : ''}`;
+      const ta=getLanguage()==='ta';
+      const localizedSummary=ta?(tournament.forcedDraw||s1===s2?`🤝 சமநிலை (${s1}–${s2})`:`${s1>s2?names[1]:names[2]} ${Math.max(s1,s2)}/${total} விதைகளுடன் வென்றார்!`):summary;
+      const text=`${ta?'🏆 பல்லாங்குழி · பாரம்பரியம்':'🏆 Pallanguzhi Heritage'}\n${localizedSummary}\n${names[1]}: ${s1} | ${names[2]}: ${s2}${shareUrl?'\n👉 '+(ta?'இங்கே ஆடுங்கள்: ':'Play here: ')+shareUrl:''}`;
       void shareToWhatsApp(text);
     });
 
@@ -2568,12 +2596,25 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       $('tools-panel').hidden=true;$('tools-toggle').setAttribute('aria-expanded','false');
       if(focus)$('tools-toggle').focus();
     };
-    $('tools-toggle').addEventListener('click',()=>{
+    fireworks=createFireworks($('fireworks-canvas'));
+    document.querySelectorAll('.header-tools button').forEach(b=>b.addEventListener('pointerdown',()=>{document.body.dataset.dialogOwner='neutral';document.body.dataset.toolsOwner='neutral';}));
+    document.querySelectorAll('[data-side-tools]').forEach(b=>b.addEventListener('click',()=>{document.body.dataset.dialogOwner=b.dataset.sideTools;document.body.dataset.toolsOwner=b.dataset.sideTools;$('tools-toggle').click();}));
+    document.querySelectorAll('[data-side-pause]').forEach(b=>b.addEventListener('click',()=>{document.body.dataset.dialogOwner=b.dataset.sidePause;$('pause-btn').click();}));
+    document.querySelectorAll('[data-side-owner]').forEach(b=>b.addEventListener('click',()=>{document.body.dataset.dialogOwner=b.dataset.sideOwner;}));
+    $('tool-stats-btn').addEventListener('click',openStats);
+    $('mat-btn').addEventListener('click',()=>{
+      document.querySelectorAll('.mat-choice[data-mat]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mat===options.mat)));
+      $('mat-modal').classList.remove('hidden');
+    });
+    document.querySelectorAll('.mat-choice[data-mat]').forEach(b=>b.addEventListener('click',()=>{options.mat=validMat(b.dataset.mat);document.body.dataset.mat=options.mat;saveSettings();$('mat-modal').classList.add('hidden');}));
+    $('close-mat').addEventListener('click',()=>$('mat-modal').classList.add('hidden'));
+    $('tools-toggle').addEventListener('click',event=>{
+      if(event.isTrusted){document.body.dataset.toolsOwner='neutral';document.body.dataset.dialogOwner='neutral';}
       const opening=$('tools-panel').hidden;$('tools-panel').hidden=!opening;
       $('tools-toggle').setAttribute('aria-expanded',String(opening));
     });
     $('tools-panel').addEventListener('click',e=>{if(e.target.closest('button'))closeTools();});
-    document.addEventListener('pointerdown',e=>{if(!$('tools-panel').hidden&&!e.target.closest('#tools-panel,#tools-toggle'))closeTools();});
+    document.addEventListener('pointerdown',e=>{if(!$('tools-panel').hidden&&!e.target.closest('#tools-panel,#tools-toggle,[data-side-tools]'))closeTools();});
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('tools-panel').hidden){e.preventDefault();e.stopImmediatePropagation();closeTools(true);}},true);
     $('speed-btn').setAttribute('aria-label','Gameplay pace: natural. Tap to change.');
     $('skip-btn').addEventListener('click',skipCurrentMove);
@@ -2624,6 +2665,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
 
     document.addEventListener('keydown',event=>{
       if(event.key==='Escape'){
+        if(isModalOpen('mat-modal')){$('mat-modal').classList.add('hidden');return;}
         handleSystemBack();
       }
     });
@@ -2644,6 +2686,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       tutorialOpen,tutorialRebuild,tutorialNext,tutorialPlay,tutorialSetLanguage,
       getTutorial:()=>({open:tutorial.open,step:tutorial.step,running:tutorial.running,complete:tutorial.complete,pits:tutorial.pits.slice(),banks:tutorial.banks.slice(),lang:tutorial.lang}),
       getStats:()=>JSON.parse(JSON.stringify(stats)),getSaved:()=>loadSavedMatch(),resumeMatch,discardSavedMatch,openStats,
+      getPresentation:()=>({mat:options.mat,fireworks:fireworks?.inspect()}),
       getMetrics:()=>({...state.metrics}),playPit,showSetup,
       getRound:()=>({round:state.round,locked:state.kasiePits.slice(),pending:state.roundPending,options:{...options}}),
       setTestPosition:(p)=>{if(!p||!Array.isArray(p.pits)||p.pits.length!==N||!Array.isArray(p.banks))throw Error('Invalid test input'); invalidateMatch();state.pits=p.pits.slice();state.banks=p.banks.slice();state.kasiePits=normalizeKasie(p.kasiePits);state.turn=p.turn||1;state.round=p.round||1;state.started=true;state.over=false;render();},
