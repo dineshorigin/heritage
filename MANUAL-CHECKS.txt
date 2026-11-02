@@ -20,3 +20,14 @@ v3.22 acceptance checks
 Version 3.23.0 removes the problem-report button, report dialog, download/export feature and diagnostic event collection. Gameplay and connection recovery remain available. Upload all 26 game files and reopen on both phones.
 
 Version 3.23: two steps only (Home > chosen mode); Start match on the mode page. Theme/language under the gear. Create room and Join room show one panel at a time. Advanced rules and Pieces & sound are collapsed. Home titles/subtitles use centered text containers. Angled capture/Pasu trail removed; count and rim feedback retained.
+
+V3.24 FIELD ACCEPTANCE — still pending
+A. On both phones: verify release v3.24, matching counts and scores through long relay, Pasu, capture, final sweep, Kasie allocation and rematch. Repeat ten complete matches across same Wi-Fi and separate mobile networks.
+B. Disconnect sender before tapping: no sowing or history change. After stale heartbeat, cups and turn cues must be inactive. Reconnect both, compare every count.
+C. Refresh guest, then host independently during sowing and between turns. Continue same room. If host loads an older checkpoint, guest must see rollback notice; compare boards before continuing. Clearing browser storage cannot recover a local save.
+D. Disable/block storage and play: persistent saving warning, no crash. Dismiss warning if desired; do not imply the match is durable.
+E. Keyboard Tab/Shift+Tab in dialogs, Back/Escape, native Android back; visible focus and return focus. Android TalkBack/Tamil and English pit labels. Larger browser text, reduced motion, muted audio and colour-distinguishability.
+F. Interrupt touch by scrolling, dragging, app switching or pointer cancellation. No accidental move on release; deliberate taps count once.
+G. Advanced options: summary matches time, Pasu, format and seeds. New match defaults remain as designed. Ready resets when shared rules change.
+H. Ask experienced players to validate the named rules and beginners to explain a capture unaided. Collect reproduction steps and short recordings manually; no report feature exists.
+I. Play sustained matches on an older phone. Inspect layout/alignment, sound fatigue, heat and responsiveness. Record evidence; automated engine tests cannot prove these qualities.

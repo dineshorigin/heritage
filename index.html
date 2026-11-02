@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 
-<title>Pallanguzhi • Heritage Edition (v3.23.0 • Reference Board Edition)</title>
+<title>Pallanguzhi • Heritage Edition (v3.24.0 • Reference Board Edition)</title>
 <!-- PeerJS is bundled locally; online play still uses external signaling. -->
-<link rel="preload" as="image" href="royal-board.webp?v=3.23.0">
-<link rel="preload" as="image" href="reference-board.webp?v=3.23.0">
-<link rel="icon" type="image/png" href="icon-192.png?v=3.23.0"><link rel="apple-touch-icon" href="icon-192.png?v=3.23.0">
+<link rel="preload" as="image" href="royal-board.webp?v=3.24.0">
+<link rel="preload" as="image" href="reference-board.webp?v=3.24.0">
+<link rel="icon" type="image/png" href="icon-192.png?v=3.24.0"><link rel="apple-touch-icon" href="icon-192.png?v=3.24.0">
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#173e35">
-<link rel="stylesheet" href="game.css?v=3.23.0">
-<script id="peerjs-loader" defer src="native-bridge.js?v=3.23.0"></script>
+<link rel="stylesheet" href="game.css?v=3.24.0">
+<script id="peerjs-loader" defer src="native-bridge.js?v=3.24.0"></script>
 </head>
 <body>
 <!-- Board artwork is reconstructed from the supplied photograph; cups are interactive overlays. -->
 
 <main id="game-frame" aria-label="Pallanguzhi game">
   <header class="top-strip">
-    <div class="brand"><img class="brand-icon" src="icon-192.png?v=3.23.0" alt="" width="34" height="34"><span class="brand-title">Pallanguzhi</span><small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
+    <div class="brand"><img class="brand-icon" src="icon-192.png?v=3.24.0" alt="" width="34" height="34"><span class="brand-title">Pallanguzhi</span><small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
     <div class="header-tools"><button type="button" class="action-btn" id="language-btn" data-no-i18n data-language-toggle aria-label="Switch language">Language</button><button type="button" class="action-btn" id="pause-btn">Ⅱ Pause</button><button type="button" class="stats-trigger" id="stats-btn" aria-label="Open match statistics and achievements">📊 Stats</button></div>
     <div class="players-scoreboard">
       <div class="player-pod" id="p2-pod"><span class="player-name" id="p2-label" data-no-i18n>Azhagi (AI)</span><span class="score-badge" id="p2-score">0</span><span class="owner-indicator" id="ind-2" aria-live="polite"></span></div>
@@ -57,6 +57,7 @@
     </div></div></div>
   </div>
   <section class="play-guide" aria-label="Game guidance">
+    <div id="session-notice" role="status" hidden><span id="session-notice-copy"></span><button type="button" id="dismiss-session-notice" aria-label="Dismiss">×</button></div>
     <p id="turn-guide" role="status">Choose a mode, or try Quick Play against the computer.</p>
     <p id="capture-guide" role="status"></p><button type="button" class="capture-why" id="capture-detail-btn" hidden>Why?</button>
     <div id="online-recovery" hidden><span id="connection-text" role="status"></span><button type="button" class="action-btn" id="reconnect-btn">Reconnect</button></div>
@@ -173,7 +174,7 @@
 <div class="overlay" id="setup-modal" role="dialog" aria-modal="true" aria-label="Set up game">
 <div class="modal-card home-card lobby-home">
 <div class="home-top-actions"><button type="button" class="action-btn" id="setup-back" aria-label="Previous step" title="Previous step" hidden>‹</button><span id="setup-progress">Step 1 of 2</span><details class="home-preferences"><summary aria-label="Settings" title="Settings">⚙</summary><div><button type="button" class="action-btn" id="appearance-setup-btn">Dark mode</button><button type="button" class="action-btn" id="language-setup-btn" data-no-i18n data-language-toggle>Language</button></div></details></div>
-<div class="home-eyebrow">HERITAGE · STRATEGY · TRADITION</div><h1 class="home-game-title"><img class="brand-icon" src="icon-192.png?v=3.23.0" alt="" width="60" height="60"><span>Pallanguzhi</span></h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
+<div class="home-eyebrow">HERITAGE · STRATEGY · TRADITION</div><h1 class="home-game-title"><img class="brand-icon" src="icon-192.png?v=3.24.0" alt="" width="60" height="60"><span>Pallanguzhi</span></h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
 <section data-setup-step="1">    <section class="resume-panel" id="resume-panel" hidden aria-label="Continue saved match">
       <div class="resume-heading">💾 Continue your match?</div>
       <div class="resume-summary" id="resume-summary"></div>
@@ -271,7 +272,7 @@
 <div class="overlay hidden" id="rules-modal" role="dialog" aria-modal="true" aria-label="Rules">
   <div class="modal-card">
     <h2>📖 How to play</h2>
-    <div class="rules">
+    <div class="rules"><p class="variant-note">This game uses relay-sowing rules. Regional Pallanguzhi traditions may differ. Agree on Pasu and Kasie before starting.</p>
       <p><strong>1. Board:</strong> Each player owns 7 cups. Every cup starts with 4 or 5 seeds (56 or 70 total), depending on setup. The outer cups store captured seeds and are <em>not</em> part of the sowing path.</p>
       <p><strong>2. Your move:</strong> Select a nonempty cup from <em>your own</em> row. Pick up all its seeds and sow one into each next cup, counter-clockwise. You may sow into both rows.</p>
       <p><strong>3. Keep sowing:</strong> When your hand becomes empty, examine the <em>next</em> cup. If it has seeds, pick them up and continue from the following cup.</p>
@@ -354,6 +355,6 @@
   </div>
 </div>
 
-<script type="module" src="app.js?v=3.23.0"></script>
+<script type="module" src="app.js?v=3.24.0"></script>
 </body>
 </html>

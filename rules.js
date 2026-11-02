@@ -2,6 +2,8 @@
 const N=14, MAX_DROPS=1600;
 const owner=pit=>pit<7?1:2;
 export function simulateMove(originalPits, originalBanks, player, selected, config={}) {
+    if(!Array.isArray(originalPits)||originalPits.length!==N||!originalPits.every(n=>Number.isSafeInteger(n)&&n>=0)||!Array.isArray(originalBanks)||originalBanks.length!==3||!originalBanks.every(n=>Number.isSafeInteger(n)&&n>=0)||originalPits.reduce((a,b)=>a+b,0)+originalBanks[1]+originalBanks[2]>100000)throw new Error('Invalid board position.');
+    if(config.locked&&(!Array.isArray(config.locked)||config.locked.length!==N||!config.locked.every(v=>typeof v==='boolean')))throw new Error('Invalid locked cups.');
     const locked=config.locked || Array(N).fill(false);
     const enablePasu=(config.pasu || 'on')==='on';
     if (!Number.isInteger(player) || ![1, 2].includes(player) ||

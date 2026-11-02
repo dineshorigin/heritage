@@ -1,20 +1,21 @@
-import {lightweight,connectionView} from './reliability.js?v=3.23.0';
-import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.23.0';
-import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.23.0';
-import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.23.0';
-import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.23.0';
-import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.23.0';
-import {createFeatures} from './features.js?v=3.23.0';
-import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.23.0';
-import {ballisticFlight} from './physics.js?v=3.23.0';
-import { installLanguage, getLanguage, translate } from './locale.js?v=3.23.0';
-import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.23.0';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.23.0';
+import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.24.0';
+import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.24.0';
+import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.24.0';
+import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.24.0';
+import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.24.0';
+import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.24.0';
+import {createFeatures} from './features.js?v=3.24.0';
+import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.24.0';
+import {ballisticFlight} from './physics.js?v=3.24.0';
+import { installLanguage, getLanguage, translate } from './locale.js?v=3.24.0';
+import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.24.0';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.24.0';
 
 (() => {
   'use strict';
   const recovery={timer:null,attempt:0,lastHeard:Date.now(),hidden:false,pendingSync:null,connectingUntil:0,pauseAfterToss:false};
-  let peerStale=false;
+  let peerStale=false,saveWarningShown=false;
+  function sessionNotice(text){$('session-notice-copy').textContent=translate(text);$('session-notice').hidden=false;}
   let performanceMode='auto',captureTips=true;
   try{const prefs=JSON.parse(localStorage.getItem('pallanguzhi.reliability')||'{}');performanceMode=['auto','light','full'].includes(prefs.performance)?prefs.performance:'auto';captureTips=prefs.tips!==false;}catch{}
   const lightEffects=()=>lightweight(performanceMode,navigator);
@@ -358,6 +359,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     document.querySelectorAll('[data-pasu]').forEach(b=>b.classList.toggle('active',b.dataset.pasu===options.pasu));
     document.querySelectorAll('[data-difficulty]').forEach(b=>{const active=b.dataset.difficulty===options.difficulty;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
     
+    const ta=getLanguage()==='ta';document.querySelector('.recommended-note').textContent=ta?`${options.turnSeconds?options.turnSeconds+' விநாடிகள்':'நேர வரம்பில்லை'} · ${options.format==='kasie'?'காசி சுற்றுகள்':'ஒரு சுற்று'} · ${options.seedsPerPit} விதைகள் · பசு ${options.pasu==='on'?'உண்டு':'இல்லை'}`:`${options.turnSeconds?options.turnSeconds+' seconds':'Untimed'} · ${options.format==='kasie'?'Kasie rounds':'One round'} · ${options.seedsPerPit} seeds · Pasu ${options.pasu}`;
     document.querySelectorAll('[data-seeds]').forEach(b=>b.classList.toggle('active',b.dataset.seeds===options.seedStyle));
     $('difficulty-picker').hidden=!options.ai||options.online;
     $('online-panel').hidden=!options.online;
@@ -945,6 +947,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       const previousStats=state.recordedStatsBefore;
       if(!Number.isInteger(data.rev)||data.rev<0||data.rev>10000)return;
       if(typeof data.matchId!=='string'||data.matchId.length>90||!validPosition({...pos,pendingRound:pos.over===true||pos.roundPending===true,options:{seedsPerPit:data.options?.seedsPerPit||options.seedsPerPit}})||!Array.isArray(pos.kasiePits)||!Array.isArray(pos.banks)||typeof pos.metrics!=='object'||!Number.isInteger(pos.round)||pos.round<1)return;
+      const restoredNotice=recoveryNotice({matchId:state.matchId,round:state.round,moves:state.metrics.moves},{matchId:data.matchId,round:pos.round,moves:pos.metrics.moves});
       applyRemoteRules(data.options);
       restoreTournament(pos.tournament);
       if(state.resultRecorded&&pos.metrics?.moves<state.metrics.moves)rollbackFinishedResult();
@@ -969,7 +972,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       ['setup-modal','end-modal','coin-toss-modal','round-modal'].forEach(id=>$(id).classList.add('hidden'));
       if(validPauseState(pos.pause))applyRoomPause(pos.pause);
       if(priorClock?.key===clockKey())turnClock.restore(clockKey(),priorClock.remaining,options.turnSeconds);
-      render();saveStableMatch();
+      render();saveStableMatch();if(restoredNotice)sessionNotice(restoredNotice);
       if(state.roundPending)showRoundSummary();
       else if(state.over)finishMatch();
       else setStatus(`🌐 Reconnected · ${names[state.turn]}'s turn.`);
@@ -1003,7 +1006,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   function positionFingerprint(){return [state.round,state.metrics.moves,state.turn,state.pits.join(','),state.banks.join(','),state.kasiePits.map(Number).join('')].join('|');}
   function sendOnlineMove(pit){
     if(options.online&&onlineState.connected)
-      sendOnlinePacket({type:'MOVE',position:positionFingerprint(),pit,player:state.turn,round:state.round,seq:state.metrics.moves,matchId:state.matchId,rev:onlineState.revision});
+      return sendOnlinePacket({type:'MOVE',position:positionFingerprint(),pit,player:state.turn,round:state.round,seq:state.metrics.moves,matchId:state.matchId,rev:onlineState.revision});
   }
 
   function showEmoteReaction(emoji, fromPlayer) {
@@ -1080,7 +1083,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       roomPause:options.online?{...(onlineState.isHost?pauseBudget.snapshot(Date.now()):roomPause),savedAt:Date.now()}:null,
       turnClock:clockView?.key===clockKey()?{key:clockKey(),remaining:clockView.remaining}:null,
       names:{...names}};
-    if(validPosition(pos))storedSet(PROGRESS_KEY,pos);
+    if(validPosition(pos)&&!storedSet(PROGRESS_KEY,pos)&&!saveWarningShown){saveWarningShown=true;sessionNotice('Saving is unavailable on this device. Keep this tab open; closing it may lose your match.');}
   }
   function removeSavedMatch(){if(practice)return;storedRemove(PROGRESS_KEY);refreshResumePanel();}
   function applySavedOptions(saved){
@@ -1441,11 +1444,11 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     countNode.textContent=count;
     
     // In online mode, you can only play your assigned player side!
-    const isMyTurnOnline = !options.online || (onlineState.connected && !onlineState.awaitingSync && !onlineState.undoPending && state.turn === onlineState.myPlayerIndex);
+    const isMyTurnOnline = !options.online || (onlineState.connected && !peerStale && !onlineState.awaitingSync && !onlineState.undoPending && state.turn === onlineState.myPlayerIndex);
     const playable=state.started&&!state.busy&&!state.over&&!state.paused&&!onlineState.remotePaused&&!state.awaitingToss&&!isKasie&&count>0&&owner(index)===state.turn&&!(options.ai&&state.turn===2)&&isMyTurnOnline;
     el.disabled=!playable;el.classList.toggle('playable',playable);
     el.classList.toggle('hinted',state.hintPit===index && playable);
-    el.setAttribute('aria-label',`Player ${owner(index)} cup ${index<7?index+1:14-index}, ${count} ${pieceWord()}${isKasie?', locked as Kasie':''}${playable?', tap to play':''}`);
+    el.setAttribute('aria-label',pitDescription({name:displayName(owner(index)),cup:index<7?index+1:14-index,count,locked:isKasie,playable,ta:getLanguage()==='ta'}));
   }
 
   function paintBank(player,newlyAdded=0){
@@ -1477,7 +1480,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   function updatePlayerDocks(){
     document.body.classList.toggle('table-facing',!options.ai&&!options.online);
     for(const p of [1,2]){
-      const active=state.started&&!state.over&&!state.paused&&!onlineState.remotePaused&&state.turn===p&&!state.awaitingToss&&!state.roundPending&&(!options.online||(onlineState.connected&&!peerStale&&!onlineState.awaitingSync&&!onlineState.undoPending));
+      const active=state.started&&!state.busy&&!state.over&&!state.paused&&!onlineState.remotePaused&&state.turn===p&&!state.awaitingToss&&!state.roundPending&&(!options.online||(onlineState.connected&&!peerStale&&!onlineState.awaitingSync&&!onlineState.undoPending));
       $('dock-name-'+p).textContent=displayName(p);$('dock-score-'+p).textContent=String(state.banks[p]);
       $('dock-turn-'+p).textContent=p===state.turn&&active?'Your turn':'Waiting';
       $('p'+p+'-label').textContent=displayName(p);
@@ -1490,11 +1493,12 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
   function render() {
     for(let i=0;i<N;i++) paintPit(i);
+    const turnVisible=state.started&&!state.busy&&!state.over&&!state.paused&&!onlineState.remotePaused&&!state.awaitingToss&&(!options.online||(onlineState.connected&&!peerStale&&!onlineState.awaitingSync&&!onlineState.undoPending));
     for(let p=1;p<=2;p++) {
       paintBank(p);
-      $('p'+p+'-pod').classList.toggle('active',state.started&&state.turn===p&&!state.over&&!state.paused&&!state.awaitingToss);
-      $('mc-'+p).classList.toggle('active-owner',state.started&&state.turn===p&&!state.over&&!state.paused&&!state.awaitingToss);
-      $(p===1?'plank-bottom':'plank-top').classList.toggle('active-side',state.started&&state.turn===p&&!state.over&&!state.paused&&!state.awaitingToss);
+      $('p'+p+'-pod').classList.toggle('active',turnVisible&&state.turn===p);
+      $('mc-'+p).classList.toggle('active-owner',turnVisible&&state.turn===p);
+      $(p===1?'plank-bottom':'plank-top').classList.toggle('active-side',turnVisible&&state.turn===p);
     }
     updatePlayerDocks();
     const turnState={started:state.started,over:state.over,paused:state.paused||onlineState.remotePaused,awaitingToss:state.awaitingToss,roundPending:state.roundPending,busy:state.busy,turn:state.turn,ai:options.ai,online:options.online,connected:onlineState.connected&&!peerStale,awaitingPlayback:onlineState.awaitingPlayback,awaitingSync:onlineState.awaitingSync,undoPending:onlineState.undoPending,myPlayer:onlineState.myPlayerIndex,names};
@@ -2340,7 +2344,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     saveStableMatch();
     // Broadcast move to remote peer if online
     if (options.online && !fromRemote) {
-      sendOnlineMove(index);
+      if(!sendOnlineMove(index)){onlineStatus('Move could not be sent. Reconnecting…',false);sessionNotice('Your move was not sent. Reconnect before trying again.');scheduleReconnect();return;}
     }
 
     if(!options.ai || current===1){
@@ -2736,6 +2740,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     stats=loadStats();
     state.pits = Array(N).fill(options.seedsPerPit);
     createBoard();
+    installDialogAccess();$('dismiss-session-notice').addEventListener('click',()=>$('session-notice').hidden=true);
     tutorialInit();
     for(const p of [1,2]){$('wish-lamp-'+p).innerHTML=menuArt('lamp',String(p));$('wish-lamp-'+p).addEventListener('click',()=>{if(state.turn===p)showHint();});}
     wizard=setupWizard({mode:()=>options.online?'online':options.ai?'ai':'two',changed:()=>{},language:getLanguage});
@@ -2919,6 +2924,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('board-size-btn').addEventListener('click',()=>{if(state.busy){toast(getLanguage()==='ta'?'நகர்வு முடிந்ததும் பலகையின் அளவை மாற்றவும்':'Finish the move before changing board size',1600);return;}boardEnlarged=!boardEnlarged;fitBoard(true);if(boardEnlarged)toast(getLanguage()==='ta'?'பெரிய பலகை · முழுவதையும் பார்க்க நகர்த்தவும்':'Bigger board · pan to see the whole board',2400);});
     $('board-scroll').addEventListener('scroll',()=>{layoutDirty=true;lastHandPos=null;boardGestureUntil=performance.now()+200;}, {passive:true});
     $('board-scroll').addEventListener('pointerdown',e=>{pointerStart={x:e.clientX,y:e.clientY};},{passive:true});
+    $('board-scroll').addEventListener('pointercancel',()=>{boardGestureUntil=performance.now()+250;pointerStart=null;},{passive:true});
     $('board-scroll').addEventListener('pointerup',e=>{if(pointerStart&&Math.hypot(e.clientX-pointerStart.x,e.clientY-pointerStart.y)>8)boardGestureUntil=performance.now()+200;pointerStart=null;},{passive:true});
 
     const toggleAppearance=()=>{options.uiTheme=options.uiTheme==='light'?'dark':'light';saveSettings();syncSetupModalUI();};

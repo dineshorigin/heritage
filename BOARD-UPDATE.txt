@@ -1,11 +1,18 @@
-PALLANGUZHI v3.23.0 — MINIMAL SETUP
+PALLANGUZHI v3.24.0 — TESTER AUDIT FIXES
 
-Home: centered mode cards with explicit full-width centered text containers; smaller spacing and lighter borders. Personal theme/language buttons are under a gear menu.
+Fixed verified code issues:
+- Failed outbound MOVE sends now stop before local sowing, history changes or turn changes; show a notice and reconnect.
+- Disconnected/stale cups no longer look playable. All turn highlights agree and stop during sowing, pauses and resynchronization.
+- Recovery to an earlier host checkpoint shows an explicit rollback notice. This is still local checkpoint recovery, not cloud saving.
+- Failed browser storage writes show a persistent warning rather than silently implying progress was saved.
+- Rule engine rejects malformed/negative/fractional/non-finite board inputs and invalid Kasie masks before sowing.
+- Mode settings summary reflects the actual timer, format, seed count and Pasu setting instead of always describing defaults.
+- Screen-reader pit descriptions use player names, counts, lock/action state in Tamil or English.
+- Keyboard Tab stays inside visible dialogs and focus returns when dialogs close. Added visible focus for summaries/dialogs, larger utility controls and sliders, cancellation guard for interrupted touch gestures, and broader reduced-motion CSS.
+- Rules explain that the implemented relay-sowing variant may differ from regional traditions.
 
-Mode setup: reduced from three pages to two steps total. AI shows own name, fixed Azhagi opponent and difficulty. Pass N Play shows both editable names. Connect separates Create room and Join room, locks role switching after connection, and shows opponent readiness. Start match is on the same page; advanced rules and Pieces & sound remain collapsed. The host must still have both players Ready. Shared room rules, timing, recovery and gameplay remain unchanged.
+Retained: v3.23 minimalist menu, centered mode labels and removal of angled Pasu/capture trail; shared room pace and completion acknowledgements; lightweight effects; optional capture tips. Report functionality remains removed. No backend or email was added.
 
-Removed the SVG angled capture trail for Pasu and capture. Pit outlines, count updates and seed collection remain. Report functionality remains removed.
+Evidence: 92 automated tests pass, including the failed-send invariant, invalid rules inputs, rollback notice, save-failure notice, bilingual pit descriptions, menu/role navigation and ten paired-engine matches (271 moves, no count differences). Syntax, module references, HTML IDs and native asset sync passed. Android source only, no APK build. No remote commit or deployment was made.
 
-Verification: 86 automated tests passed, including all-mode navigation/back, room role switching/connected guard and previous paired-engine checks. JS syntax, unique HTML IDs and setup nesting passed. Native source assets synchronized (no APK build). Browser visual and physical two-phone checks remain pending: previous automatic approval review blocked browser use due session usage limit. No remote commit or deployment was made.
-
-Replace all 26 root game files. Close all old tabs on BOTH phones, reopen online and create a fresh room. Confirm v3.23.0 to avoid seeing cached layouts. Check card labels in both languages, narrow portrait and tablet landscape; gear controls, each mode, back, advanced rules, room Ready/Start and Pasu.
+Still not verified: physical two-phone Wi-Fi/mobile-network behavior, visual layouts, keyboard/screen-reader experience in browsers, sustained device FPS/heat/battery, listening comfort, experienced Madurai players' rule agreement, beginner comprehension and replay interest. These require actual device/user observations. Browser testing was previously blocked by automatic approval review due session usage limit; no bypass was attempted. This is not release certification.
