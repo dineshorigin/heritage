@@ -49,17 +49,11 @@ export function settledCowries(count,index=0,store=false){
  cache.set(key,result);return result;
 }
 export function ballisticFlight({dx,dy,duration,portrait=false,kind='drop',spin=30}){
- const seconds=Math.max(.001,duration/1000),impact=kind==='scoop'?1:.82;
- const fall=seconds*impact,gravity=9.81,pixelsPerMetre=950;
+ // Depth affects scale/shadow, not an extra screen-axis loop. No overshoot or return path.
  const frames=[];
  for(let i=0;i<=12;i++){
-  const p=i/12,progress=Math.min(1,p/impact);
-  let height;
-  if(p<=impact){const t=seconds*p;const initialVelocity=gravity*fall/2;height=initialVelocity*t-.5*gravity*t*t;}
-  else{const t=seconds*(p-impact),bounceTime=seconds*(1-impact);height=.5*gravity*bounceTime*t-.5*gravity*t*t;}
-  const z=Math.max(0,height)*pixelsPerMetre;
-  frames.push({offset:p,x:dx*progress-(portrait?z:0),y:dy*progress-(portrait?0:z),angle:spin*p,height:z});
+  const p=i/12,progress=kind==='scoop'?p*p*(3-2*p):p*p;
+  frames.push({offset:p,x:dx*progress,y:dy*progress,angle:spin*p,height:Math.sin(Math.PI*p)*(kind==='scoop'?5:9)});
  }
- frames[0]={offset:0,x:0,y:0,angle:0,height:0};frames[12]={offset:1,x:dx,y:dy,angle:spin,height:0};
- return frames;
+ frames[0]={offset:0,x:0,y:0,angle:0,height:0};frames[12]={offset:1,x:dx,y:dy,angle:spin,height:0};return frames;
 }

@@ -1,0 +1,5 @@
+v3.19 home background
+Built-in image generation, not CLI. Project asset: home-background.webp, 1200x800, WebP quality 65. Original generation preserved unchanged: generated_images/exec-44d57928-eb4f-41cc-b5f9-8918b60a2dcd.png.
+
+Prompt:
+Use case: stylized-concept. Asset type: subtle backdrop image for the home screen and settings of an elegant Pallanguzhi mobile game. Landscape 3:2 composition which can also crop to portrait. An atmospheric South Indian royal heritage game room: deep emerald and peacock-teal silk felt, soft warm brass light, very subtle Tamil kolam floral linework around the outermost edges, blurred carved walnut and ivory motifs in the far corners. A quiet, dark teal central area occupying 75 percent, evenly dim and low contrast to keep gold and cream UI text perfectly readable. Premium tactile materials, refined three-dimensional lighting, restrained warm gold glints only at margins, slight vignette. No board, no people, no elephants in the centre, no icons, no buttons, no text, no letters, no watermark. This is a background texture behind real interactive menus, not a mockup.

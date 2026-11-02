@@ -1,6 +1,6 @@
-PALLANGUZHI v3.18.0
+PALLANGUZHI v3.19.0
 
-Extract and upload/replace all TWENTY-ONE files below in the heritage repository ROOT. No js/css folders. Upload the files, not the ZIP.
+Extract and upload/replace all TWENTY-THREE game files below in the heritage repository ROOT. No js/css folders. Upload these files, not the ZIP.
 
 index.html
 game.css
@@ -13,19 +13,21 @@ presentation.js
 features.js
 menu.js
 clock.js
+session.js
 native-bridge.js
 reference-board.webp
 royal-board.webp
 cowrie-shell.webp
 wood-bead.webp
 elephant-eye.webp
+home-background.webp
 sw.js
 manifest.webmanifest
 icon-192.png
 icon-512.png
 
-Commit and wait for Pages deployment. Close old tabs and reopen online so the updated service worker can activate.
+Commit, wait for Pages deployment, close old tabs and reopen online so the updated service worker activates. Both room clients MUST be v3.19 for the coin-call/readiness and bounded-pause protocol.
 
-Default portrait controls are more compact. Tools > Bigger board enlarges proportionally; pan to see both ends. Tools > Whole board returns to full visibility. Tools > Fit is fullscreen.
+New entries: Daily Puzzle on home; chat bubble at bottom-right during a room match. Heads/Tails in step 3. Opening Tools counts as one of your two room pauses (maximum 90 seconds each).
 
-Android archive is optional source, not an APK. See BOARD-UPDATE.txt for verification limits.
+Android archive is optional source, not an APK. See MANUAL-CHECKS.txt and BOARD-UPDATE.txt for test limits.

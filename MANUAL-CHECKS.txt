@@ -1,7 +1,10 @@
-v3.18 manual acceptance checks
-1. Portrait phone: default view should retain both elephant ends and all fourteen cups with compact header/guide/footer. Pit circles must remain round.
-2. Tools > Bigger board: board becomes wider, swipe along its length to inspect both ends. Tap cups after scrolling; chosen cup, hand and seeds should align. Scrollbars/mouse wheel can be used on desktop.
-3. Whole board returns to full visibility. Reload to check the selected view preference. Toggle only after a move finishes.
-4. Rotate device and use Fit/fullscreen; board proportions must stay constant. Read long capture feedback without board-size changes.
-5. Check local/AI/online moves, cup counts, labels, timers, hints, Undo, materials, dark/light appearance and chat. Panning during animation is a manual visual check; no automatic camera tracking is implemented.
-6. This update was checked with automated geometry/rules tests and source synchronization, not a final browser/device run.
+v3.19 device checks
+1. Portrait/landscape home: all mode captions centred, gold Daily Puzzle card visible, new background readable in Light and Dark. Steps 2/3 Back arrow and system Back return exactly one step.
+2. All modes: no First Move/P1/P2/Alt control. Call Heads then start; repeat Tails. Visible coin face must agree with the winning player. In Connect, both screens must agree; guest call buttons disabled.
+3. Sow using each material/pace/portrait/landscape. Each flight should move toward the pit once, without the old looping return. Check counts conserved, no clipping or second large bounce.
+4. Tools during local sowing: seeds and hand stop, no clock ticks. Close it: same sowing resumes and ends normally. Test settings/replay/rules child panels; resume after closing. Hint/Undo resume before running.
+5. TWO real devices v3.19: request pause from each seat, inspect both banners/counts, early resume owner-only. Repeat to exhaust two allowances independently. Opening Tools uses one allowance. Third request cannot pause. Pause should auto-end at 90s without another tap. Repeated taps must not extend/reset duration. Test actual pause mid-sowing.
+6. Disconnect/reconnect and save/reload while paused, especially host mid-sowing. Used counts should not reset. Test new Kasie round retains counts; new match/rematch resets them. These need network/device verification.
+7. Numeric clock circle visible only during the active human decision. Last-ten-second ticks only on active local online device. Pause stops it; resume continues remaining time. After pause allowance exhausted, Leave dialog does not claim the clock has stopped.
+8. Room chat bubble at bottom-right: unread badge, send/receive/mute; no Tools navigation needed. Daily Puzzle accessible from home, absent from Tools hub.
+9. Check original board proportions/zoom, cup labels, removed ivory marker, pupils, all materials, light/dark, English/Tamil, AI, Undo, rematch, offline mode and fireworks. No final browser/device certification accompanies these automated checks.

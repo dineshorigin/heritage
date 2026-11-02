@@ -1,4 +1,4 @@
-import {settledCowries} from './physics.js?v=3.18.0';
+import {settledCowries} from './physics.js?v=3.19.0';
 export const BOARD_ASPECT=8/3;
 // Plain-text feedback shared by the interface and its tests.
 export function turnGuidance(g) {

@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 
-<title>Pallanguzhi • Heritage Edition (v3.18.0 • Reference Board Edition)</title>
+<title>Pallanguzhi • Heritage Edition (v3.19.0 • Reference Board Edition)</title>
 <!-- PeerJS is bundled locally; online play still uses external signaling. -->
-<link rel="preload" as="image" href="royal-board.webp?v=3.18.0">
-<link rel="preload" as="image" href="reference-board.webp?v=3.18.0">
-<link rel="icon" type="image/png" href="icon-192.png?v=3.18.0"><link rel="apple-touch-icon" href="icon-192.png?v=3.18.0">
+<link rel="preload" as="image" href="royal-board.webp?v=3.19.0">
+<link rel="preload" as="image" href="reference-board.webp?v=3.19.0">
+<link rel="icon" type="image/png" href="icon-192.png?v=3.19.0"><link rel="apple-touch-icon" href="icon-192.png?v=3.19.0">
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#173e35">
-<link rel="stylesheet" href="game.css?v=3.18.0">
-<script id="peerjs-loader" defer src="native-bridge.js?v=3.18.0"></script>
+<link rel="stylesheet" href="game.css?v=3.19.0">
+<script id="peerjs-loader" defer src="native-bridge.js?v=3.19.0"></script>
 </head>
 <body>
 <!-- Board artwork is reconstructed from the supplied photograph; cups are interactive overlays. -->
 
 <main id="game-frame" aria-label="Pallanguzhi game">
   <header class="top-strip">
-    <div class="brand"><img class="brand-icon" src="icon-192.png?v=3.18.0" alt="" width="34" height="34"><span class="brand-title">Pallanguzhi</span><small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
+    <div class="brand"><img class="brand-icon" src="icon-192.png?v=3.19.0" alt="" width="34" height="34"><span class="brand-title">Pallanguzhi</span><small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
     <div class="header-tools"><button type="button" class="action-btn" id="language-btn" data-no-i18n data-language-toggle aria-label="Switch language">Language</button><button type="button" class="action-btn" id="pause-btn">Ⅱ Pause</button><button type="button" class="stats-trigger" id="stats-btn" aria-label="Open match statistics and achievements">📊 Stats</button></div>
     <div class="players-scoreboard">
       <div class="player-pod" id="p2-pod"><span class="player-name" id="p2-label" data-no-i18n>Azhagi (AI)</span><span class="score-badge" id="p2-score">0</span><span class="owner-indicator" id="ind-2" aria-live="polite"></span></div>
@@ -27,7 +27,7 @@
   </header>
   <div class="arena-stage"><div class="board-scroll" id="board-scroll" tabindex="0" aria-label="Board view"><div class="board-sizer" id="board-sizer">
     <div class="play-arena" id="arena"><span class="painted-pupil pupil-left" aria-hidden="true"></span><span class="painted-pupil pupil-right" aria-hidden="true"></span>
-      <svg class="ivory-edge" viewBox="0 0 1600 600" aria-hidden="true"><defs><linearGradient id="ivory-edge-light"><stop stop-color="#fdf3dc"/><stop offset=".55" stop-color="#ead6b1"/><stop offset="1" stop-color="#b89b71"/></linearGradient></defs><path d="M1410 132 Q1521 202 1554 310" fill="none" stroke="#644126" stroke-width="27" stroke-linecap="round"/><path d="M1410 132 Q1521 202 1554 310" fill="none" stroke="url(#ivory-edge-light)" stroke-width="22" stroke-linecap="round"/></svg>
+
       
       <div class="side-highlight" id="side-highlight-2" aria-hidden="true"></div><div class="side-highlight" id="side-highlight-1" aria-hidden="true"></div>
       <section class="player-dock dock-2" aria-label="Player 2 score and turn">
@@ -63,6 +63,7 @@
   </section>
   <footer class="bottom-strip">
     <div class="status-message" id="status-text" aria-live="polite">Choose a game mode to start.</div>
+<button type="button" class="chat-fab" id="chat-fab" aria-label="Room chat" title="Room chat" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-6 4v-4H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" fill="currentColor"/><circle cx="7" cy="10" r="1.3" fill="#12332d"/><circle cx="12" cy="10" r="1.3" fill="#12332d"/><circle cx="17" cy="10" r="1.3" fill="#12332d"/></svg></button>
     <button type="button" class="action-btn tools-toggle" id="tools-toggle" aria-expanded="false" aria-controls="tools-panel">☰ Tools</button>
     <div class="actions" id="tools-panel" role="group" aria-label="Match tools" hidden>
       <button type="button" class="action-btn" id="features-btn">Play &amp; learn</button>
@@ -104,6 +105,7 @@
  </svg>
  <span class="hand-seed-count" id="hand-visual-count"></span>
 </div>
+<div id="room-pause-banner" role="status" aria-live="polite" hidden><span id="room-pause-text"></span><button type="button" class="action-btn" id="room-pause-resume">Resume</button></div>
 <div class="hand-counter" id="hand-counter" aria-hidden="true"></div>
 <div class="toast" id="toast" role="status"></div>
 <div class="hint-explanation" id="hint-explanation" hidden role="status" aria-live="polite"><span id="hint-explanation-text"></span><button type="button" id="hint-dismiss" aria-label="Dismiss hint explanation">✕</button></div>
@@ -165,8 +167,8 @@
 
 <div class="overlay" id="setup-modal" role="dialog" aria-modal="true" aria-label="Set up game">
 <div class="modal-card home-card lobby-home">
-<div class="home-top-actions"><button type="button" class="action-btn" id="setup-back" hidden>← Back</button><span id="setup-progress">Step 1 of 3</span><button type="button" class="action-btn" id="appearance-setup-btn">Dark mode</button><button type="button" class="action-btn" id="language-setup-btn" data-no-i18n data-language-toggle>Language</button></div>
-<div class="home-eyebrow">HERITAGE · STRATEGY · TRADITION</div><h1 class="home-game-title"><img class="brand-icon" src="icon-192.png?v=3.18.0" alt="" width="60" height="60"><span>Pallanguzhi</span></h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
+<div class="home-top-actions"><button type="button" class="action-btn" id="setup-back" aria-label="Previous step" title="Previous step" hidden>‹</button><span id="setup-progress">Step 1 of 3</span><button type="button" class="action-btn" id="appearance-setup-btn">Dark mode</button><button type="button" class="action-btn" id="language-setup-btn" data-no-i18n data-language-toggle>Language</button></div>
+<div class="home-eyebrow">HERITAGE · STRATEGY · TRADITION</div><h1 class="home-game-title"><img class="brand-icon" src="icon-192.png?v=3.19.0" alt="" width="60" height="60"><span>Pallanguzhi</span></h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
 <section data-setup-step="1">    <section class="resume-panel" id="resume-panel" hidden aria-label="Continue saved match">
       <div class="resume-heading">💾 Continue your match?</div>
       <div class="resume-summary" id="resume-summary"></div>
@@ -181,7 +183,7 @@
 <button type="button" class="option" data-mode="ai"><span class="mode-icon"></span><strong>Play computer</strong><small>Meet Azhagi</small></button>
 <button type="button" class="option" data-mode="two"><span class="mode-icon"></span><strong>Pass N Play</strong><small>Two players · one device</small></button>
 <button type="button" class="option" data-mode="online"><span class="mode-icon"></span><strong>Connect</strong><small>Play with a room code</small></button>
-</div><button type="button" class="secondary-btn" id="tutorial-setup-btn">Learn to play</button>
+</div><button type="button" class="daily-home-card" id="home-puzzle-btn"><span class="daily-puzzle-art" id="daily-puzzle-art" aria-hidden="true"></span><span><strong>Daily Puzzle</strong><small>One move. Find the best capture.</small></span></button><button type="button" class="secondary-btn" id="tutorial-setup-btn">Learn to play</button>
 <button type="button" id="quick-play-btn" hidden>Quick play</button>
 </section>
 <section data-setup-step="2" hidden><h2>Your seat at the board</h2>
@@ -229,13 +231,7 @@
     <details class="home-settings">
       <summary>Match rules <span>Single Match recommended · Kasie is a longer tournament</span></summary>
     <span class="field-label">Time to choose a cup</span><div class="button-grid" id="timer-picker"><button type="button" class="option" data-clock="0">Off</button><button type="button" class="option" data-clock="30">30 seconds</button><button type="button" class="option" data-clock="60">60 seconds</button><button type="button" class="option" data-clock="90">90 seconds</button></div><p class="difficulty-note">Last 10 seconds tick. When time ends, a legal cup is chosen automatically.</p>
-<span class="field-label">First move</span>
-    <div class="button-grid" style="grid-template-columns: repeat(4, 1fr);">
-      <button type="button" class="option active" data-toss="coin">🪙 Toss</button>
-      <button type="button" class="option" data-toss="p1">⬇️ P1</button>
-      <button type="button" class="option" data-toss="p2">⬆️ P2</button>
-      <button type="button" class="option" data-toss="alt">🔄 Alt</button>
-    </div>
+<span class="field-label">Coin call</span><div class="button-grid" id="coin-call-picker"><button type="button" class="option" data-call="heads">Heads</button><button type="button" class="option" data-call="tails">Tails</button></div><p class="difficulty-note">Player 1 calls the coin. The other player gets the opposite side. The winner starts.</p>
 
     <span class="field-label">Tournament format</span>
     <div class="button-grid">
@@ -351,6 +347,6 @@
   </div>
 </div>
 
-<script type="module" src="app.js?v=3.18.0"></script>
+<script type="module" src="app.js?v=3.19.0"></script>
 </body>
 </html>

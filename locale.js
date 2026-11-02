@@ -1,5 +1,14 @@
 // English/Tamil UI translation; player names and input values remain unchanged.
 export const tamil = {
+"Room chat":"அறை உரையாடல்",
+"Resume":"தொடர்க",
+"Previous step":"முந்தைய படி",
+"Coin call":"நாணயத் தேர்வு",
+"Player 1 calls the coin. The other player gets the opposite side. The winner starts.":"வீரர் 1 தலை அல்லது பூ தேர்ந்தெடுப்பார். மற்றவருக்கு எதிர்ப்பக்கம். வென்றவர் முதலில் ஆடுவார்.",
+"Daily Puzzle":"தினசரி புதிர்",
+"One move. Find the best capture.":"ஒரே நகர்வு. சிறந்த கைப்பற்றலைக் கண்டறியுங்கள்.",
+"Leave the match?":"ஆட்டத்தை விட்டு வெளியேறவா?",
+
 "Board view":"பலகைக் காட்சி",
 "⤢ Bigger board":"⤢ பெரிய பலகை",
 "⤡ Whole board":"⤡ முழுப் பலகை",
