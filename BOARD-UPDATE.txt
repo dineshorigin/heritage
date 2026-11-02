@@ -1,9 +1,11 @@
-PALLANGUZHI v3.21.0 — ROOM PLAYBACK FIX
+PALLANGUZHI v3.23.0 — MINIMAL SETUP
 
-Host pace is shared by both phones at match start, reconnect and pace changes. Guests cannot change room pace. Online hand-travel timing no longer depends on screen size; online scoop/capture flight counts are also consistent.
+Home: centered mode cards with explicit full-width centered text containers; smaller spacing and lighter borders. Personal theme/language buttons are under a gear menu.
 
-Both phones acknowledge the completed move before the next turn, timer or result is released. Counts must match. Late/duplicate acknowledgements are handled; lost acknowledgements are retried with a bounded completed-move cache. Reconnection can recover through a host board snapshot. Both clients must use the new protocol.
+Mode setup: reduced from three pages to two steps total. AI shows own name, fixed Azhagi opponent and difficulty. Pass N Play shows both editable names. Connect separates Create room and Join room, locks role switching after connection, and shows opponent readiness. Start match is on the same page; advanced rules and Pieces & sound remain collapsed. The host must still have both players Ready. Shared room rules, timing, recovery and gameplay remain unchanged.
 
-Device rendering speed and personal reduced-motion settings can still make animations finish at different times. This is a shared-pace/completion barrier, not frame-perfect synchronization. No server/relay or deployment was added.
+Removed the SVG angled capture trail for Pasu and capture. Pit outlines, count updates and seed collection remain. Report functionality remains removed.
 
-80 automated tests pass. Native assets synchronized successfully (source only; no APK build). Browser and physical two-phone network verification remain pending.
+Verification: 86 automated tests passed, including all-mode navigation/back, room role switching/connected guard and previous paired-engine checks. JS syntax, unique HTML IDs and setup nesting passed. Native source assets synchronized (no APK build). Browser visual and physical two-phone checks remain pending: previous automatic approval review blocked browser use due session usage limit. No remote commit or deployment was made.
+
+Replace all 26 root game files. Close all old tabs on BOTH phones, reopen online and create a fresh room. Confirm v3.23.0 to avoid seeing cached layouts. Check card labels in both languages, narrow portrait and tablet landscape; gear controls, each mode, back, advanced rules, room Ready/Start and Pasu.

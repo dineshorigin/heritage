@@ -1,6 +1,6 @@
-PALLANGUZHI v3.21.0
+PALLANGUZHI v3.23.0
 
-Extract this ZIP and upload/replace all TWENTY-FIVE game files below in the heritage repository ROOT. No js/css folders. Upload the extracted files, not the ZIP.
+Extract this ZIP and upload/replace all TWENTY-SIX game files below in the heritage repository ROOT. No js/css folders. Upload the extracted files, not the ZIP.
 
 index.html
 game.css
@@ -16,6 +16,7 @@ clock.js
 session.js
 comfort.js
 playback.js
+reliability.js
 native-bridge.js
 reference-board.webp
 royal-board.webp
@@ -28,10 +29,15 @@ manifest.webmanifest
 icon-192.png
 icon-512.png
 
-Commit, wait for Pages deployment, close old tabs and reopen online so the updated service worker activates. Both room players should update to v3.21.
+Commit, wait for Pages deployment, close old tabs and reopen online so the updated service worker activates. Both room players should update to v3.22.
 
 New casual games are untimed. Advanced match options enables timed play. Tools no longer spends a pause. Sound levels is in Tools. Try a short practice on Home. Puzzles/replays: More to explore. Capture/Kasie details: Why? / Kasie help near the guide. Extra mats: More colours.
 
 Existing saved full matches keep their rules; practice does not overwrite them. Optional android-project.zip is source, not an APK. See MANUAL-CHECKS.txt.
 
-Room synchronization fix: host pace applies on both phones; the next turn waits for both playback acknowledgements. Both phones MUST update to v3.21; close ALL old game tabs, reopen online, and create a fresh room. Confirm v3.21 in the game release label.
+Room synchronization fix: host pace applies on both phones; the next turn waits for both playback acknowledgements. Both phones MUST update to v3.22; close ALL old game tabs, reopen online, and create a fresh room. Confirm v3.22 in the game release label.
+
+
+Version 3.23.0 removes the problem-report button, report dialog, download/export feature and diagnostic event collection. Gameplay and connection recovery remain available. Upload all 26 game files and reopen on both phones.
+
+Version 3.23: two steps only (Home > chosen mode); Start match on the mode page. Theme/language under the gear. Create room and Join room show one panel at a time. Advanced rules and Pieces & sound are collapsed. Home titles/subtitles use centered text containers. Angled capture/Pasu trail removed; count and rim feedback retained.

@@ -1,5 +1,9 @@
 // English/Tamil UI translation; player names and input values remain unchanged.
 export const tamil = {
+"Create room":"அறையை உருவாக்கு","Join room":"அறையில் சேர்","Room options":"அறை விருப்பங்கள்","Share your room code":"அறைக் குறியீட்டைப் பகிரவும்","Settings":"அமைப்புகள்",
+"Effects: Auto":"விளைவுகள்: தானாக","Effects: Light":"விளைவுகள்: எளிமை","Effects: Full":"விளைவுகள்: முழுமை",
+"Effects":"விளைவுகள்","Auto":"தானாக","Light":"எளிமை","Full":"முழுமை","Capture tips on":"கைப்பற்றல் விளக்கம் உண்டு","Capture tips off":"கைப்பற்றல் விளக்கம் இல்லை","You are offline. Moves are paused.":"இணைய இணைப்பு இல்லை. நகர்வுகள் நிறுத்தப்பட்டுள்ளன.","Opponent reconnecting. Moves are paused.":"எதிர்வீரர் மீண்டும் இணைகிறார். நகர்வுகள் நிறுத்தப்பட்டுள்ளன.","Connected":"இணைக்கப்பட்டது",
+
 "Waiting for the other phone to finish sowing…":"மற்ற தொலைபேசியில் விதைத்தல் முடியக் காத்திருக்கிறோம்…",
 "FINISHING ON BOTH PHONES…":"இரு தொலைபேசிகளிலும் முடிகிறது…",
 "Both phones must update to v3.21 or later.":"இரு தொலைபேசிகளிலும் v3.21 அல்லது புதிய பதிப்பு தேவை.",

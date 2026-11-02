@@ -1,4 +1,4 @@
-v3.21 acceptance checks
+v3.22 acceptance checks
 1. Home: Play cards lead the page; Practice and Learn the rules are secondary; puzzles/replays are under More to explore. Check portrait/landscape and Tamil/English.
 2. Choose each mode: recommended settings are untimed/single/5/Pasu. Advanced timed rules still work. Both room players must agree through Ready. Resume an old timed saved match: its timer should be retained. Play again keeps the just-used names/settings.
 3. Tools during a room match: no pause banner, no allowance spent. Mat/theme/sound can change without a pause. Explicit Pause still uses an allowance. If you deliberately choose a timed match, its clock continues through personal settings.
@@ -10,5 +10,13 @@ v3.21 acceptance checks
 9. TWO devices: Ready/name exchange, moves, reconnect, chat, Undo, explicit pause, rematch, defaults and opt-in timing. Existing peer-to-peer networking can fail on some networks; no backend relay was added.
 10. Recheck offline install, tutorial lessons, saved progress, counts, seed materials and result fireworks. This release has unit/regression verification, not a final browser/device certification.
 
-11. ROOM PLAYBACK: update BOTH phones to v3.21, close all old game tabs and create a fresh room. Start with different saved pace settings. The host pace must apply on both. Try Fast/Natural/Relaxed changes between moves; the guest cannot change pace. Sow a long relay. The faster phone should show the waiting message and must not start the next turn/timer/results before the slower phone finishes. Verify pits and banks match after every move.
+11. ROOM PLAYBACK: update BOTH phones to v3.22, close all old game tabs and create a fresh room. Start with different saved pace settings. The host pace must apply on both. Try Fast/Natural/Relaxed changes between moves; the guest cannot change pace. Sow a long relay. The faster phone should show the waiting message and must not start the next turn/timer/results before the slower phone finishes. Verify pits and banks match after every move.
 12. Test a slower device, reduced motion, a brief network interruption during sowing, reconnect while waiting, deliberate Pause/resume during sowing, Undo after completion, final capture, round continuation and rematch. A backgrounded phone can stall playback: return it to the foreground/reconnect. Exact frame matching is not promised.
+
+13. HOME ALIGNMENT: inspect the three mode labels/subtitles centered beneath the icons in portrait and landscape, English and Tamil.
+14. CONNECTION/RESUME: interrupt Wi-Fi/mobile data; after heartbeat expiry check warning, blocked moves and frozen turn clock. Reconnect. Refresh guest then host independently, tap Continue and compare board counts, turn, score, pause allowances and clock. Repeat both phones refreshing. Host must return to the same room; local storage must remain available. A mid-move interruption can roll back to the last consistent host checkpoint.
+15. EFFECTS: switch Auto/Light/Full under Tools on a slower phone. Verify count labels remain exact and sowing timing matches host pace. Check reduced motion too. Do not change room pace mid-move.
+
+Version 3.23.0 removes the problem-report button, report dialog, download/export feature and diagnostic event collection. Gameplay and connection recovery remain available. Upload all 26 game files and reopen on both phones.
+
+Version 3.23: two steps only (Home > chosen mode); Start match on the mode page. Theme/language under the gear. Create room and Join room show one panel at a time. Advanced rules and Pieces & sound are collapsed. Home titles/subtitles use centered text containers. Angled capture/Pasu trail removed; count and rim feedback retained.

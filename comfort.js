@@ -1,4 +1,4 @@
-import {validClockSeconds} from './clock.js?v=3.21.0';
+import {validClockSeconds} from './clock.js?v=3.23.0';
 export const PRIMARY_MATS=Object.freeze(['emerald','burgundy','navy','sand','plum','slate']);
 export const clampVolume=(value,fallback)=>typeof value==='number'&&Number.isFinite(value)?Math.max(0,Math.min(1,value)):fallback;
 // Only old preferences migrate. A saved in-progress match retains its original rules.

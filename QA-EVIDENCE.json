@@ -1,22 +1,25 @@
 {
-  "version": "3.21.0",
-  "unitTestsPassed": 80,
-  "nativeSourceSync": "PASS; no APK",
+  "version": "3.23.0",
+  "unitTestsPassed": 86,
+  "pairedEngineMatches": 10,
+  "pairedEngineMoves": 271,
+  "pairedEngineCountDifferences": 0,
+  "nativeSourceSync": "PASS; source only, no APK",
   "browserVerification": "NOT RUN: prior automatic approval review session usage limit",
-  "twoDeviceBehaviour": "NOT VERIFIED on physical phones",
-  "requiredRootFiles": 25,
+  "physicalTwoDeviceVerification": "PENDING: same Wi-Fi and separate mobile networks",
+  "requiredRootFiles": 26,
   "files": {
     "index.html": {
-      "bytes": 36713,
-      "sha256": "9b79f07f77346575951062b98abc774b3bcb2ee54890d7d92f0be5e0a548f6fe"
+      "bytes": 36925,
+      "sha256": "0f40e67d715da664d4cfd8f9426ff8804ff85d8cfbc3a989a92ffbb5b8e73a7b"
     },
     "game.css": {
-      "bytes": 84740,
-      "sha256": "a99281c4f65c724a8cab2c59e02ca99f4ca8c8101ff1b315b740248a46602565"
+      "bytes": 88400,
+      "sha256": "fa29f59bdac49f59af414502e35fafc79931492ac47488366edc5d898c3520d9"
     },
     "app.js": {
-      "bytes": 182112,
-      "sha256": "afa93cc0668a072aaa1e6ab59e502e820262148700b9f46d484952cb690be69d"
+      "bytes": 184410,
+      "sha256": "69a8ad0f00195cef49ac7b344c0944f9a42ee6e6ea2d10bc9ec27010c6236c3c"
     },
     "rules.js": {
       "bytes": 3153,
@@ -24,11 +27,11 @@
     },
     "guidance.js": {
       "bytes": 5619,
-      "sha256": "566b7d3aad86040492cb6f1883276274459501ed6c7563d8bff6da0c531a6761"
+      "sha256": "a2c8b450514d3e8c784f2162e4e6aa954d71bea0eed07e8f100ad47bc7167d8c"
     },
     "locale.js": {
-      "bytes": 71261,
-      "sha256": "1d9776025b85ef92e7a52c5d19bbc416c150ce3e8d9e1ec5212e061411a25a0b"
+      "bytes": 72528,
+      "sha256": "d025c934b4625a680349d062f18dacba356722110eac14c535b62fa5449950ef"
     },
     "physics.js": {
       "bytes": 3190,
@@ -40,11 +43,11 @@
     },
     "features.js": {
       "bytes": 16042,
-      "sha256": "0bea302474b6ee617bc115bf7dc75b39f95ca1de20a1794970d888bde138ee1f"
+      "sha256": "075fed209a699d23cc0e4ccf2e74ccd79616319ea57cb36fdee5f26e9c933413"
     },
     "menu.js": {
-      "bytes": 5321,
-      "sha256": "7b6163330f39620b9ca4dee230396d6da08b9e34392f65b81b8833babcd18cc1"
+      "bytes": 5307,
+      "sha256": "ac160f0513e75ad23e23bdb19063858b4705ff8018ae434ebfdd7d52bf8e43b8"
     },
     "clock.js": {
       "bytes": 1213,
@@ -56,11 +59,15 @@
     },
     "comfort.js": {
       "bytes": 2906,
-      "sha256": "5ddb9ca04f2721e2476b7815e0a4430111c3ece77ece87867b21e7416cc9abf6"
+      "sha256": "b38c2aaaa317af64e67e6fb93c58ba85daf78bba0df8714ad2f306169c40228c"
     },
     "playback.js": {
       "bytes": 1654,
       "sha256": "09a0f1b425f6e07dd247cae09b74c827040eeb7a5c37e2b8fa92d43f4ecdc286"
+    },
+    "reliability.js": {
+      "bytes": 762,
+      "sha256": "3fd7fcebcea2714e2281dac8fee2a7f7ae18e6983dfdea31532c8327f945889f"
     },
     "native-bridge.js": {
       "bytes": 97491,
@@ -91,8 +98,8 @@
       "sha256": "2b3f7f4ffcb8baf350f122fa83bb2c2998e8557cca16ad5b7c541493c99cb3cb"
     },
     "sw.js": {
-      "bytes": 1798,
-      "sha256": "e2f46f0903242b55354d022e21a59e471ed8aa2a16db32d5fab8512e2d11f5de"
+      "bytes": 1815,
+      "sha256": "67efb41b371cf2a1faafc515efa0974753a0be0935fc307b36a62bab688e163b"
     },
     "manifest.webmanifest": {
       "bytes": 409,

@@ -23,7 +23,7 @@ export function menuArt(type,variant=''){
 }
 export function setupWizard({mode,changed,language}){
  const $=id=>document.getElementById(id);let step=1;
- const show=n=>{step=Math.max(1,Math.min(3,n));document.querySelectorAll('[data-setup-step]').forEach(el=>el.hidden=Number(el.dataset.setupStep)!==step);$('setup-progress').textContent=language()==='ta'?`படி ${step} / 3`:`Step ${step} of 3`;$('setup-back').hidden=step===1;$('setup-next').hidden=step===1||step===3;const card=$('setup-modal').querySelector('.home-card');card.scrollTop=0;};
+ const show=n=>{step=Math.max(1,Math.min(2,n));document.querySelectorAll('[data-setup-step]').forEach(el=>el.hidden=Number(el.dataset.setupStep)!==step);$('setup-progress').textContent=language()==='ta'?`படி ${step} / 2`:`Step ${step} of 2`;$('setup-back').hidden=step===1;$('setup-next').hidden=true;const card=$('setup-modal').querySelector('.home-card');card.scrollTop=0;};
  document.querySelectorAll('[data-mode]').forEach(b=>{b.querySelector('.mode-icon').innerHTML=menuArt(b.dataset.mode);b.addEventListener('click',()=>{changed(b.dataset.mode);show(2);});});
  $('setup-back').onclick=()=>show(step-1);$('setup-next').onclick=()=>show(3);
  return {goto:show,home:()=>show(1),refresh:()=>show(step),step:()=>step};
