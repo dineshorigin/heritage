@@ -1,4 +1,4 @@
-import {simulateMove} from './rules.js?v=3.19.0';
+import {simulateMove} from './rules.js?v=3.21.0';
 export const FEATURE_KEY='pallanguzhi.features.v1';
 export function cleanChat(packet,{matchId,player,now=Date.now(),last=0,seen=new Set()}={}){
  if(!packet||packet.type!=='CHAT'||packet.matchId!==matchId||packet.player!==player||typeof packet.id!=='string'||packet.id.length>80||seen.has(packet.id)||now-last<700||typeof packet.text!=='string')return null;
@@ -56,7 +56,7 @@ export function createFeatures(api){
  function updateBadge(){api.chatBadge?.(unread);}
  function hub(){open(t('Play & learn','ஆடு & கற்றுக்கொள்'));const actions=document.createElement('div');actions.className='feature-actions';actions.append(button(t('Guided first game','வழிகாட்டும் முதல் ஆட்டம்'),()=>{close();api.tutorial();}),button(t('Match replays','ஆட்ட மீள்பார்வை'),history),button(t('Explain AI moves','கணினி நகர்வு விளக்கம்'),()=>{api.toggleExplanation();hub();}),button(t('Install / Offline','நிறுவு / இணையமின்றி'),async()=>{if(installPrompt){await installPrompt.prompt();installPrompt=null;}else{text(t('On Android Chrome, open the browser menu → Install app or Add to Home screen. Open once online before playing offline. Room matches and chat need internet.','ஆண்ட்ராய்டு குரோமில் உலாவி பட்டி → செயலியை நிறுவு அல்லது முகப்புத் திரையில் சேர். இணையமின்றி ஆட முன்பே இணையத்தில் திறக்கவும். அறை ஆட்டத்திற்கும் உரையாடலுக்கும் இணையம் தேவை.'));}}));content.append(actions);text(api.explanationEnabled()?t('AI explanations: on','கணினி விளக்கங்கள்: இயங்கும்'):t('AI explanations: off','கணினி விளக்கங்கள்: நிறுத்தம்'));}
  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;});document.addEventListener('visibilitychange',()=>{if(document.hidden){clearInterval(replayTimer);replayTimer=0;}});
- return {open:hub,openChat:chatView,openPuzzle:puzzle,close,refresh:()=>{if(!modal.classList.contains('hidden'))hub();},
+ return {open:hub,openChat:chatView,openPuzzle:puzzle,openHistory:history,close,refresh:()=>{if(!modal.classList.contains('hidden'))hub();},
  resetRoom(){chat=[];seen.clear();muted=false;unread=0;lastReceive=lastSend=0;updateBadge();if(view==='chat'&&!modal.classList.contains('hidden'))chatView();},
  receive(packet){const n=api.network();if(!n.connected||muted)return;const m=cleanChat(packet,{matchId:n.matchId,player:n.player===1?2:1,last:lastReceive,seen});if(!m)return;lastReceive=Date.now();seen.add(m.id);if(seen.size>160)seen.delete(seen.values().next().value);chat.push(m);chat=chat.slice(-80);if(view==='chat'&&!modal.classList.contains('hidden'))renderChat?.();else{unread=Math.min(99,unread+1);updateBadge();}},
  recordBefore(pit,player,before){pending={pit,player,before:{pits:before.pits.slice(),banks:before.banks.slice(),locked:before.kasiePits.slice()},seq:before.metrics.moves,round:before.round};},

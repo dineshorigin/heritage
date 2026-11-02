@@ -1,12 +1,14 @@
-import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.19.0';
-import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.19.0';
-import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.19.0';
-import {createFeatures} from './features.js?v=3.19.0';
-import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.19.0';
-import {ballisticFlight} from './physics.js?v=3.19.0';
-import { installLanguage, getLanguage, translate } from './locale.js?v=3.19.0';
-import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.19.0';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.19.0';
+import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.21.0';
+import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.21.0';
+import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.21.0';
+import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.21.0';
+import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.21.0';
+import {createFeatures} from './features.js?v=3.21.0';
+import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.21.0';
+import {ballisticFlight} from './physics.js?v=3.21.0';
+import { installLanguage, getLanguage, translate } from './locale.js?v=3.21.0';
+import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.21.0';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.21.0';
 
 (() => {
   'use strict';
@@ -17,10 +19,12 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   let selfName='Player 1',passName='Player 2';
   const turnClock=createTurnClock();let clockView=null,clockTick=-1,clockHandled='',clockSentAt=0,remoteClock=null;
   const lobby={localReady:false,remoteReady:false,remoteSignature:''};
-  const pauseBudget=createPauseBudget(),pauseRequests=new Map();let roomPause={revision:-1,used:[0,0,0],owner:0,remaining:0,id:'',at:Date.now()},toolsOwnsPause=false;let afterPauseAction=null;
+  const pauseBudget=createPauseBudget(),pauseRequests=new Map();let roomPause={revision:-1,used:[0,0,0],owner:0,remaining:0,id:'',at:Date.now()};
+  let practice=false,practiceOptions=null,practiceGuidance=true,practiceLastHint='',lastCapture=null,lastDetail='',boardGestureUntil=0,pointerStart=null;
   try{explainAI=localStorage.getItem('pallanguzhi.ai.explain')==='1';}catch{}
   const tournament={allocations:[],forcedDraw:false,endReason:''};
   const rematch={localReady:false,remoteReady:false};
+  const playback=createPlaybackBarrier();let pendingCompletion=null,lastPlaybackAck=0;
   const N = 14, START_SEEDS = 5, TOTAL_SEEDS = 70, MAX_DROPS = 1600;
   const $ = id => document.getElementById(id);
   const other = p => p === 1 ? 2 : 1;
@@ -36,7 +40,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     difficulty: 'medium',
     theme: 'bright',
     uiTheme:'dark',
-    turnSeconds:30,
+    turnSeconds:0,comfortVersion:1,seedVolume:.85,uiVolume:.22,
     mat: 'emerald',
     seedStyle: 'cowrie',
     fast: false,
@@ -91,6 +95,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     pendingNextRound: null,
     acknowledgedMatch: null,
     awaitingSync: false,
+    awaitingPlayback:false,
     syncPending: false,
     remoteUndoAvailable: false,
     undoPending: false,
@@ -113,7 +118,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   const paceMultiplier = () => options.pace==='fast' ? 0.58 : options.pace==='relaxed' ? 1.38 : 1;
   const layoutCenters = new Map();
   let layoutDirty = true;
-  let boardEnlarged=false;try{boardEnlarged=localStorage.getItem('pallanguzhi.board.enlarged')==='1';}catch{}
+  let boardEnlarged=false;
   const portraitBoard = () => matchMedia('(orientation: portrait) and (max-width:700px)').matches;
 
   function isModalOpen(id) {
@@ -129,20 +134,21 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   function continuePlay(){
     state.paused=false;onlineState.remotePaused=false;
     for(const animation of activeAnims)try{animation.play();}catch{}
-    updateSkipButton();render();const action=afterPauseAction;afterPauseAction=null;if(action)action();
+    updateSkipButton();render();
     if(options.ai&&state.turn===2&&!state.busy)scheduleAiTurn(()=>state.started&&!state.over&&!state.paused);
-    if(options.online){processPendingUndo();processRemoteQueue();}
+    if(options.online){maybeCompleteOnlineMove();processPendingUndo();processRemoteQueue();}
   }
   async function waitForPlay(epoch=state.epoch){while(state.paused||onlineState.remotePaused){if(epoch!==state.epoch||!state.started||state.over)return false;await wait(50);}return epoch===state.epoch;}
   function applyRoomPause(snapshot){
     if(!validPauseState(snapshot)||snapshot.revision<roomPause.revision)return;
     const was=roomPause.owner,now=Date.now();if(snapshot.revision===roomPause.revision){const remaining=Math.min(snapshot.remaining,Math.max(0,roomPause.remaining-(now-roomPause.at)));snapshot={...snapshot,remaining,owner:remaining?snapshot.owner:0,id:remaining?snapshot.id:''};}roomPause={...snapshot,used:snapshot.used.slice(),at:now};
     if(snapshot.owner){onlineState.remotePaused=false;haltPlay();}
-    else if(was||state.paused){toolsOwnsPause=false;$('quit-modal').classList.add('hidden');$('tools-panel').hidden=true;$('tools-toggle').setAttribute('aria-expanded','false');features?.close();['mat-modal','rules-modal','stats-modal'].forEach(id=>$(id).classList.add('hidden'));if(tutorial.open)tutorialClose();continuePlay();}
+    else if(was||state.paused){$('quit-modal').classList.add('hidden');$('tools-panel').hidden=true;$('tools-toggle').setAttribute('aria-expanded','false');features?.close();['mat-modal','rules-modal','stats-modal','audio-modal','capture-detail-modal'].forEach(id=>$(id).classList.add('hidden'));if(tutorial.open)tutorialClose();continuePlay();}
     updatePauseUI();
   }
   function publishPause(){const s=pauseBudget.snapshot(Date.now());storedSet('pallanguzhi.room.pause',{matchId:state.matchId,pause:s,savedAt:Date.now()});applyRoomPause(s);sendOnlinePacket({type:'PAUSE_STATE',matchId:state.matchId,pause:s});saveStableMatch();return s;}
   function updatePauseUI(){
+    const caption=options.online&&state.started?(getLanguage()==='ta'?'இடைநிறுத்து':'Ⅱ Pause')+' · '+(PAUSE_LIMIT-roomPause.used[onlineState.myPlayerIndex]):translate('Ⅱ Pause');if($('pause-btn').textContent!==caption)$('pause-btn').textContent=caption;
     const active=options.online&&state.started&&roomPause.owner>0;
     $('room-pause-banner').hidden=!active;
     if(active){const seconds=Math.max(0,Math.ceil((roomPause.remaining-(Date.now()-roomPause.at))/1000));const left=PAUSE_LIMIT-roomPause.used[onlineState.myPlayerIndex];$('room-pause-text').textContent=getLanguage()==='ta'?`${displayName(roomPause.owner)} இடைநிறுத்தினார் · ${seconds} வி · உங்களுக்கு மீதி ${left}`:`${names[roomPause.owner]} paused · ${seconds}s · Your pauses left: ${left}`;}
@@ -159,7 +165,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     else{const timer=setTimeout(()=>{const p=pauseRequests.get(id);if(p){pauseRequests.delete(id);p.done({accepted:false});}},5000);pauseRequests.set(id,{done,timer});sendOnlinePacket({type:'PAUSE_REQUEST',action:'start',matchId:state.matchId,player:onlineState.myPlayerIndex,id});}
   }
   function resumeOwnedPause(){
-    toolsOwnsPause=false;
+    
     if(!options.online){continuePlay();return;}
     if(roomPause.owner!==onlineState.myPlayerIndex)return;
     if(onlineState.isHost){if(pauseBudget.resume(onlineState.myPlayerIndex,Date.now()))publishPause();}
@@ -172,10 +178,13 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   function closeQuitModal(resume=true){$('quit-modal').classList.add('hidden');if(resume)resumeOwnedPause();}
   function pauseTick(){
     if(options.online&&state.started&&!state.over&&!state.awaitingToss){if(onlineState.isHost){const latest=pauseBudget.snapshot(Date.now());if(latest.revision!==roomPause.revision||latest.owner!==roomPause.owner)publishPause();}else if(roomPause.owner&&Date.now()-roomPause.at>=roomPause.remaining){applyRoomPause({...roomPause,owner:0,remaining:0,id:''});sendOnlinePacket({type:'STATE_REQUEST'});}updatePauseUI();}
-    if(toolsOwnsPause&&$('tools-panel').hidden&&!['features-modal','rules-modal','stats-modal','mat-modal','tutorial-modal','quit-modal'].some(isModalOpen))resumeOwnedPause();
+    
   }
 
   function handleSystemBack() {
+    if(isModalOpen('audio-modal')){$('audio-modal').classList.add('hidden');return true;}
+    if(isModalOpen('capture-detail-modal')){$('capture-detail-modal').classList.add('hidden');return true;}
+    if(isModalOpen('practice-end-modal')){showSetup();return true;}
     if(isModalOpen('setup-modal')&&wizard?.step()>1){wizard.goto(wizard.step()-1);return true;}
     if(isModalOpen('features-modal')){features?.close();return true;}
     if(isModalOpen('mat-modal')){$('mat-modal').classList.add('hidden');return true;}
@@ -277,7 +286,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       ai: options.ai,
       online: options.online,
       difficulty: options.difficulty,
-      theme: 'bright',uiTheme:options.uiTheme,selfName,passName,turnSeconds:options.turnSeconds,
+      theme: 'bright',uiTheme:options.uiTheme,selfName,passName,turnSeconds:options.turnSeconds,comfortVersion:1,seedVolume:options.seedVolume,uiVolume:options.uiVolume,
       mat: options.mat,
       seedStyle: options.seedStyle,
       pace: options.pace,
@@ -300,7 +309,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       if (typeof data.ai === 'boolean') options.ai = data.ai;
       if (typeof data.online === 'boolean') options.online = data.online;
       if (['easy','medium','hard','expert'].includes(data.difficulty)) options.difficulty = data.difficulty;
-      options.theme='bright';options.uiTheme=data.uiTheme==='light'?'light':'dark';options.turnSeconds=validClockSeconds(data.turnSeconds);
+      options.theme='bright';options.uiTheme=data.uiTheme==='light'?'light':'dark';Object.assign(options,comfortSettings(data));
       if(typeof data.passName==='string')passName=data.passName.trim().slice(0,18)||'Player 2';
       if(typeof data.selfName==='string')selfName=data.selfName.trim().slice(0,18)||'Player 1';else if(typeof data.names?.[1]==='string')selfName=data.names[1].slice(0,18);
       options.mat=validMat(data.mat);
@@ -355,6 +364,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('setup-opponent-name').textContent=options.online?(onlineState.connected?displayName(other(onlineState.myPlayerIndex)):translate('Waiting for opponent…')):displayName(2);
     $('volume-input').value=Math.round(options.volume*100);
     $('volume-display').textContent=Math.round(options.volume*100)+'%';
+    for(const kind of ['seed','ui']){$(kind+'-volume-input').value=Math.round(options[kind+'Volume']*100);$(kind+'-volume-display').textContent=Math.round(options[kind+'Volume']*100)+'%';}
     options.theme='bright';document.body.className='';document.body.dataset.uiTheme=options.uiTheme;document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.content=options.uiTheme==='light'?'#eae3d4':'#0b171b');
     for(const id of ['theme-btn','appearance-setup-btn'])$(id).setAttribute('aria-pressed',String(options.uiTheme==='dark'));
     document.body.classList.toggle('table-facing',!options.ai&&!options.online);
@@ -369,10 +379,11 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
 
   function showSetup(){
+    if(practice){practice=false;if(practiceOptions)options={...practiceOptions};practiceOptions=null;}$('practice-end-modal').classList.add('hidden');$('practice-bar').hidden=true;
     document.body.dataset.dialogOwner='neutral';
     fireworks?.stop();
     recovery.pauseAfterToss=false;
-    $('capture-guide').textContent='';
+    clearCaptureFeedback();
     invalidateMatch();
     state.started = false;
     state.over = false;
@@ -393,6 +404,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
 
   function selectOption(group,value){
     if(group==='mode'){
+      options.turnSeconds=0;options.format='single';options.seedsPerPit=5;options.pasu='on';boardEnlarged=false;fitBoard(true);
       const wasOnline=options.online;
       options.online=value==='online';options.ai=value==='ai';
       if(wasOnline&&!options.online)resetOnlineConnection();
@@ -419,7 +431,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
      ======================================================== */
   function resetLobbyReady(){lobby.localReady=false;lobby.remoteReady=false;lobby.remoteSignature='';}
   function roomCanStart(){return canStartRoom({connected:onlineState.connected,host:onlineState.isHost,localReady:lobby.localReady,remoteReady:lobby.remoteReady,localSignature:lobbySignature(options),remoteSignature:lobby.remoteSignature});}
-  function broadcastReady(){return sendOnlinePacket({type:'LOBBY_READY',room:onlineState.roomCode,player:onlineState.myPlayerIndex,ready:lobby.localReady,signature:lobbySignature(options),name:selfName});}
+  function broadcastReady(){return sendOnlinePacket({type:'LOBBY_READY',protocol:PLAYBACK_PROTOCOL,room:onlineState.roomCode,player:onlineState.myPlayerIndex,ready:lobby.localReady,signature:lobbySignature(options),name:selfName});}
   function updateLobbyUI(){
     const connected=options.online&&onlineState.connected,peer=other(onlineState.myPlayerIndex),ta=getLanguage()==='ta';
     $('room-peer-name').textContent=connected?displayName(peer):translate('Waiting for opponent…');
@@ -456,7 +468,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     updateRematchUI();
     $('online-recovery').hidden=!options.online||!state.started;
     $('reconnect-btn').hidden=onlineState.connected&&!onlineState.awaitingSync;
-    $('connection-text').textContent=onlineState.connected?(onlineState.awaitingSync?'Synchronizing boards…':onlineState.remotePaused?'Your friend paused the match.':'Connected · Room '+onlineState.roomCode):'Connection lost · Room '+onlineState.roomCode;
+    $('online-recovery').dataset.state=!onlineState.connected?'reconnecting':state.paused?'paused':onlineState.awaitingSync?'synchronizing':'connected';
+    $('connection-text').textContent=onlineState.connected?(onlineState.awaitingPlayback?'Waiting for the other phone to finish sowing…':onlineState.awaitingSync?'Synchronizing boards…':onlineState.remotePaused?'Your friend paused the match.':'Connected · Room '+onlineState.roomCode):'Connection lost · Room '+onlineState.roomCode;
   }
   function resetOnlineConnection({keepRoom=false}={}) {
     clearTimeout(recovery.timer);recovery.timer=null;
@@ -484,12 +497,12 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
   function applyRemoteRules(remote) {
     if(!remote||typeof remote!=='object')return;
-    // Only shared rules are synchronized; device sound, pace and theme remain personal.
+    // Shared rules and room pace match; sound, accessibility and theme remain personal.
     options.firstMove='coin';options.coinCall=remote.coinCall==='tails'?'tails':'heads';
     if(['single','kasie'].includes(remote.format))options.format=remote.format;
     if([4,5].includes(remote.seedsPerPit))options.seedsPerPit=remote.seedsPerPit;
     if(['on','off'].includes(remote.pasu))options.pasu=remote.pasu;options.turnSeconds=validClockSeconds(remote.turnSeconds);
-    options.ai=false;options.online=true;
+    options.ai=false;options.online=true;options.pace=validRoomPace(remote.pace);
     options.fast=options.pace==='fast';
   }
   function onlinePacket(payload) {
@@ -510,9 +523,9 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       kasiePits:state.kasiePits.slice(),round:state.round,roundPending:state.roundPending,over:state.over,paused:state.paused,
       tournament:{allocations:tournament.allocations.slice(),forcedDraw:tournament.forcedDraw,endReason:tournament.endReason},
       metrics:{...state.metrics},currentRoundStarter:state.currentRoundStarter,matchStartedAt:state.matchStartedAt,pause:pauseBudget.snapshot(Date.now())};
-    sendOnlinePacket({type:'STATE_SYNC',matchId:state.matchId,rev:onlineState.revision,
+    sendOnlinePacket({type:'STATE_SYNC',protocol:PLAYBACK_PROTOCOL,matchId:state.matchId,rev:onlineState.revision,
       undoAvailable:state.history.length>0,position,
-      options:{format:options.format,firstMove:'coin',coinCall:options.coinCall,seedsPerPit:options.seedsPerPit,pasu:options.pasu,turnSeconds:options.turnSeconds},names:{...names}});
+      options:{format:options.format,firstMove:'coin',coinCall:options.coinCall,seedsPerPit:options.seedsPerPit,pasu:options.pasu,turnSeconds:options.turnSeconds,pace:options.pace},names:{...names}});
     onlineState.syncPending=false;
   }
   function sendUndoAvailability(){
@@ -826,8 +839,18 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   function handleOnlineMessage(data){
     if(!options.online||!data||typeof data!=='object'||typeof data.type!=='string')return;
     recovery.lastHeard=Date.now();
+    if(data.type==='MOVE_FINISHED_QUERY'){
+      if(!onlineState.connected||data.protocol!==PLAYBACK_PROTOCOL||data.matchId!==state.matchId||data.sender!==other(onlineState.myPlayerIndex)||data.rev!==onlineState.revision||data.round!==state.round||!Number.isInteger(data.seq)||data.seq<state.metrics.moves-8||data.seq>state.metrics.moves+1||![1,2].includes(data.mover))return;
+      const done=playback.lookup(data);if(done)sendOnlinePacket({type:'MOVE_FINISHED',protocol:PLAYBACK_PROTOCOL,...done.context,sender:onlineState.myPlayerIndex,digest:done.digest});return;
+    }
+    if(data.type==='MOVE_FINISHED'){
+      if(!onlineState.connected||data.protocol!==PLAYBACK_PROTOCOL||data.matchId!==state.matchId||data.sender!==other(onlineState.myPlayerIndex)||data.rev!==onlineState.revision||data.round!==state.round||!Number.isInteger(data.seq)||data.seq<state.metrics.moves||data.seq>state.metrics.moves+1||![1,2].includes(data.mover))return;
+      playback.receive({matchId:data.matchId,round:data.round,seq:data.seq,rev:data.rev,mover:data.mover},data.digest);maybeCompleteOnlineMove();return;
+    }
+    if(data.type==='ROOM_PACE'){if(onlineState.isHost||!onlineState.connected||data.matchId!==state.matchId)return;options.pace=validRoomPace(data.pace);options.fast=options.pace==='fast';updatePaceUI();saveSettings();return;}
     if(data.type==='TURN_CLOCK'){if(onlineState.connected&&validRemoteClock(data,{key:clockKey(),player:other(onlineState.myPlayerIndex),duration:options.turnSeconds,matchId:state.matchId})){remoteClock={...data,at:performance.now(),running:false};updateTurnClock();}return;}
     if(data.type==='LOBBY_READY'){
+      if(data.protocol!==PLAYBACK_PROTOCOL){toast('Both phones must update to v3.21 or later.',2500);return;}
       if(!onlineState.connected||state.started||!acceptReady(data,{room:onlineState.roomCode,player:other(onlineState.myPlayerIndex),signature:lobbySignature(options)}))return;
       lobby.remoteReady=data.ready;lobby.remoteSignature=data.signature;names[other(onlineState.myPlayerIndex)]=safeRemoteName(data.name,'Player 2');updateOnlineControls();return;
     }
@@ -870,6 +893,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       if(state.started){onlineState.syncPending=true;queueMicrotask(sendAuthoritativeState);}
     }else if(data.type==='STATE_REQUEST'){
       if(!onlineState.isHost||!onlineState.connected)return;
+      if(onlineState.awaitingPlayback&&pendingCompletion){recoverPlayback();return;}
       onlineState.syncPending=true;sendAuthoritativeState();
     }else if(data.type==='UNDO_REQUEST'){
       if(!onlineState.isHost||!onlineState.connected||typeof data.matchId!=='string')return;
@@ -885,8 +909,9 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       onlineState.undoPending=false;updateAssistButtons();render();
       toast('Undo no longer available. Board resynchronizing.',2200);
     }else if(data.type==='STATE_SYNC'){
+      if(data.protocol!==PLAYBACK_PROTOCOL){toast('Both phones must update to v3.21 or later.',2500);return;}
       if(onlineState.isHost||!onlineState.connected||!data.position||!data.names)return;
-      if(state.activeMove||state.busy){recovery.pendingSync=data;return;}
+      if(state.activeMove||(state.busy&&!onlineState.awaitingPlayback)){recovery.pendingSync=data;return;}
       const pos=data.position;
       const priorClock=clockView?.key===clockKey()&&state.turn===onlineState.myPlayerIndex?{...clockView}:null;
       const keepResult=state.resultRecorded&&state.matchId===data.matchId&&state.over&&pos.over===true;
@@ -923,6 +948,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       else setStatus(`🌐 Reconnected · ${names[state.turn]}'s turn.`);
       processRemoteQueue();
     }else if(data.type==='START_GAME'){
+      if(data.protocol!==PLAYBACK_PROTOCOL){toast('Both phones must update to v3.21 or later.',2500);return;}
       if(onlineState.isHost||!onlineState.connected||data.matchId===state.matchId||!Number.isInteger(data.starter)||![1,2].includes(data.starter)||typeof data.matchId!=='string'||data.matchId.length>90)return;
       applyRemoteRules(data.options);
       if(!data.names||typeof data.names!=='object')return;
@@ -983,6 +1009,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
         seedStyle:['natural','colored','cowrie'].includes(data.options.seedStyle)?data.options.seedStyle:'natural',
         pace:['natural','relaxed','fast'].includes(data.options.pace)?data.options.pace:'natural',
         sound:typeof data.options.sound==='boolean'?data.options.sound:true,
+        seedVolume:options.seedVolume,uiVolume:options.uiVolume,comfortVersion:1,
         volume:typeof data.options.volume==='number'&&Number.isFinite(data.options.volume)?Math.max(0,Math.min(1,data.options.volume)):.65,
         firstMove:'coin',coinCall:data.options.coinCall==='tails'?'tails':'heads',
         format:['kasie','single'].includes(data.options.format)?data.options.format:'kasie',
@@ -1011,6 +1038,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
 
   function saveStableMatch(){
+    if(practice)return;
     if(!state.started||state.activeMove||(state.over&&!state.roundPending))return;
     const pos={version:1,matchId:state.matchId,savedAt:Date.now(),
       pits:state.pits.slice(),banks:state.banks.slice(),turn:state.turn,
@@ -1027,7 +1055,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       names:{...names}};
     if(validPosition(pos))storedSet(PROGRESS_KEY,pos);
   }
-  function removeSavedMatch(){storedRemove(PROGRESS_KEY);refreshResumePanel();}
+  function removeSavedMatch(){if(practice)return;storedRemove(PROGRESS_KEY);refreshResumePanel();}
   function applySavedOptions(saved){
     Object.assign(options,saved.options,{fast:saved.options.pace==='fast'});
     syncSetupModalUI();
@@ -1106,6 +1134,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   ];
   function achieved(){return achievements.filter(a=>a.value()>=a.goal).map(a=>a.id);}
   function recordFinishedMatch(){
+    if(practice)return;
     if(state.resultRecorded)return;
     const before=achieved();
     state.recordedStatsBefore=JSON.parse(JSON.stringify(stats));
@@ -1209,7 +1238,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       gain.gain.setValueAtTime(0.06 * options.volume, t);
       gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
       osc.connect(gain);
-      gain.connect(ctx.pallanguzhiMaster);
+      gain.connect(ctx.pallanguzhiUI);
       osc.start(t);
       osc.stop(t + 0.46);
 
@@ -1221,7 +1250,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
         g2.gain.setValueAtTime((0.05 - i * 0.012) * options.volume, t + delay);
         g2.gain.exponentialRampToValueAtTime(0.0001, t + delay + 0.04);
         o2.connect(g2);
-        g2.connect(ctx.pallanguzhiMaster);
+        g2.connect(ctx.pallanguzhiUI);
         o2.start(t + delay);
         o2.stop(t + delay + 0.045);
       });
@@ -1305,7 +1334,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
         pit.style.setProperty('--cup-y',point.y+'%');
         pit.style.setProperty('--cup-w',point.width+'%');pit.style.setProperty('--cup-h',point.height+'%');
         const badgeY=index<7?91:8;pit.style.setProperty('--count-y',((badgeY-point.y+point.height/2)/point.height*100)+'%');
-        pit.addEventListener('click', () => playPit(index));
+        pit.addEventListener('click', e=>{if(e.detail>0&&performance.now()<boardGestureUntil)return;playPit(index);});
         slot.append(pit); fragment.append(slot);
       }
       $(target).append(fragment);
@@ -1441,7 +1470,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       $(p===1?'plank-bottom':'plank-top').classList.toggle('active-side',state.started&&state.turn===p&&!state.over&&!state.paused&&!state.awaitingToss);
     }
     updatePlayerDocks();
-    const turnState={started:state.started,over:state.over,paused:state.paused||onlineState.remotePaused,awaitingToss:state.awaitingToss,roundPending:state.roundPending,busy:state.busy,turn:state.turn,ai:options.ai,online:options.online,connected:onlineState.connected,awaitingSync:onlineState.awaitingSync,undoPending:onlineState.undoPending,myPlayer:onlineState.myPlayerIndex,names};
+    const turnState={started:state.started,over:state.over,paused:state.paused||onlineState.remotePaused,awaitingToss:state.awaitingToss,roundPending:state.roundPending,busy:state.busy,turn:state.turn,ai:options.ai,online:options.online,connected:onlineState.connected,awaitingPlayback:onlineState.awaitingPlayback,awaitingSync:onlineState.awaitingSync,undoPending:onlineState.undoPending,myPlayer:onlineState.myPlayerIndex,names};
     for(const p of [1,2]){const lamp=$('wish-lamp-'+p);lamp.hidden=options.online?p!==onlineState.myPlayerIndex:options.ai?p!==1:false;lamp.disabled=!shouldNotifyTurn(turnState)||p!==state.turn;lamp.classList.toggle('lamp-active',!lamp.disabled);}
     for(const player of [1,2]){const label=playerTurnLabel(turnState,player);$('ind-'+player).textContent=label;$('dock-turn-'+player).textContent=label;}
     if(shouldNotifyTurn(turnState)){
@@ -1458,12 +1487,37 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     updateAssistButtons();
     updateOnlineControls();
     $('chat-fab').hidden=!options.online||!state.started;updatePauseUI();
-    updateTurnClock();
-    $('turn-guide').textContent=turnGuidance({started:state.started,over:state.over,busy:state.busy,paused:state.paused||onlineState.remotePaused,awaitingToss:state.awaitingToss,roundPending:state.roundPending,turn:state.turn,name:names[state.turn],ai:options.ai,online:options.online,connected:onlineState.connected,myPlayer:onlineState.myPlayerIndex,awaitingSync:onlineState.awaitingSync,undoPending:onlineState.undoPending,portrait:matchMedia('(orientation:portrait) and (max-width:700px)').matches});
+    if(!lastDetail&&state.kasiePits.some(Boolean)){$('capture-detail-btn').hidden=false;document.querySelector('.play-guide').classList.add('has-reason');$('capture-detail-btn').textContent=translate('Kasie help');}
+    updatePractice();updateTurnClock();
+    $('turn-guide').textContent=turnGuidance({started:state.started,over:state.over,busy:state.busy,paused:state.paused||onlineState.remotePaused,awaitingToss:state.awaitingToss,roundPending:state.roundPending,turn:state.turn,name:names[state.turn],ai:options.ai,online:options.online,connected:onlineState.connected,myPlayer:onlineState.myPlayerIndex,awaitingPlayback:onlineState.awaitingPlayback,awaitingSync:onlineState.awaitingSync,undoPending:onlineState.undoPending,portrait:matchMedia('(orientation:portrait) and (max-width:700px)').matches});
+  }
+
+  function clearCaptureFeedback(){lastCapture=null;lastDetail='';$('capture-guide').textContent='';$('capture-detail-btn').hidden=true;document.querySelector('.play-guide').classList.remove('has-reason');$('capture-trace').classList.remove('visible');}
+  function openExplanation(text){$('capture-detail-copy').textContent=text;$('capture-detail-modal').classList.remove('hidden');$('close-capture-detail').focus({preventScroll:true});}
+  function setCaptureFeedback(event){
+    lastCapture={...event};lastDetail=captureExplanation(event,state.kasiePits,{1:displayName(1),2:displayName(2)},getLanguage()==='ta');
+    $('capture-guide').textContent=captureGuidance(names[event.player],event.count,event.kind==='pasu');$('capture-detail-btn').hidden=false;document.querySelector('.play-guide').classList.add('has-reason');$('capture-detail-btn').textContent=translate('Why?');
+    const target=referenceCup(event.pit),bank={x:event.player===1?65.8:31.3,y:49};
+    const path=[];if(Number.isInteger(event.emptyPit)){const empty=referenceCup(event.emptyPit);path.push(`M ${empty.x} ${empty.y} L ${target.x} ${target.y}`);highlightPit(event.emptyPit,'reason-pulse',1100);}
+    path.push(`M ${target.x} ${target.y} L ${bank.x} ${bank.y}`);$('capture-trace-path').setAttribute('d',path.join(' '));$('capture-trace').classList.add('visible');const timer=setTimeout(()=>{$('capture-trace').classList.remove('visible');feedbackTimers.delete(timer);},1100);feedbackTimers.add(timer);
+  }
+  function startPractice(){
+    if(!practice)practiceOptions={...options};practice=true;practiceGuidance=true;practiceLastHint='';
+    if(options.online)resetOnlineConnection();Object.assign(options,{online:false,ai:true,difficulty:'easy',format:'single',seedsPerPit:5,pasu:'on',turnSeconds:0,firstMove:'coin',seedStyle:'cowrie',pace:'natural',fast:false});boardEnlarged=false;fitBoard(true);
+    $('practice-end-modal').classList.add('hidden');syncSetupModalUI();startGame(true,1);
+  }
+  function endPractice(){
+    closeAnimations();state.aiTicket++;state.activeMove=null;state.busy=false;state.over=true;state.paused=false;updateSkipButton();hideHintExplanation();render();$('practice-summary').textContent=practiceComplete(state.metrics.moves)?translate('Four turns each. Ready for a full match?'):translate('You finished the practice position. Ready for a full match?');$('practice-end-modal').classList.remove('hidden');$('practice-full-btn').focus({preventScroll:true});
+  }
+  function updatePractice(){
+    $('practice-bar').hidden=!practice||!state.started||state.over;
+    if(!practice)return;$('practice-progress').textContent=getLanguage()==='ta'?`பயிற்சி · ${Math.min(8,state.metrics.moves)}/8 நகர்வுகள்`:`Practice · ${Math.min(8,state.metrics.moves)}/8 moves`;
+    $('practice-guidance-btn').textContent=practiceGuidance?translate('Hints on'):translate('Hints off');
+    const key=clockKey();if(practiceGuidance&&!state.busy&&!state.over&&!state.paused&&state.turn===1&&practiceLastHint!==key){practiceLastHint=key;queueMicrotask(()=>{if(practice&&practiceGuidance&&state.turn===1&&!state.busy&&!state.paused&&!state.over&&state.hintPit===null)showHint();});}
   }
 
   function clockKey(){return `${state.matchId}|${state.round}|${state.metrics.moves}|${state.turn}`;}
-  function clockActive(){return (options.online||!['rules-modal','stats-modal','features-modal','mat-modal','tutorial-modal'].some(isModalOpen))&&state.started&&!state.over&&!state.roundPending&&!state.awaitingToss&&!state.busy&&!state.paused&&!onlineState.remotePaused&&(!document.hidden||options.online)&&!(options.ai&&state.turn===2)&&(!options.online||(onlineState.connected&&!onlineState.awaitingSync&&!onlineState.undoPending));}
+  function clockActive(){return (options.online||!['rules-modal','stats-modal','features-modal','tutorial-modal','capture-detail-modal'].some(isModalOpen))&&state.started&&!state.over&&!state.roundPending&&!state.awaitingToss&&!state.busy&&!state.paused&&!onlineState.remotePaused&&(!document.hidden||options.online)&&!(options.ai&&state.turn===2)&&(!options.online||(onlineState.connected&&!onlineState.awaitingSync&&!onlineState.undoPending));}
   function updateTurnClock(){
     const now=performance.now(),key=clockKey(),source=!options.online||state.turn===onlineState.myPlayerIndex,active=clockActive();
     clockView=turnClock.step({turnKey:key,duration:options.turnSeconds,active:active&&source,now});
@@ -1572,7 +1626,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     if(distance<2)return;
     lastHandPos=point;
     const duration=reducedMotion()?0:Math.round(
-      Math.min(318,215+Math.max(0,distance-65)*.16)*paceMultiplier()
+      (options.online?220:Math.min(318,215+Math.max(0,distance-65)*.16))*paceMultiplier()
     );
     if(!duration){el.style.transform=target;return;}
     if(typeof el.animate!=='function'){
@@ -1750,9 +1804,10 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
         limiter.threshold.value=-14;limiter.knee.value=7;limiter.ratio.value=6;
         limiter.attack.value=.002;limiter.release.value=.065;
         master.connect(limiter);limiter.connect(audio.destination);
-        audio.pallanguzhiMaster=master;
+        audio.pallanguzhiMaster=master;audio.pallanguzhiSeeds=audio.createGain();audio.pallanguzhiUI=audio.createGain();audio.pallanguzhiSeeds.connect(master);audio.pallanguzhiUI.connect(master);
         audio.pallanguzhiSamples={};
       }
+      if(audio.seedLevel!==options.seedVolume){audio.seedLevel=options.seedVolume;audio.pallanguzhiSeeds.gain.setTargetAtTime(options.seedVolume,audio.currentTime,.015);}if(audio.uiLevel!==options.uiVolume){audio.uiLevel=options.uiVolume;audio.pallanguzhiUI.gain.setTargetAtTime(options.uiVolume,audio.currentTime,.015);}
       const material=options.seedStyle||'natural';
       if(!audio.pallanguzhiSamples[material])
         audio.pallanguzhiSamples[material]=Array.from({length:8},(_,i)=>makeImpactBuffer(audio,material,i));
@@ -1762,6 +1817,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
 
   function beadImpact(kind='drop',strength=1,offset=0){
+    if(options.seedVolume<=0)return;
     const ctx=ensureAudio();if(!ctx||!options.sound||options.volume===0)return;
     try{
       const style = options.seedStyle || 'natural';
@@ -1774,13 +1830,14 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       const level=Math.min(1,Math.max(.005,.55*strength*typeFactor));
       const t=ctx.currentTime+offset;
       gain.gain.setValueAtTime(level,t);
-      source.connect(gain);gain.connect(ctx.pallanguzhiMaster);
+      source.connect(gain);gain.connect(ctx.pallanguzhiSeeds);
       source.start(t);
       source.onended=()=>{try{source.disconnect();gain.disconnect();}catch{}};
     }catch{}
   }
 
   function softNotes(frequencies,level=.065){
+    if(options.uiVolume<=0)return;
     const ctx=ensureAudio();if(!ctx||!options.sound||options.volume===0)return;
     try{
       frequencies.forEach((frequency,i)=>{
@@ -1788,13 +1845,13 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
         osc.type='sine';osc.frequency.setValueAtTime(frequency,t);
         gain.gain.setValueAtTime(0,t);gain.gain.linearRampToValueAtTime(level,t+.009);
         gain.gain.exponentialRampToValueAtTime(.0001,t+.14);
-        osc.connect(gain);gain.connect(ctx.pallanguzhiMaster);osc.start(t);osc.stop(t+.15);
+        osc.connect(gain);gain.connect(ctx.pallanguzhiUI);osc.start(t);osc.stop(t+.15);
         osc.onended=()=>{osc.disconnect();gain.disconnect();};
       });
     }catch{}
   }
   let lastUiClick=0;
-  function uiClick(){const now=performance.now();if(!options.sound||options.volume<=0||now-lastUiClick<65)return;lastUiClick=now;softNotes([760,1020],.025);}
+  function uiClick(){const now=performance.now();if(!options.sound||options.volume<=0||now-lastUiClick<65)return;lastUiClick=now;softNotes([760],.018);}
   function turnSound(player){
     if(options.online&&player!==onlineState.myPlayerIndex||options.ai&&player!==1)return;
     softNotes(player===1?[440,660]:[523.25,783.99],.075);
@@ -1827,7 +1884,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     handPose('grip');
     scoopSound(count);
     const hand=releasePoint(at,player);
-    const n=Math.min(count,options.fast?1:matchMedia('(pointer:coarse)').matches?2:3);
+    const n=Math.min(count,options.fast?1:options.online?2:matchMedia('(pointer:coarse)').matches?2:3);
     await Promise.all(Array.from({length:n},(_,i)=>fly(
       {x:at.x+(i-(n-1)/2)*3.6,y:at.y+((i%2)*4)},
       {x:hand.x+(i-(n-1)/2)*1.5,y:hand.y},
@@ -1842,7 +1899,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     await moveHand(at,player,'open');if(!live())return;
     handPose('grip');scoopSound(count);
     const lift=releasePoint(at,player);
-    const n=Math.min(count,options.fast?2:matchMedia('(pointer:coarse)').matches?3:5);
+    const n=Math.min(count,options.fast?2:options.online?3:matchMedia('(pointer:coarse)').matches?3:5);
     await Promise.all(Array.from({length:Math.min(n,6)},(_,i)=>
       fly({x:at.x+(i%3-1)*4,y:at.y+(Math.floor(i/3)*3)},lift,{kind:'scoop',index:pit,serial:i,delay:i*(options.fast?9:18)})
     ));
@@ -1939,6 +1996,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
 
   function handleRoundSettlement() {
+    if(practice){endPractice();return;}
     settleLockedSeeds(state.pits,state.banks,state.kasiePits);
     render();
     assertConservation('round settlement');
@@ -1974,6 +2032,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('round-details').innerHTML=`<div style="margin-bottom:8px;font-weight:850;color:#ffd700">${ta?'சுற்று':'Round'} ${state.round} ${ta?'விதைகள்':'score'}</div>
        <div style="display:flex;justify-content:space-between;gap:8px"><span>${escapeMarkup(names[1])}: <b>${s1} ${ta?'விதைகள்':'seeds'}</b></span><span>${escapeMarkup(names[2])}: <b>${s2} ${ta?'விதைகள்':'seeds'}</b></span></div>
        <div style="margin-top:9px;border-top:1px dashed #644525;padding-top:8px"><div>${escapeMarkup(names[1])}: ${fill1} ${ta?'நிரப்பிய குழிகள்':'filled'}, ${7-fill1} ${ta?'காசி':'Kasie'} 🔒 (${rem1} ${ta?'மீதி விதைகள்':'surplus'})</div><div>${escapeMarkup(names[2])}: ${fill2} ${ta?'நிரப்பிய குழிகள்':'filled'}, ${7-fill2} ${ta?'காசி':'Kasie'} 🔒 (${rem2} ${ta?'மீதி விதைகள்':'surplus'})</div></div>`;
+    $('kasie-explainer').textContent=kasieExplanation(displayName(1),fill1,ta)+' '+kasieExplanation(displayName(2),fill2,ta);
     const button=$('next-round-btn');
     button.disabled=options.online&&!onlineState.isHost;
     button.textContent=options.online&&!onlineState.isHost?'⏳ Waiting for host to begin next round…':'START NEXT ROUND';
@@ -2063,12 +2122,12 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       kasiePits:state.kasiePits.slice(),round:state.round,metrics:{...state.metrics}};
   }
   function updateAssistButtons(){
-    const canHint=state.started&&!state.over&&!state.busy&&(!state.paused||toolsOwnsPause)&&!onlineState.remotePaused&&!state.awaitingToss&&(!options.online||(onlineState.connected&&!onlineState.awaitingSync&&state.turn===onlineState.myPlayerIndex))&&!(options.ai&&state.turn===2)&&validMoves(state.turn).length>0;
+    const canHint=state.started&&!state.over&&!state.busy&&!state.paused&&!onlineState.remotePaused&&!state.awaitingToss&&(!options.online||(onlineState.connected&&!onlineState.awaitingSync&&state.turn===onlineState.myPlayerIndex))&&!(options.ai&&state.turn===2)&&validMoves(state.turn).length>0;
     $('hint-btn').disabled=!canHint;
     $('hint-btn').setAttribute('aria-pressed',String(canHint&&state.hintPit!==null));
     const canUndo=state.started&&(
       options.online
-        ? onlineState.connected&&!onlineState.remotePaused&&!onlineState.awaitingSync&&!onlineState.undoPending&&!state.busy&&!state.awaitingToss&&(!state.paused||toolsOwnsPause)&&!state.roundPending&&(onlineState.isHost?state.history.length>0:onlineState.remoteUndoAvailable)
+        ? onlineState.connected&&!onlineState.remotePaused&&!onlineState.awaitingSync&&!onlineState.undoPending&&!state.busy&&!state.awaitingToss&&!state.paused&&!state.roundPending&&(onlineState.isHost?state.history.length>0:onlineState.remoteUndoAvailable)
         : state.history.length>0);
     $('undo-btn').disabled=!canUndo;
     $('undo-end-btn').hidden=!canUndo;
@@ -2119,7 +2178,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
   function performLocalUndo(){
     if(!state.started||!state.history.length)return false;
-    $('capture-guide').textContent='';
+    clearCaptureFeedback();
     rematch.localReady=false;rematch.remoteReady=false;
     const previous=state.history.pop();
     tournament.allocations=[];tournament.forcedDraw=false;tournament.endReason='';
@@ -2131,7 +2190,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     state.over=false;state.roundPending=false;state.paused=false;state.started=true;
     $('round-brand-sub').textContent=options.format==='kasie'?`ROUND ${state.round} · KASIE TOURNAMENT`:'SINGLE MATCH';
     ['end-modal','round-modal','quit-modal'].forEach(id=>$(id).classList.add('hidden'));
-    features?.undo(state.round,state.metrics.moves);
+    if(!practice)features?.undo(state.round,state.metrics.moves);
     assertConservation('undo');
     render();saveStableMatch();
     setStatus(`↶ Turn restored. ${names[state.turn]}'s turn.`);
@@ -2177,13 +2236,34 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     if(!state.over)toast('⏭ Move completed',750);
   }
 
-  function completeMove(mover, live, recovered=false, simulated=null) {
+  function playbackContext(mover=state.turn){return {matchId:state.matchId,round:state.round,seq:state.metrics.moves,rev:onlineState.revision,mover};}
+  function sendPlaybackAck(){const b=playback.inspect();if(!options.online||!onlineState.connected||!b.localDone)return;lastPlaybackAck=Date.now();sendOnlinePacket({type:'MOVE_FINISHED',protocol:PLAYBACK_PROTOCOL,...b.context,sender:onlineState.myPlayerIndex,digest:b.digest});sendOnlinePacket({type:'MOVE_FINISHED_QUERY',protocol:PLAYBACK_PROTOCOL,...b.context,sender:onlineState.myPlayerIndex});}
+  function recoverPlayback(){
+    if(!options.online)return;
+    if(onlineState.isHost){if(!pendingCompletion)return;const c=pendingCompletion;pendingCompletion=null;playback.clear();onlineState.awaitingPlayback=false;onlineState.syncPending=true;finishCompletedMove(c.mover,c.live,c.recovered,c.simulated);queueMicrotask(sendAuthoritativeState);}
+    else{pendingCompletion=null;playback.reset();state.epoch++;state.aiTicket++;closeAnimations();state.activeMove=null;state.busy=false;onlineState.awaitingPlayback=false;onlineState.awaitingSync=true;sendOnlinePacket({type:'STATE_REQUEST'});render();}
+  }
+  function maybeCompleteOnlineMove(){
+    if(!pendingCompletion||state.paused||onlineState.remotePaused)return;
+    const b=playback.inspect();if(b.status==='mismatch'){recoverPlayback();return;}if(b.status!=='ready')return;
+    const c=pendingCompletion;pendingCompletion=null;playback.clear();onlineState.awaitingPlayback=false;finishCompletedMove(c.mover,c.live,c.recovered,c.simulated);
+  }
+  function completeMove(mover,live,recovered=false,simulated=null){
+    if(!live())return;
+    if(!options.online||!simulated){finishCompletedMove(mover,live,recovered,simulated);return;}
+    state.activeMove=null;hideHand();updateSkipButton();
+    if(recovery.pendingSync){const packet=recovery.pendingSync;recovery.pendingSync=null;state.busy=false;handleOnlineMessage(packet);return;}
+    pendingCompletion={mover,live,recovered,simulated};onlineState.awaitingPlayback=true;state.busy=true;
+    playback.finish(playbackContext(mover));sendPlaybackAck();if(onlineState.isHost&&onlineState.syncPending){recoverPlayback();return;}maybeCompleteOnlineMove();if(pendingCompletion){render();setStatus('Waiting for the other phone to finish sowing…');}
+  }
+
+  function finishCompletedMove(mover, live, recovered=false, simulated=null) {
     if (!live()) return;
     state.activeMove=null;
     updateSkipButton();
     hideHand();
     if(simulated){
-      features?.recordAfter();
+      if(!practice)features?.recordAfter();
       state.metrics.moves++;
       for(const e of simulated.events){
         if(e.kind==='pasu'&&e.player===1)state.metrics.p1Pasu++;
@@ -2193,6 +2273,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
         }
       }
     }
+    if(practice&&practiceComplete(state.metrics.moves)){endPractice();return;}
     if (settleIfFinished(state.pits,state.banks)) {
       state.over=true;state.busy=false;render();
       handleRoundSettlement();
@@ -2224,7 +2305,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     if(options.online && (!onlineState.connected || (fromRemote ? state.turn===onlineState.myPlayerIndex : state.turn!==onlineState.myPlayerIndex)))return;
     if(state.kasiePits[index])return;
 
-    $('capture-guide').textContent='';
+    clearCaptureFeedback();
     const current=state.turn;
     const epoch=state.epoch;
     let simulated;
@@ -2240,7 +2321,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       state.history.push(snapshot());
       if(state.history.length>40)state.history.shift();
     }
-    features?.recordBefore(index,current,state);
+    if(options.online)playback.begin(playbackContext(current),boardDigest(simulated.pits,simulated.banks));
+    if(!practice)features?.recordBefore(index,current,state);
     state.hintPit=null;
     hideHintExplanation();
     state.busy=true;
@@ -2281,7 +2363,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
           handPose('grip');
           if(!reducedMotion())await wait(Math.round((options.fast?4:10)*paceMultiplier()));
         }else if(event.kind==='pasu'){
-          $('capture-guide').textContent=captureGuidance(names[event.player],4,true);
+          setCaptureFeedback(event);
           highlightPit(event.pit,'capture-pulse',500);
           toast(`Pasu! ${names[event.player]} +4 ${pieceWord()}`,options.fast?750:1600);
           setStatus(`Pasu! ${names[event.player]} wins 4.`);
@@ -2293,7 +2375,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
           handBadge(source,hand);
           if(!options.fast&&!reducedMotion())await wait(Math.round(42*paceMultiplier()));
         }else if(event.kind==='capture'){
-          $('capture-guide').textContent=captureGuidance(names[event.player],event.count,false);
+          setCaptureFeedback(event);
           highlightPit(event.pit,'capture-pulse',520);
           toast(`${names[event.player]} captured ${event.count} ${pieceWord()}!`,options.fast?900:1800);
           setStatus(`${names[event.player]} collects ${event.count} from the next cup.`);
@@ -2333,7 +2415,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
         gain.gain.setValueAtTime(.0001,start);
         gain.gain.linearRampToValueAtTime(.055,start+.016);
         gain.gain.exponentialRampToValueAtTime(.0001,start+.32);
-        osc.connect(gain);gain.connect(ctx.pallanguzhiMaster);
+        osc.connect(gain);gain.connect(ctx.pallanguzhiUI);
         osc.start(start);osc.stop(start+.34);
       });
     }catch{}
@@ -2356,6 +2438,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
 
   function finishMatch(){
+    if(practice){endPractice();return;}
     closeAnimations();
     hideHintExplanation();
     assertConservation('final score');
@@ -2396,11 +2479,11 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     tryStartRematch();
   }
 
-  function invalidateMatch(){turnClock.reset();clockHandled='';remoteClock=null;features?.discardPending();fireworks?.stop();hideHintExplanation();state.epoch++;state.aiTicket++;state.busy=false;state.activeMove=null;state.hintPit=null;updateSkipButton();closeAnimations();clearTimeout(toastTimer);$('toast').classList.remove('visible');}
+  function invalidateMatch(){playback.reset();pendingCompletion=null;onlineState.awaitingPlayback=false;clearCaptureFeedback();turnClock.reset();clockHandled='';remoteClock=null;features?.discardPending();fireworks?.stop();hideHintExplanation();state.epoch++;state.aiTicket++;state.busy=false;state.activeMove=null;state.hintPit=null;updateSkipButton();closeAnimations();clearTimeout(toastTimer);$('toast').classList.remove('visible');}
   
   function startGame(broadcast=true,forcedStarter=null,remoteMatchId=null){
     recovery.pauseAfterToss=false;options.firstMove='coin';
-    $('capture-guide').textContent='';
+    clearCaptureFeedback();
     if(options.online&&broadcast&&!roomCanStart()&&!canStartRematch({online:options.online,connected:onlineState.connected,isHost:onlineState.isHost,over:state.over,busy:state.busy,...rematch})){
       toast(onlineState.isHost?'Both players must tap Ready first.':'Only the host can start the match.',2300);return;
     }
@@ -2408,12 +2491,12 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     tournament.allocations=[];tournament.forcedDraw=false;tournament.endReason='';
     rematch.localReady=false;rematch.remoteReady=false;
     invalidateMatch();
-    saveSettings();
+    if(!practice)saveSettings();
     const S=options.seedsPerPit||5;
     state.pits=Array(N).fill(S);state.banks=[0,0,0];
     state.over=false;state.roundPending=false;state.paused=false;state.started=true;
     state.history=[];state.round=1;state.kasiePits=Array(N).fill(false);
-    pauseBudget.reset();roomPause={revision:-1,used:[0,0,0],owner:0,remaining:0,id:'',at:Date.now()};toolsOwnsPause=false;
+    pauseBudget.reset();roomPause={revision:-1,used:[0,0,0],owner:0,remaining:0,id:'',at:Date.now()};
     state.metrics=emptyMetrics();state.matchId=remoteMatchId||`${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
     state.matchStartedAt=Date.now();state.recordedStatsBefore=null;state.resultRecorded=false;
     onlineState.pendingRemoteMoves=[];onlineState.pendingNextRound=null;
@@ -2432,7 +2515,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       else starter=options.firstMove==='p2'?2:1;
     }
     if(options.online&&broadcast){
-      sendOnlinePacket({type:'START_GAME',starter,matchId:state.matchId,options:{...options},names:{...names}});
+      sendOnlinePacket({type:'START_GAME',protocol:PLAYBACK_PROTOCOL,starter,matchId:state.matchId,options:{...options},names:{...names}});
     }
     onlineState.awaitingSync=false;
     state.awaitingToss=options.firstMove==='coin';
@@ -2445,7 +2528,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       if(options.online&&onlineState.isHost)sendUndoAvailability();
       if(options.ai&&state.turn===2)scheduleAiTurn(()=>state.started&&!state.over);
     };
-    if(options.firstMove==='coin')launchCoinToss(begin,starter);
+    if(practice)begin(1);else if(options.firstMove==='coin')launchCoinToss(begin,starter);
     else begin(starter);
   }
   async function fullscreen(){
@@ -2583,6 +2666,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   function tutorialOpen(){
     if(state.busy||state.activeMove){$('rules-modal').classList.add('hidden');toast('Finish the current move before opening the tutorial.',2300);return;}
     $('rules-modal').classList.add('hidden');
+    if(options.online&&state.started&&!state.over&&!state.paused){toast(getLanguage()==='ta'?'பயிற்சிக்கு முகப்பைப் பயன்படுத்தவும் அல்லது முதலில் ஆட்டத்தை இடைநிறுத்தவும்':'Learn from Home, or explicitly pause the room match first',2300);return;}
     if(state.started&&!state.over&&!state.paused)openQuitModal();
     tutorial.open=true;try{tutorial.step=Math.min(5,Math.max(0,Number(localStorage.getItem('pallanguzhi.lesson')||0)||0));}catch{tutorial.step=0;}tutorialRebuild();
     $('tutorial-modal').classList.remove('hidden');
@@ -2634,14 +2718,24 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     features=createFeatures({language:getLanguage,names:()=>names,state:()=>state,pasu:()=>options.pasu,toast,tutorial:tutorialOpen,send:sendOnlinePacket,network:()=>({connected:options.online&&onlineState.connected,player:onlineState.myPlayerIndex,matchId:state.matchId}),explanationEnabled:()=>explainAI,toggleExplanation:()=>{explainAI=!explainAI;try{localStorage.setItem('pallanguzhi.ai.explain',explainAI?'1':'0');}catch{}},chatBadge:n=>{$('chat-fab').dataset.unread=n||'';}});
     $('features-btn').addEventListener('click',()=>features.open());
     $('chat-fab').addEventListener('click',()=>features.openChat());
-    $('home-puzzle-btn').addEventListener('click',()=>features.openPuzzle());$('daily-puzzle-art').innerHTML=menuArt('puzzle');
+    $('home-puzzle-btn').addEventListener('click',()=>features.openPuzzle());
+    $('home-replays-btn').addEventListener('click',()=>features.openHistory());
+    $('practice-btn').addEventListener('click',startPractice);$('practice-again-btn').addEventListener('click',startPractice);$('practice-home-btn').addEventListener('click',showSetup);$('practice-exit-btn').addEventListener('click',showSetup);
+    $('practice-full-btn').addEventListener('click',()=>{practice=false;practiceOptions=null;$('practice-end-modal').classList.add('hidden');startGame(true);});
+    $('practice-guidance-btn').addEventListener('click',()=>{practiceGuidance=!practiceGuidance;practiceLastHint='';if(!practiceGuidance){state.hintPit=null;hideHintExplanation();}render();});
+    $('capture-detail-btn').addEventListener('click',()=>{const text=lastCapture?captureExplanation(lastCapture,state.kasiePits,{1:displayName(1),2:displayName(2)},getLanguage()==='ta'):[1,2].map(player=>kasieExplanation(displayName(player),7-state.kasiePits.filter((v,i)=>v&&owner(i)===player).length,getLanguage()==='ta')).join(' ');openExplanation(text);});
+    $('close-capture-detail').addEventListener('click',()=>$('capture-detail-modal').classList.add('hidden'));
+    const syncGameAudio=()=>{$('audio-mute-btn').textContent=options.sound?translate('Mute'):translate('Unmute');for(const [prefix,property] of [['game','volume'],['game-seed','seedVolume'],['game-ui','uiVolume']]){$(prefix+'-volume-input').value=Math.round(options[property]*100);$(prefix+'-volume-display').textContent=Math.round(options[property]*100)+'%';}};
+    $('audio-btn').addEventListener('click',()=>{syncGameAudio();$('audio-modal').classList.remove('hidden');});$('close-audio').addEventListener('click',()=>$('audio-modal').classList.add('hidden'));
+    for(const [prefix,property] of [['game','volume'],['game-seed','seedVolume'],['game-ui','uiVolume']])$(prefix+'-volume-input').addEventListener('input',e=>{options[property]=Number(e.target.value)/100;$(prefix+'-volume-display').textContent=e.target.value+'%';saveSettings();ensureAudio();if(audio)audio.pallanguzhiMaster.gain.setTargetAtTime(options.sound?options.volume:0,audio.currentTime,.02);});
+    $('audio-mute-btn').addEventListener('click',()=>{$('sound-btn').click();syncGameAudio();});$('daily-puzzle-art').innerHTML=menuArt('puzzle');
     $('room-pause-resume').addEventListener('click',resumeOwnedPause);
     if('serviceWorker' in navigator&&!window.PallanguzhiNative&&location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
     refreshResumePanel();
     initBackButtonHandler();
     installRecovery();
-    setInterval(()=>{pauseTick();if(state.started&&!state.over&&!state.roundPending)updateTurnClock();},250);
+    setInterval(()=>{if(options.online&&onlineState.awaitingPlayback&&Date.now()-lastPlaybackAck>1500)sendPlaybackAck();pauseTick();if(state.started&&!state.over&&!state.roundPending)updateTurnClock();},250);
     installNativeLifecycle();
     installLanguage(lang=>{wizard?.refresh();features?.refresh();document.querySelectorAll('#final-scores .result-player > span').forEach((el,i)=>el.textContent=displayName(i+1));tutorialSetLanguage(lang);refreshResumePanel();if(isModalOpen('stats-modal'))renderStats();if(isModalOpen('round-modal'))showRoundSummary();render();});
     // Treat a direct room link as a guest, not a new host room.
@@ -2741,6 +2835,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
 
     $('p2-input').addEventListener('input',e=>{if(options.ai||options.online)return;passName=e.target.value.trim().slice(0,18)||'Player 2';names[2]=passName;$('setup-opponent-name').textContent=displayName(2);saveSettings();});
 
+    for(const kind of ['seed','ui'])$(kind+'-volume-input').addEventListener('input',e=>{options[kind+'Volume']=Number(e.target.value)/100;$(kind+'-volume-display').textContent=e.target.value+'%';saveSettings();ensureAudio();});
     $('volume-input').addEventListener('input',e=>{
       options.volume=Number(e.target.value)/100;
       $('volume-display').textContent=e.target.value+'%';
@@ -2760,16 +2855,15 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('tool-stats-btn').addEventListener('click',openStats);
     $('mat-btn').addEventListener('click',()=>{
       document.querySelectorAll('.mat-choice[data-mat]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mat===options.mat)));
-      $('mat-modal').classList.remove('hidden');
+      $('extra-mat-choices').open=!PRIMARY_MATS.includes(options.mat);$('mat-modal').classList.remove('hidden');
     });
     document.querySelectorAll('.mat-choice[data-mat]').forEach(b=>b.addEventListener('click',()=>{options.mat=validMat(b.dataset.mat);document.body.dataset.mat=options.mat;saveSettings();$('mat-modal').classList.add('hidden');}));
     $('close-mat').addEventListener('click',()=>$('mat-modal').classList.add('hidden'));
     $('tools-toggle').addEventListener('click',event=>{
       if(event.isTrusted){document.body.dataset.toolsOwner='neutral';document.body.dataset.dialogOwner='neutral';}
       const opening=$('tools-panel').hidden;if(!opening){closeTools();return;}
-      requestGamePause('tools',r=>{if(!r.accepted){toast(getLanguage()==='ta'?'இடைநிறுத்தங்கள் இல்லை':'No pauses left for this match',2000);return;}toolsOwnsPause=toolsOwnsPause||r.created;$('tools-panel').hidden=false;$('tools-toggle').setAttribute('aria-expanded','true');render();});
+      $('tools-panel').hidden=false;$('tools-toggle').setAttribute('aria-expanded','true');
     });
-    $('tools-panel').addEventListener('click',e=>{const b=e.target.closest('#hint-btn,#undo-btn');if(b&&!b.disabled&&state.paused&&toolsOwnsPause){e.preventDefault();e.stopImmediatePropagation();afterPauseAction=b.id==='hint-btn'?showHint:undoMove;closeTools();resumeOwnedPause();}},true);
     $('tools-panel').addEventListener('click',e=>{if(e.target.closest('button'))closeTools();});
     document.addEventListener('pointerdown',e=>{if(!$('tools-panel').hidden&&!e.target.closest('#tools-panel,#tools-toggle,[data-side-tools]'))closeTools();});
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('tools-panel').hidden){e.preventDefault();e.stopImmediatePropagation();closeTools(true);}},true);
@@ -2795,16 +2889,20 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('rules-btn').addEventListener('click',()=>$('rules-modal').classList.remove('hidden'));
     $('close-rules').addEventListener('click',()=>$('rules-modal').classList.add('hidden'));
     $('fit-btn').addEventListener('click',fullscreen);
-    $('board-size-btn').addEventListener('click',()=>{if(state.busy){toast(getLanguage()==='ta'?'நகர்வு முடிந்ததும் பலகையின் அளவை மாற்றவும்':'Finish the move before changing board size',1600);return;}boardEnlarged=!boardEnlarged;try{localStorage.setItem('pallanguzhi.board.enlarged',boardEnlarged?'1':'0');}catch{}fitBoard(true);if(boardEnlarged)toast(getLanguage()==='ta'?'பெரிய பலகை · முழுவதையும் பார்க்க நகர்த்தவும்':'Bigger board · pan to see the whole board',2400);});
-    $('board-scroll').addEventListener('scroll',()=>{layoutDirty=true;lastHandPos=null;}, {passive:true});
+    $('board-size-btn').addEventListener('click',()=>{if(state.busy){toast(getLanguage()==='ta'?'நகர்வு முடிந்ததும் பலகையின் அளவை மாற்றவும்':'Finish the move before changing board size',1600);return;}boardEnlarged=!boardEnlarged;fitBoard(true);if(boardEnlarged)toast(getLanguage()==='ta'?'பெரிய பலகை · முழுவதையும் பார்க்க நகர்த்தவும்':'Bigger board · pan to see the whole board',2400);});
+    $('board-scroll').addEventListener('scroll',()=>{layoutDirty=true;lastHandPos=null;boardGestureUntil=performance.now()+200;}, {passive:true});
+    $('board-scroll').addEventListener('pointerdown',e=>{pointerStart={x:e.clientX,y:e.clientY};},{passive:true});
+    $('board-scroll').addEventListener('pointerup',e=>{if(pointerStart&&Math.hypot(e.clientX-pointerStart.x,e.clientY-pointerStart.y)>8)boardGestureUntil=performance.now()+200;pointerStart=null;},{passive:true});
 
     const toggleAppearance=()=>{options.uiTheme=options.uiTheme==='light'?'dark':'light';saveSettings();syncSetupModalUI();};
     $('theme-btn').addEventListener('click',toggleAppearance);$('appearance-setup-btn').addEventListener('click',toggleAppearance);
 
     $('speed-btn').addEventListener('click',()=>{
+      if(options.online&&(!onlineState.isHost||state.busy)){toast(onlineState.isHost?'Wait until both phones finish sowing.':'The host controls the room pace.',1800);return;}
       options.pace=options.pace==='natural'?'relaxed':options.pace==='relaxed'?'fast':'natural';
       options.fast=options.pace==='fast';
       updatePaceUI();
+      if(options.online&&onlineState.connected)sendOnlinePacket({type:'ROOM_PACE',matchId:state.matchId,pace:options.pace});
       saveSettings();
     });
     $('sound-btn').addEventListener('click',()=>{
@@ -2847,7 +2945,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       setTestPosition:(p)=>{if(!p||!Array.isArray(p.pits)||p.pits.length!==N||!Array.isArray(p.banks))throw Error('Invalid test input'); invalidateMatch();state.pits=p.pits.slice();state.banks=p.banks.slice();state.kasiePits=normalizeKasie(p.kasiePits);state.turn=p.turn||1;state.round=p.round||1;state.started=true;state.over=false;render();},
       getMatch:()=>({matchId:state.matchId,started:state.started,over:state.over,resultRecorded:state.resultRecorded,round:state.round,awaitingToss:state.awaitingToss}),
       getRecovery:()=>({attempt:recovery.attempt,age:Date.now()-recovery.lastHeard,hidden:document.hidden,connOpen:Boolean(onlineState.conn?.open),awaitingSync:onlineState.awaitingSync,paused:state.paused,remotePaused:onlineState.remotePaused}),
-      getOnline:()=>({isHost:onlineState.isHost,player:onlineState.myPlayerIndex,connected:onlineState.connected,roomCode:onlineState.roomCode,queued:onlineState.pendingRemoteMoves.length}),
+      getPlayback:()=>playback.inspect(),
+      getOnline:()=>({awaitingPlayback:onlineState.awaitingPlayback,isHost:onlineState.isHost,player:onlineState.myPlayerIndex,connected:onlineState.connected,roomCode:onlineState.roomCode,queued:onlineState.pendingRemoteMoves.length}),
       inspect:()=>({pits:state.pits.slice(),banks:state.banks.slice(),turn:state.turn,started:state.started,over:state.over,round:state.round,roundPending:state.roundPending,busy:state.busy,awaitingToss:state.awaitingToss,kasiePits:state.kasiePits.slice(),moves:state.metrics.moves,matchId:state.matchId}),
       injectOnlinePacket:handleOnlineMessage,drainOnline:processRemoteQueue};
   }

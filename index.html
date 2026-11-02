@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 
-<title>Pallanguzhi • Heritage Edition (v3.19.0 • Reference Board Edition)</title>
+<title>Pallanguzhi • Heritage Edition (v3.21.0 • Reference Board Edition)</title>
 <!-- PeerJS is bundled locally; online play still uses external signaling. -->
-<link rel="preload" as="image" href="royal-board.webp?v=3.19.0">
-<link rel="preload" as="image" href="reference-board.webp?v=3.19.0">
-<link rel="icon" type="image/png" href="icon-192.png?v=3.19.0"><link rel="apple-touch-icon" href="icon-192.png?v=3.19.0">
+<link rel="preload" as="image" href="royal-board.webp?v=3.21.0">
+<link rel="preload" as="image" href="reference-board.webp?v=3.21.0">
+<link rel="icon" type="image/png" href="icon-192.png?v=3.21.0"><link rel="apple-touch-icon" href="icon-192.png?v=3.21.0">
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#173e35">
-<link rel="stylesheet" href="game.css?v=3.19.0">
-<script id="peerjs-loader" defer src="native-bridge.js?v=3.19.0"></script>
+<link rel="stylesheet" href="game.css?v=3.21.0">
+<script id="peerjs-loader" defer src="native-bridge.js?v=3.21.0"></script>
 </head>
 <body>
 <!-- Board artwork is reconstructed from the supplied photograph; cups are interactive overlays. -->
 
 <main id="game-frame" aria-label="Pallanguzhi game">
   <header class="top-strip">
-    <div class="brand"><img class="brand-icon" src="icon-192.png?v=3.19.0" alt="" width="34" height="34"><span class="brand-title">Pallanguzhi</span><small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
+    <div class="brand"><img class="brand-icon" src="icon-192.png?v=3.21.0" alt="" width="34" height="34"><span class="brand-title">Pallanguzhi</span><small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
     <div class="header-tools"><button type="button" class="action-btn" id="language-btn" data-no-i18n data-language-toggle aria-label="Switch language">Language</button><button type="button" class="action-btn" id="pause-btn">Ⅱ Pause</button><button type="button" class="stats-trigger" id="stats-btn" aria-label="Open match statistics and achievements">📊 Stats</button></div>
     <div class="players-scoreboard">
       <div class="player-pod" id="p2-pod"><span class="player-name" id="p2-label" data-no-i18n>Azhagi (AI)</span><span class="score-badge" id="p2-score">0</span><span class="owner-indicator" id="ind-2" aria-live="polite"></span></div>
@@ -26,7 +26,7 @@
     </div>
   </header>
   <div class="arena-stage"><div class="board-scroll" id="board-scroll" tabindex="0" aria-label="Board view"><div class="board-sizer" id="board-sizer">
-    <div class="play-arena" id="arena"><span class="painted-pupil pupil-left" aria-hidden="true"></span><span class="painted-pupil pupil-right" aria-hidden="true"></span>
+    <div class="play-arena" id="arena"><svg class="capture-trace" id="capture-trace" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path id="capture-trace-path" fill="none" stroke="#f3d595" stroke-width=".45" stroke-dasharray="1.5 1"/></svg><span class="painted-pupil pupil-left" aria-hidden="true"></span><span class="painted-pupil pupil-right" aria-hidden="true"></span>
 
       
       <div class="side-highlight" id="side-highlight-2" aria-hidden="true"></div><div class="side-highlight" id="side-highlight-1" aria-hidden="true"></div>
@@ -58,20 +58,20 @@
   </div>
   <section class="play-guide" aria-label="Game guidance">
     <p id="turn-guide" role="status">Choose a mode, or try Quick Play against the computer.</p>
-    <p id="capture-guide" role="status"></p>
+    <p id="capture-guide" role="status"></p><button type="button" class="capture-why" id="capture-detail-btn" hidden>Why?</button>
     <div id="online-recovery" hidden><span id="connection-text" role="status"></span><button type="button" class="action-btn" id="reconnect-btn">Reconnect</button></div>
   </section>
   <footer class="bottom-strip">
     <div class="status-message" id="status-text" aria-live="polite">Choose a game mode to start.</div>
 <button type="button" class="chat-fab" id="chat-fab" aria-label="Room chat" title="Room chat" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H9l-6 4v-4H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" fill="currentColor"/><circle cx="7" cy="10" r="1.3" fill="#12332d"/><circle cx="12" cy="10" r="1.3" fill="#12332d"/><circle cx="17" cy="10" r="1.3" fill="#12332d"/></svg></button>
     <button type="button" class="action-btn tools-toggle" id="tools-toggle" aria-expanded="false" aria-controls="tools-panel">☰ Tools</button>
-    <div class="actions" id="tools-panel" role="group" aria-label="Match tools" hidden>
+    <div class="actions" id="tools-panel" role="group" aria-label="Match tools" hidden><p class="tools-live-note">Settings do not use pauses. Timed games keep counting.</p>
       <button type="button" class="action-btn" id="features-btn">Play &amp; learn</button>
       <button type="button" class="action-btn assist-btn" id="hint-btn" aria-pressed="false" disabled title="Highlight a suggested cup">💡 Hint</button>
       <button type="button" class="action-btn assist-btn" id="undo-btn" disabled title="Undo your last move (and the AI reply, if any)">↶ Undo</button>
       <button type="button" class="action-btn" id="speed-btn" aria-pressed="false">🎞 Pace: Natural</button>
       <button type="button" class="action-btn" id="sound-btn" aria-pressed="true" title="Wooden seed taps and bead-on-wood clacks (procedurally rendered)">🔊 Sound</button>
-      <button type="button" class="action-btn" id="tool-stats-btn">📊 Stats</button>
+      <button type="button" class="action-btn" id="audio-btn">Sound levels</button><button type="button" class="action-btn" id="tool-stats-btn">📊 Stats</button>
       <button type="button" class="action-btn" id="mat-btn">▧ Mat</button>
       <button type="button" class="action-btn" id="theme-btn">☀️ Theme</button>
       <button type="button" class="action-btn" id="rules-btn">📖 Rules</button>
@@ -82,7 +82,11 @@
   </footer>
 </main>
 
-<div class="overlay hidden" id="mat-modal" role="dialog" aria-modal="true" aria-label="Choose a mat"><div class="modal-card"><h2>Choose a mat</h2><p>Change the table mat without restarting your match.</p><div class="mat-options"><button type="button" class="mat-choice" data-mat="emerald" aria-pressed="false"><span class="mat-swatch swatch-emerald" aria-hidden="true"></span>Emerald</button><button type="button" class="mat-choice" data-mat="burgundy" aria-pressed="false"><span class="mat-swatch swatch-burgundy" aria-hidden="true"></span>Burgundy</button><button type="button" class="mat-choice" data-mat="navy" aria-pressed="false"><span class="mat-swatch swatch-navy" aria-hidden="true"></span>Royal blue</button><button type="button" class="mat-choice" data-mat="sand" aria-pressed="false"><span class="mat-swatch swatch-sand" aria-hidden="true"></span>Sand</button><button type="button" class="mat-choice" data-mat="plum" aria-pressed="false"><span class="mat-swatch swatch-plum" aria-hidden="true"></span>Plum</button><button type="button" class="mat-choice" data-mat="slate" aria-pressed="false"><span class="mat-swatch swatch-slate" aria-hidden="true"></span>Slate</button><button type="button" class="mat-choice" data-mat="forest" aria-pressed="false"><span class="mat-swatch swatch-forest" aria-hidden="true"></span>Forest green</button><button type="button" class="mat-choice" data-mat="teal" aria-pressed="false"><span class="mat-swatch swatch-teal" aria-hidden="true"></span>Peacock teal</button><button type="button" class="mat-choice" data-mat="wine" aria-pressed="false"><span class="mat-swatch swatch-wine" aria-hidden="true"></span>Deep wine</button><button type="button" class="mat-choice" data-mat="saffron" aria-pressed="false"><span class="mat-swatch swatch-saffron" aria-hidden="true"></span>Saffron</button><button type="button" class="mat-choice" data-mat="charcoal" aria-pressed="false"><span class="mat-swatch swatch-charcoal" aria-hidden="true"></span>Charcoal</button><button type="button" class="mat-choice" data-mat="ivory" aria-pressed="false"><span class="mat-swatch swatch-ivory" aria-hidden="true"></span>Ivory mat</button><button type="button" class="mat-choice" data-mat="indigo" aria-pressed="false"><span class="mat-swatch swatch-indigo" aria-hidden="true"></span>Indigo</button><button type="button" class="mat-choice" data-mat="rose" aria-pressed="false"><span class="mat-swatch swatch-rose" aria-hidden="true"></span>Dusty rose</button></div><button type="button" class="primary-btn" id="close-mat">Back to game</button></div></div>
+<div class="overlay hidden" id="mat-modal" role="dialog" aria-modal="true" aria-label="Choose a mat"><div class="modal-card"><h2>Choose a mat</h2><p>Change the table mat without restarting your match.</p><div class="mat-options"><button type="button" class="mat-choice" data-mat="emerald" aria-pressed="false"><span class="mat-swatch swatch-emerald" aria-hidden="true"></span>Emerald</button><button type="button" class="mat-choice" data-mat="burgundy" aria-pressed="false"><span class="mat-swatch swatch-burgundy" aria-hidden="true"></span>Burgundy</button><button type="button" class="mat-choice" data-mat="navy" aria-pressed="false"><span class="mat-swatch swatch-navy" aria-hidden="true"></span>Royal blue</button><button type="button" class="mat-choice" data-mat="sand" aria-pressed="false"><span class="mat-swatch swatch-sand" aria-hidden="true"></span>Sand</button><button type="button" class="mat-choice" data-mat="plum" aria-pressed="false"><span class="mat-swatch swatch-plum" aria-hidden="true"></span>Plum</button><button type="button" class="mat-choice" data-mat="slate" aria-pressed="false"><span class="mat-swatch swatch-slate" aria-hidden="true"></span>Slate</button></div><details id="extra-mat-choices" class="extra-mats"><summary>More colours</summary><div class="mat-options"><button type="button" class="mat-choice" data-mat="forest" aria-pressed="false"><span class="mat-swatch swatch-forest" aria-hidden="true"></span>Forest green</button><button type="button" class="mat-choice" data-mat="teal" aria-pressed="false"><span class="mat-swatch swatch-teal" aria-hidden="true"></span>Peacock teal</button><button type="button" class="mat-choice" data-mat="wine" aria-pressed="false"><span class="mat-swatch swatch-wine" aria-hidden="true"></span>Deep wine</button><button type="button" class="mat-choice" data-mat="saffron" aria-pressed="false"><span class="mat-swatch swatch-saffron" aria-hidden="true"></span>Saffron</button><button type="button" class="mat-choice" data-mat="charcoal" aria-pressed="false"><span class="mat-swatch swatch-charcoal" aria-hidden="true"></span>Charcoal</button><button type="button" class="mat-choice" data-mat="ivory" aria-pressed="false"><span class="mat-swatch swatch-ivory" aria-hidden="true"></span>Ivory mat</button><button type="button" class="mat-choice" data-mat="indigo" aria-pressed="false"><span class="mat-swatch swatch-indigo" aria-hidden="true"></span>Indigo</button><button type="button" class="mat-choice" data-mat="rose" aria-pressed="false"><span class="mat-swatch swatch-rose" aria-hidden="true"></span>Dusty rose</button></div></details><button type="button" class="primary-btn" id="close-mat">Back to game</button></div></div>
+<div class="practice-bar" id="practice-bar" hidden><span id="practice-progress"></span><button type="button" class="action-btn" id="practice-guidance-btn">Hints on</button><button type="button" class="action-btn" id="practice-exit-btn">Exit practice</button></div>
+<div class="overlay hidden" id="audio-modal" role="dialog" aria-modal="true" aria-label="Sound levels"><div class="modal-card"><h2>Sound levels</h2><label class="slider-line" for="game-volume-input">Master volume <input type="range" id="game-volume-input" min="0" max="100" step="1"><output id="game-volume-display"></output></label><label class="slider-line" for="game-seed-volume-input">Seed sounds <input type="range" id="game-seed-volume-input" min="0" max="100" step="1"><output id="game-seed-volume-display"></output></label><label class="slider-line" for="game-ui-volume-input">Buttons &amp; alerts <input type="range" id="game-ui-volume-input" min="0" max="100" step="1"><output id="game-ui-volume-display"></output></label><button type="button" class="secondary-btn" id="audio-mute-btn">Mute / unmute</button><button type="button" class="primary-btn" id="close-audio">Back to game</button></div></div>
+<div class="overlay hidden" id="capture-detail-modal" role="dialog" aria-modal="true" aria-label="Move explanation"><div class="modal-card"><h2>Why those seeds were collected</h2><p id="capture-detail-copy"></p><button type="button" class="primary-btn" id="close-capture-detail">Back to game</button></div></div>
+<div class="overlay hidden" id="practice-end-modal" role="dialog" aria-modal="true" aria-label="Practice complete"><div class="modal-card"><h2>Practice complete!</h2><p id="practice-summary">Four turns each. Ready for a full match?</p><button type="button" class="primary-btn" id="practice-full-btn">Play a full match</button><button type="button" class="secondary-btn" id="practice-again-btn">Practise again</button><button type="button" class="secondary-btn" id="practice-home-btn">Home</button></div></div>
 <div class="player-hand" id="player-hand" aria-hidden="true" data-facing="bottom">
  <svg viewBox="0 0 116 165" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -157,7 +161,7 @@
     <div class="victory-emblem" style="font-size:36px; line-height:1;">🏆</div>
     <h2 id="round-modal-title" style="text-align:center; font-size:22px; margin-bottom:3px; color:#ffe1a4;">Round 1 complete!</h2>
     <p class="sub" id="round-modal-sub" style="text-align:center; margin-bottom:14px;">KASIE ALLOCATION · REFILLING CUPS</p>
-    <div id="round-details" style="font-size:12px; line-height:1.6; color:#eedcc6; background:rgba(0,0,0,0.35); border:1px solid #755434; border-radius:12px; padding:12px; margin-bottom:14px;"></div>
+    <p class="kasie-explainer" id="kasie-explainer"></p><div id="round-details" style="font-size:12px; line-height:1.6; color:#eedcc6; background:rgba(0,0,0,0.35); border:1px solid #755434; border-radius:12px; padding:12px; margin-bottom:14px;"></div>
     <p style="font-size:11px; color:#f6d289; line-height:1.45; margin-bottom:14px;">
       💡 <b>Kasie rule:</b> Pits that could not be filled with seeds are locked (🔒 Kasie). Seeds dropped into locked pits cannot be scooped and will be claimed at the round's end!
     </p>
@@ -168,7 +172,7 @@
 <div class="overlay" id="setup-modal" role="dialog" aria-modal="true" aria-label="Set up game">
 <div class="modal-card home-card lobby-home">
 <div class="home-top-actions"><button type="button" class="action-btn" id="setup-back" aria-label="Previous step" title="Previous step" hidden>‹</button><span id="setup-progress">Step 1 of 3</span><button type="button" class="action-btn" id="appearance-setup-btn">Dark mode</button><button type="button" class="action-btn" id="language-setup-btn" data-no-i18n data-language-toggle>Language</button></div>
-<div class="home-eyebrow">HERITAGE · STRATEGY · TRADITION</div><h1 class="home-game-title"><img class="brand-icon" src="icon-192.png?v=3.19.0" alt="" width="60" height="60"><span>Pallanguzhi</span></h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
+<div class="home-eyebrow">HERITAGE · STRATEGY · TRADITION</div><h1 class="home-game-title"><img class="brand-icon" src="icon-192.png?v=3.21.0" alt="" width="60" height="60"><span>Pallanguzhi</span></h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
 <section data-setup-step="1">    <section class="resume-panel" id="resume-panel" hidden aria-label="Continue saved match">
       <div class="resume-heading">💾 Continue your match?</div>
       <div class="resume-summary" id="resume-summary"></div>
@@ -183,7 +187,8 @@
 <button type="button" class="option" data-mode="ai"><span class="mode-icon"></span><strong>Play computer</strong><small>Meet Azhagi</small></button>
 <button type="button" class="option" data-mode="two"><span class="mode-icon"></span><strong>Pass N Play</strong><small>Two players · one device</small></button>
 <button type="button" class="option" data-mode="online"><span class="mode-icon"></span><strong>Connect</strong><small>Play with a room code</small></button>
-</div><button type="button" class="daily-home-card" id="home-puzzle-btn"><span class="daily-puzzle-art" id="daily-puzzle-art" aria-hidden="true"></span><span><strong>Daily Puzzle</strong><small>One move. Find the best capture.</small></span></button><button type="button" class="secondary-btn" id="tutorial-setup-btn">Learn to play</button>
+</div><div class="home-learn-actions"><button type="button" class="secondary-btn" id="practice-btn">Try a short practice</button><button type="button" class="secondary-btn" id="tutorial-setup-btn">Learn the rules</button></div>
+<details class="home-extras"><summary>More to explore</summary><div class="home-extra-actions"><button type="button" class="daily-home-card" id="home-puzzle-btn"><span class="daily-puzzle-art" id="daily-puzzle-art" aria-hidden="true"></span><span><strong>Daily Puzzle</strong><small>One move. Find the best capture.</small></span></button><button type="button" class="secondary-btn" id="home-replays-btn">Match replays</button></div></details>
 <button type="button" id="quick-play-btn" hidden>Quick play</button>
 </section>
 <section data-setup-step="2" hidden><h2>Your seat at the board</h2>
@@ -216,7 +221,7 @@
         <button type="button" class="action-btn" id="join-room-btn" style="background:#78491c; font-weight:850;">Connect</button>
       </div>
       <div class="online-badge waiting" id="online-status-badge" role="status" aria-live="polite">📡 Ready to connect</div>
-      <div class="room-presence" aria-live="polite"><strong id="room-peer-name" data-no-i18n></strong><span id="room-ready-status"></span><button type="button" class="primary-btn" id="room-ready-btn" disabled>I’m ready</button></div><p id="online-help" style="font-size:11px;line-height:1.45;color:#d7bb92;margin:9px 0 0">For two phones, both players must open the hosted HTTPS game. Room codes use PeerJS signaling and WebRTC, which may not connect on every network. To resume online, the host and guest must reconnect to the same room. Same-browser tabs can connect locally.</p>
+      <div class="room-presence" aria-live="polite"><strong id="room-peer-name" data-no-i18n></strong><span id="room-ready-status"></span><button type="button" class="primary-btn" id="room-ready-btn" disabled>I’m ready</button></div><details class="connection-help"><summary>Connection help</summary><p id="online-help">Share the code or join your friend's room, then both tap Ready. If the connection drops, reconnect to the same room. Online matches need internet and may not connect on every network.</p></details>
       <div id="online-reactions" style="display:flex;gap:6px;justify-content:center;margin-top:10px" hidden aria-label="Send a reaction">
         <button type="button" class="action-btn" data-emote="👏" aria-label="Send applause">👏</button>
         <button type="button" class="action-btn" data-emote="😄" aria-label="Send smile">😄</button>
@@ -228,9 +233,9 @@
 
 </section>
 <section data-setup-step="3" hidden><h2>Make it your match</h2>
-    <details class="home-settings">
-      <summary>Match rules <span>Single Match recommended · Kasie is a longer tournament</span></summary>
-    <span class="field-label">Time to choose a cup</span><div class="button-grid" id="timer-picker"><button type="button" class="option" data-clock="0">Off</button><button type="button" class="option" data-clock="30">30 seconds</button><button type="button" class="option" data-clock="60">60 seconds</button><button type="button" class="option" data-clock="90">90 seconds</button></div><p class="difficulty-note">Last 10 seconds tick. When time ends, a legal cup is chosen automatically.</p>
+    <p class="recommended-note">Recommended: untimed · one round · 5 seeds · Pasu on</p><details class="home-settings" id="advanced-rules">
+      <summary>Advanced match options</summary>
+    <p class="difficulty-note">Choose timed play only when both players want it.</p><span class="field-label">Time to choose a cup</span><div class="button-grid" id="timer-picker"><button type="button" class="option" data-clock="0">Off</button><button type="button" class="option" data-clock="30">30 seconds</button><button type="button" class="option" data-clock="60">60 seconds</button><button type="button" class="option" data-clock="90">90 seconds</button></div><p class="difficulty-note">Timed only: ticks in the last 10 seconds; a legal cup is chosen at zero. Casual play has no countdown.</p>
 <span class="field-label">Coin call</span><div class="button-grid" id="coin-call-picker"><button type="button" class="option" data-call="heads">Heads</button><button type="button" class="option" data-call="tails">Tails</button></div><p class="difficulty-note">Player 1 calls the coin. The other player gets the opposite side. The winner starts.</p>
 
     <span class="field-label">Tournament format</span>
@@ -256,6 +261,7 @@
 <details class="home-settings"><summary>Pieces &amp; sound</summary>
 <span class="field-label">Counter style</span><div class="button-grid"><button type="button" class="option" data-seeds="cowrie">🐚 Cowrie</button><button type="button" class="option" data-seeds="natural">🌰 Tamarind</button><button type="button" class="option" data-seeds="colored">🎨 Beads</button></div>
 <span class="field-label">Sound volume</span><label class="slider-line" for="volume-input">🔊 <input type="range" id="volume-input" min="0" max="100" step="1" value="65"><output id="volume-display">65%</output></label>
+<label class="slider-line" for="seed-volume-input">Seed sounds <input type="range" id="seed-volume-input" min="0" max="100" step="1" value="85"><output id="seed-volume-display">85%</output></label><label class="slider-line" for="ui-volume-input">Buttons &amp; alerts <input type="range" id="ui-volume-input" min="0" max="100" step="1" value="22"><output id="ui-volume-display">22%</output></label>
 </details><p id="room-final-status" aria-live="polite"></p><button type="button" class="secondary-btn" id="room-final-ready-btn" hidden disabled>I’m ready</button><button type="button" class="primary-btn" id="start-btn">Start match</button><p id="start-online-help" hidden>Both players must tap Ready. The host then starts the match.</p>
 </section>
 <button type="button" class="primary-btn" id="setup-next" hidden>Continue →</button>
@@ -347,6 +353,6 @@
   </div>
 </div>
 
-<script type="module" src="app.js?v=3.19.0"></script>
+<script type="module" src="app.js?v=3.21.0"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
-PALLANGUZHI v3.19.0
+PALLANGUZHI v3.21.0
 
-Extract and upload/replace all TWENTY-THREE game files below in the heritage repository ROOT. No js/css folders. Upload these files, not the ZIP.
+Extract this ZIP and upload/replace all TWENTY-FIVE game files below in the heritage repository ROOT. No js/css folders. Upload the extracted files, not the ZIP.
 
 index.html
 game.css
@@ -14,6 +14,8 @@ features.js
 menu.js
 clock.js
 session.js
+comfort.js
+playback.js
 native-bridge.js
 reference-board.webp
 royal-board.webp
@@ -26,8 +28,10 @@ manifest.webmanifest
 icon-192.png
 icon-512.png
 
-Commit, wait for Pages deployment, close old tabs and reopen online so the updated service worker activates. Both room clients MUST be v3.19 for the coin-call/readiness and bounded-pause protocol.
+Commit, wait for Pages deployment, close old tabs and reopen online so the updated service worker activates. Both room players should update to v3.21.
 
-New entries: Daily Puzzle on home; chat bubble at bottom-right during a room match. Heads/Tails in step 3. Opening Tools counts as one of your two room pauses (maximum 90 seconds each).
+New casual games are untimed. Advanced match options enables timed play. Tools no longer spends a pause. Sound levels is in Tools. Try a short practice on Home. Puzzles/replays: More to explore. Capture/Kasie details: Why? / Kasie help near the guide. Extra mats: More colours.
 
-Android archive is optional source, not an APK. See MANUAL-CHECKS.txt and BOARD-UPDATE.txt for test limits.
+Existing saved full matches keep their rules; practice does not overwrite them. Optional android-project.zip is source, not an APK. See MANUAL-CHECKS.txt.
+
+Room synchronization fix: host pace applies on both phones; the next turn waits for both playback acknowledgements. Both phones MUST update to v3.21; close ALL old game tabs, reopen online, and create a fresh room. Confirm v3.21 in the game release label.

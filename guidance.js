@@ -1,4 +1,4 @@
-import {settledCowries} from './physics.js?v=3.19.0';
+import {settledCowries} from './physics.js?v=3.21.0';
 export const BOARD_ASPECT=8/3;
 // Plain-text feedback shared by the interface and its tests.
 export function turnGuidance(g) {
@@ -9,6 +9,7 @@ export function turnGuidance(g) {
   if (g.awaitingToss) return 'The coin toss decides who starts.';
   if (g.online && !g.connected) return 'Connection lost. Reconnect through the online room menu.';
   if (g.online && (g.awaitingSync || g.undoPending)) return 'Please wait while both boards synchronize.';
+  if(g.online&&g.awaitingPlayback)return 'Waiting for the other phone to finish sowing…';
   if (g.busy) return `${g.name} is sowing. Watch the seeds move around the board.`;
   if (g.ai && g.turn === 2) return 'The computer is choosing a cup. Your turn is next.';
   if (g.online && g.turn !== g.myPlayer) return `Waiting for ${g.name} to play.`;
@@ -43,7 +44,7 @@ export function boardViewport(stageWidth,stageHeight,portrait,enlarged=false){
 }
 
 export function rematchView({online,connected,localReady,remoteReady}) {
- if(!online)return {disabled:false,label:'↻ Rematch',message:'Same players and rules. A fresh score.'};
+ if(!online)return {disabled:false,label:'↻ Play again',message:'Same players and rules. A fresh score.'};
  if(!connected)return {disabled:true,label:'Friend disconnected',message:'Open Home to reconnect to your room.'};
  if(localReady)return {disabled:true,label:'Waiting for friend…',message:'Your rematch request is sent. The match starts when both players are ready.'};
  return {disabled:false,label:remoteReady?'↻ Accept rematch':'↻ Request rematch',message:remoteReady?'Your friend is ready. Accept to play again in the same room.':'Both players must choose Rematch. Your room and rules stay the same.'};
@@ -56,6 +57,7 @@ export function playerTurnLabel(g,player) {
  if(!g.started||g.over||g.paused||g.awaitingToss||g.roundPending)return '';
  if(player!==g.turn)return 'WAITING';
  if(g.online&&(!g.connected||g.awaitingSync||g.undoPending))return 'CONNECTING…';
+ if(g.online&&g.awaitingPlayback)return 'FINISHING ON BOTH PHONES…';
  if(g.busy)return g.ai&&player===2?'COMPUTER PLAYING…':'SOWING…';
  if(g.ai&&player===2)return 'COMPUTER TURN';
  if(g.online)return player===g.myPlayer?'YOUR TURN':'FRIEND’S TURN';

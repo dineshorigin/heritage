@@ -6,7 +6,7 @@ export function modeIdentity({mode,ownName='Player 1',peerName='Player 2',player
  if(mode==='two')return {1:own,2:String(peerName||'Player 2').trim().slice(0,18)||'Player 2'};
  return player===2?{1:peerName,2:own}:{1:own,2:peerName};
 }
-export function lobbySignature(o){return ['coin',o.format,o.seedsPerPit,o.pasu,o.turnSeconds??30,o.coinCall||'heads'].join('|');}
+export function lobbySignature(o){return ['coin',o.format,o.seedsPerPit,o.pasu,o.turnSeconds??0,o.coinCall||'heads'].join('|');}
 export function canStartRoom({connected,host,localReady,remoteReady,localSignature,remoteSignature}){
  return Boolean(connected&&host&&localReady&&remoteReady&&localSignature===remoteSignature);
 }
