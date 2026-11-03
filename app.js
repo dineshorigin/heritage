@@ -1,16 +1,16 @@
-import {createCloudRoom,playbackAction,validCode} from './cloud-room.js?v=3.25.0';
-import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.25.0';
-import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.25.0';
-import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.25.0';
-import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.25.0';
-import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.25.0';
-import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.25.0';
-import {createFeatures} from './features.js?v=3.25.0';
-import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.25.0';
-import {ballisticFlight} from './physics.js?v=3.25.0';
-import { installLanguage, getLanguage, translate } from './locale.js?v=3.25.0';
-import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.25.0';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.25.0';
+import {createCloudRoom,createLobbyLaunch,playbackAction,validCode} from './cloud-room.js?v=3.25.1';
+import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.25.1';
+import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.25.1';
+import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.25.1';
+import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.25.1';
+import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.25.1';
+import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.25.1';
+import {createFeatures} from './features.js?v=3.25.1';
+import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.25.1';
+import {ballisticFlight} from './physics.js?v=3.25.1';
+import { installLanguage, getLanguage, translate } from './locale.js?v=3.25.1';
+import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.25.1';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.25.1';
 
 (() => {
   'use strict';
@@ -114,10 +114,13 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   };
 
   // Server snapshots control room state; seed animations only control presentation.
-  let cloudNext=null,cloudAnimating=false,cloudCreating=false,cloudPauseCallback=null;
+  let cloudNext=null,cloudAnimating=false,cloudCreating=false,cloudJoining=false,cloudPauseCallback=null;
+  const cloudLaunch=createLobbyLaunch((type,extra)=>cloud.send(type,extra));
+  function roomMessage(message,error=false){const badge=$('online-status-badge');const captions={'Creating room…':'அறையை உருவாக்குகிறோம்…','Joining room…':'அறையில் இணைகிறோம்…','Connecting to room…':'அறையுடன் இணைக்கிறோம்…','Connection interrupted. Retrying…':'இணைப்பு துண்டிக்கப்பட்டது. மீண்டும் முயல்கிறோம்…','Waiting for both players to connect.':'இரு வீரர்களும் இணைவதற்காகக் காத்திருக்கிறோம்.','Could not connect. Check your internet and tap Retry.':'இணைக்க முடியவில்லை. இணையத்தைச் சரிபார்த்து மீண்டும் முயலவும்.'};badge.textContent=getLanguage()==='ta'?(captions[message]||translate(message)):translate(message);badge.className='online-badge '+(error||!onlineState.connected?'waiting':'connected');if($('room-retry-btn'))$('room-retry-btn').hidden=!error;}
   const cloud=createCloudRoom({
-    onConnection:connected=>{if(!options.online)return;if(!connected){onlineState.connected=false;onlineState.awaitingSync=state.started;updateOnlineControls();if(state.started)render();}},
-    onError:message=>{if(!options.online)return;onlineState.awaitingSync=false;toast(message,2600);if(cloudPauseCallback){cloudPauseCallback({accepted:false});cloudPauseCallback=null;}if(state.started)render();},
+    onConnection:connected=>{if(!options.online)return;if(!connected){cloudLaunch.disconnected();onlineState.connected=false;onlineState.awaitingSync=state.started;updateOnlineControls();if(state.started)render();}},
+    onStatus:message=>{if(options.online)roomMessage(message);},
+    onError:message=>{if(!options.online)return;cloudLaunch.reset();onlineState.awaitingSync=false;const friendly=({BOTH_PLAYERS_MUST_BE_READY:'Both players need to be ready. Please try Start again.',ROOM_CREATION_DISABLED:'Room creation is temporarily disabled.',ROOM_FULL_OR_STARTED:'This room is full or already started. Use a new room code.',ROOM_EXPIRED_OR_NOT_FOUND:'Room expired or not found. Ask for a new code.',NOT_IN_LOBBY:'This match has already started. Reconnect to continue.'})[message]||message;roomMessage(friendly,true);toast(friendly,3000);updateOnlineControls();if(cloudPauseCallback){cloudPauseCallback({accepted:false});cloudPauseCallback=null;}if(state.started)render();},
     onPacket:packet=>{if(!options.online||packet.matchId!==state.matchId)return;if(packet.type==='CHAT')features?.receive(packet);else if(packet.type==='REACTION')showEmoteReaction(packet.emoji,packet.player);},
     onState:applyCloudState
   });
@@ -132,7 +135,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   function applyCloudState(next,meta={}){
     if(!options.online)return;
     const seat=cloud.seat;if(!seat)return;
-    cloudNext=next;recovery.lastHeard=Date.now();peerStale=false;
+    cloudNext=next;if(next.phase!=='lobby')cloudLaunch.reset();recovery.lastHeard=Date.now();peerStale=false;
     onlineState.myPlayerIndex=seat.player;onlineState.isHost=seat.player===1;onlineState.roomCode=seat.code;
     onlineState.connected=cloud.online&&Boolean(next.players[1]?.connected&&next.players[2]?.connected);
     onlineState.awaitingSync=false;onlineState.remoteUndoAvailable=false;
@@ -140,8 +143,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     options.turnSeconds=0;options.coinCall='heads';options.seedsPerPit=next.settings.seeds;options.format=next.settings.format;options.pasu=next.settings.pasu;options.pace=next.settings.pace;options.fast=options.pace==='fast';options.ai=false;
     $('online-room-code').textContent=seat.code;
     lobby.localReady=Boolean(next.players[seat.player]?.ready);lobby.remoteReady=Boolean(next.players[other(seat.player)]?.ready);lobby.remoteSignature=lobbySignature(options);
-    const badge=$('online-status-badge');badge.textContent=onlineState.connected?'Connected · Cloudflare':cloud.online?'Room '+seat.code+' · Waiting for opponent…':'Reconnecting…';badge.className='online-badge '+(onlineState.connected?'connected':'waiting');
-    if(next.phase==='lobby'){applyPlayerLabels();syncSetupModalUI();updateOnlineControls();return;}
+    const badge=$('online-status-badge');if(!meta.error){badge.textContent=onlineState.connected?'Connected · Cloudflare':cloud.online?'Room '+seat.code+' · Waiting for opponent…':'Reconnecting…';badge.className='online-badge '+(onlineState.connected?'connected':'waiting');if($('room-retry-btn'))$('room-retry-btn').hidden=true;}
+    if(next.phase==='lobby'){cloudLaunch.receive(next,seat.player,onlineState.connected);applyPlayerLabels();syncSetupModalUI();updateOnlineControls();return;}
     // Reconnection restores the server checkpoint instead of replaying a partial move twice.
     if(meta.welcome&&cloudAnimating){invalidateMatch();cloudAnimating=false;sessionNotice('Reconnected. The board was restored from the room server.');}
     cloudPause(next);
@@ -176,18 +179,24 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     if(cloudCreating)return;
     if(onlineState.roomCode&&cloud.seat?.code===onlineState.roomCode){if(!cloud.online&&!cloud.opening)cloud.reconnect();return;}
     cloudCreating=true;options.turnSeconds=0;onlineStatus('Creating Cloudflare room…',false);
-    try{const seat=await cloud.create(selfName,cloudSettings());if(!options.online){cloud.close();return;}onlineState.roomCode=seat.code;$('online-room-code').textContent=seat.code;}
-    catch(e){onlineStatus(e.message,false);toast(e.message,2500);}finally{cloudCreating=false;}
+    try{const seat=await cloud.create(selfName,cloudSettings());if(!seat)return;if(!options.online){cloud.close();return;}onlineState.roomCode=seat.code;$('online-room-code').textContent=seat.code;}
+    catch(e){if(e.name!=='AbortError'){onlineStatus(e.message,false);roomMessage(e.message,true);toast(e.message,2500);}}finally{cloudCreating=false;updateOnlineControls();}
   }
   async function cloudJoin(code){
+    if(cloudJoining||cloud.opening)return;
     const clean=String(code||'').trim().toUpperCase();if(!validCode(clean)){toast('Enter the 8-character room code.',2000);return;}
     resetOnlineConnection({keepRoom:true});onlineState.isHost=false;onlineState.myPlayerIndex=2;onlineState.roomCode=clean;options.turnSeconds=0;
-    try{await cloud.join(clean,selfName);}catch(e){onlineStatus(e.message,false);toast(e.message,2500);}
+    cloudJoining=true;updateOnlineControls();
+    try{await cloud.join(clean,selfName);}catch(e){if(e.name!=='AbortError'){onlineStatus(e.message,false);roomMessage(e.message,true);toast(e.message,2500);}}finally{cloudJoining=false;updateOnlineControls();}
+  }
+  function requestCloudStart(){
+    if(!cloudLaunch.request(cloud.view,onlineState.myPlayerIndex,onlineState.connected&&cloud.online)){roomMessage('Waiting for both players to connect.',true);return;}
+    updateOnlineControls();
   }
   function cloudPacket(packet){
     if(packet.type==='LOBBY_READY')return cloud.send('READY',{ready:packet.ready});
-    if(packet.type==='GUEST_HELLO')return cloud.send('NAME',{name:selfName});
-    if(packet.type==='CONFIG_SYNC'&&onlineState.isHost){cloud.send('NAME',{name:selfName});return cloud.send('SETTINGS',{settings:cloudSettings()});}
+    if(packet.type==='GUEST_HELLO')return cloud.view?.players[onlineState.myPlayerIndex]?.name===selfName||cloud.send('NAME',{name:selfName});
+    if(packet.type==='CONFIG_SYNC'&&onlineState.isHost){if(!cloud.online||cloud.view?.phase!=='lobby')return false;if(cloud.view.players[1]?.name!==selfName)cloud.send('NAME',{name:selfName});const settings=cloudSettings();return !['seeds','format','pasu','pace','turnSeconds'].some(key=>settings[key]!==cloud.view.settings[key])||cloud.send('SETTINGS',{settings});}
     if(['STATE_REQUEST','STATE_SYNC'].includes(packet.type)){cloud.sync();return true;}
     if(packet.type==='ROOM_PACE'){toast('Room pace is fixed for this match.',1800);return false;}
     if(packet.type==='CHAT')return cloud.send('CHAT',{text:packet.text});
@@ -480,7 +489,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
 
   function showSetup(){
-    if(options.online){cloud.close();cloudAnimating=false;onlineState.roomCode='';}
+    if(options.online){cloudLaunch.reset();cloud.close();cloudAnimating=false;onlineState.roomCode='';}
     if(practice){practice=false;if(practiceOptions)options={...practiceOptions};practiceOptions=null;}$('practice-end-modal').classList.add('hidden');$('practice-bar').hidden=true;
     document.body.dataset.dialogOwner='neutral';
     fireworks?.stop();
@@ -524,7 +533,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     else if(group==='clock')options.turnSeconds=options.online?0:validClockSeconds(Number(value));
     else if(group==='theme')options.uiTheme=value==='light'?'light':'dark';
     else if(group==='seeds'){options.seedStyle=value;render();beadImpact('drop',.85);}
-    if(options.online&&['mode','toss','format','seedscount','pasu','clock','call'].includes(group)){resetLobbyReady();if(onlineState.connected)broadcastReady();if(onlineState.isHost&&onlineState.connected)sendOnlinePacket({type:'CONFIG_SYNC',options:{...options},hostName:selfName});}
+    if(options.online&&['mode','toss','format','seedscount','pasu','clock','call'].includes(group)){resetLobbyReady();if(!onlineState.isHost&&cloud.online)broadcastReady();if(onlineState.isHost&&cloud.online)sendOnlinePacket({type:'CONFIG_SYNC',options:{...options},hostName:selfName});}
     saveSettings();syncSetupModalUI();
   }
 
@@ -550,10 +559,10 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('room-peer-name').textContent=connected?displayName(peer):translate('Waiting for opponent…');
     const message=!connected?translate('Waiting for opponent…'):(lobby.remoteReady?(ta?'எதிர்வீரர் தயார்':'Opponent is ready'):(ta?'எதிர்வீரர் தயாராகக் காத்திருக்கிறோம்':'Waiting for opponent to tap Ready'));
     $('room-ready-status').textContent=message;$('room-final-status').textContent=options.online?((lobby.localReady?(ta?'நீங்கள் தயார்':'You are ready'):(ta?'தயார் என்பதைத் தொடவும்':'Tap Ready'))+' · '+message):'';
-    $('room-ready-btn').disabled=!connected||state.started;
+    $('room-ready-btn').hidden=true;$('room-ready-btn').disabled=true;
     $('room-ready-btn').textContent=lobby.localReady?(ta?'✓ நீங்கள் தயார் · மாற்ற தொடவும்':'✓ You are ready · tap to cancel'):(ta?'நான் தயார்':'I’m ready');
     $('room-ready-btn').setAttribute('aria-pressed',String(lobby.localReady));
-    $('room-final-ready-btn').hidden=!options.online;$('room-final-ready-btn').disabled=!connected||state.started;$('room-final-ready-btn').textContent=$('room-ready-btn').textContent;$('room-final-ready-btn').setAttribute('aria-pressed',String(lobby.localReady));
+    $('room-final-ready-btn').hidden=true;$('room-final-ready-btn').disabled=true;$('room-final-ready-btn').textContent=$('room-ready-btn').textContent;$('room-final-ready-btn').setAttribute('aria-pressed',String(lobby.localReady));
     if(options.online)$('setup-opponent-name').textContent=connected?displayName(peer):translate('Waiting for opponent…');
     document.querySelectorAll('#setup-modal [data-call],#setup-modal [data-format],#setup-modal [data-pasu],#setup-modal [data-seedscount],#setup-modal [data-clock]').forEach(b=>b.disabled=options.online&&(b.hasAttribute('data-clock')||b.hasAttribute('data-call')||!onlineState.isHost||state.started));
   }
@@ -568,16 +577,21 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
   function updateOnlineControls() {
     if($('cloud-room-note'))$('cloud-room-note').textContent=getLanguage()==='ta'?'இந்த அறைச் சோதனையில் நேர வரம்பும் நகர்வை மீட்டலும் இல்லை. தொடங்கும் வீரர் குலுக்கல் மூலம் தேர்வு செய்யப்படுவார்.':'Room test: untimed, with no Undo. A random toss chooses the starting player.';
+    if($('room-retry-btn'))$('room-retry-btn').textContent=getLanguage()==='ta'?'மீண்டும் இணை':'Retry connection';
     const start=$('start-btn');
     if(!start)return;
     if(!options.online){start.disabled=false;start.textContent='Start match';}
     else {
-      start.disabled=!roomCanStart();
-      start.textContent=onlineState.isHost?'START ONLINE MATCH':'Waiting for host to start…';
+      const launch=cloudLaunch.inspect(),mine=Boolean(cloud.view?.players[onlineState.myPlayerIndex]?.ready),ta=getLanguage()==='ta';
+      start.disabled=!onlineState.connected||!cloud.online||cloudCreating||cloudJoining||launch.wanted||launch.readyPending||launch.startPending;
+      start.textContent=launch.startPending?(ta?'ஆட்டம் தொடங்குகிறது…':'Starting match…'):launch.readyPending?(ta?'தயார் நிலையை அனுப்புகிறோம்…':'Sending Ready…'):onlineState.isHost?(launch.wanted?(ta?'எதிர்வீரர் தயாராகக் காத்திருக்கிறோம்…':'Waiting for opponent to get ready…'):(ta?'இணைய ஆட்டத்தைத் தொடங்கு':'Start online match')):(mine?(ta?'தயார் · அறை உருவாக்கியவருக்காகக் காத்திருக்கிறோம்':'Ready · waiting for host'):(ta?'நான் தயார்':'I’m ready'));
+      if(!onlineState.isHost&&mine)start.disabled=true;
+      start.setAttribute('aria-busy',String(launch.startPending||launch.readyPending));
     }
-    if($('start-online-help'))$('start-online-help').hidden=!options.online;
+    if($('start-online-help')){$('start-online-help').hidden=!options.online;$('start-online-help').textContent=getLanguage()==='ta'?'அறை உருவாக்கியவர் தொடங்கு என்பதைத் தொடவும். மற்ற வீரர் நான் தயார் என்பதைத் தொட்டவுடன் ஆட்டம் தொடங்கும்.':'Host: tap Start online match. Friend: tap I’m ready. The match starts once both are ready.';}
     if($('online-reactions'))$('online-reactions').hidden=!options.online||!onlineState.connected;
-    if($('join-room-btn'))$('join-room-btn').disabled=options.online&&onlineState.connected;
+    if($('join-room-btn'))$('join-room-btn').disabled=options.online&&(onlineState.connected||cloudJoining||cloud.opening);
+    for(const id of ['copy-code-btn','copy-room-btn','wa-share-btn'])if($(id))$(id).disabled=options.online&&(!validCode(onlineState.roomCode)||!cloud.online);
     updateLobbyUI();
     updateRematchUI();
     $('online-recovery').hidden=!options.online||!state.started;
@@ -587,7 +601,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     const connection=roomConnection();$('online-recovery').dataset.state=connection.state;$('connection-text').textContent=translate(connection.label);$('reconnect-btn').hidden=connection.state==='connected'||connection.state==='sowing';
   }
   function resetOnlineConnection({keepRoom=false}={}) {
-    cloud.close();cloudNext=null;cloudAnimating=false;
+    cloudLaunch.reset();cloud.close();cloudNext=null;cloudAnimating=false;
     clearTimeout(recovery.timer);recovery.timer=null;
     if(!keepRoom){recovery.attempt=0;features?.resetRoom();}
     recovery.pendingSync=null;recovery.connectingUntil=0;onlineState.remotePaused=false;
@@ -2620,7 +2634,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   function invalidateMatch(){playback.reset();pendingCompletion=null;onlineState.awaitingPlayback=false;clearCaptureFeedback();turnClock.reset();clockHandled='';remoteClock=null;features?.discardPending();fireworks?.stop();hideHintExplanation();state.epoch++;state.aiTicket++;state.busy=false;state.activeMove=null;state.hintPit=null;updateSkipButton();closeAnimations();clearTimeout(toastTimer);$('toast').classList.remove('visible');}
   
   function startGame(broadcast=true,forcedStarter=null,remoteMatchId=null){
-    if(options.online&&broadcast){cloud.send('START');return;}
+    if(options.online&&broadcast){requestCloudStart();return;}
     recovery.pauseAfterToss=false;options.firstMove='coin';
     clearCaptureFeedback();
     if(options.online&&broadcast&&!roomCanStart()&&!canStartRematch({online:options.online,connected:onlineState.connected&&!peerStale,isHost:onlineState.isHost,over:state.over,busy:state.busy,...rematch})){
@@ -2854,7 +2868,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     for(const p of [1,2]){$('wish-lamp-'+p).innerHTML=menuArt('lamp',String(p));$('wish-lamp-'+p).addEventListener('click',()=>{if(state.turn===p)showHint();});}
     wizard=setupWizard({mode:()=>options.online?'online':options.ai?'ai':'two',changed:()=>{},language:getLanguage});
     document.addEventListener('click',e=>{if(e.isTrusted&&e.target.closest('button:not(:disabled)')&&!e.target.closest('.pit'))uiClick();},true);
-    ['room-ready-btn','room-final-ready-btn'].forEach(id=>$(id).addEventListener('click',()=>{if(!options.online||!onlineState.connected||state.started)return;lobby.localReady=!lobby.localReady;broadcastReady();updateOnlineControls();}));
+    ['room-ready-btn','room-final-ready-btn'].forEach(id=>$(id).addEventListener('click',()=>{if(!options.online||state.started)return;requestCloudStart();}));
     features=createFeatures({language:getLanguage,names:()=>names,state:()=>state,pasu:()=>options.pasu,toast,tutorial:tutorialOpen,send:sendOnlinePacket,network:()=>({connected:options.online&&onlineState.connected,player:onlineState.myPlayerIndex,matchId:state.matchId}),explanationEnabled:()=>explainAI,toggleExplanation:()=>{explainAI=!explainAI;try{localStorage.setItem('pallanguzhi.ai.explain',explainAI?'1':'0');}catch{}},chatBadge:n=>{$('chat-fab').dataset.unread=n||'';}});
     $('features-btn').addEventListener('click',()=>features.open());
     $('chat-fab').addEventListener('click',()=>features.openChat());
@@ -2919,6 +2933,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       btn.addEventListener('click',()=>selectOption(group,btn.dataset[group]));
     });
 
+    $('room-retry-btn').addEventListener('click',()=>{if(cloud.seat&&cloud.seat.code===onlineState.roomCode){cloud.reconnect();}else if(onlineState.isHost){void cloudHost();}else void cloudJoin($('join-room-input').value);});
     $('room-create-tab').addEventListener('click',()=>chooseRoomTab(false));$('room-join-tab').addEventListener('click',()=>chooseRoomTab(true));
     // Online UI Event Listeners
     document.querySelectorAll('[data-emote]').forEach(button=>button.addEventListener('click',()=>{
@@ -3095,4 +3110,5 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
+
 
