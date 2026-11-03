@@ -75,6 +75,15 @@ export class GameRoom extends DurableObject {
    }
    if(this.room.players[a.player]?.connectionId!==a.id){ws.close(4001,'Replaced');return;}
    if(m?.type==='SYNC'){this.send(ws,{type:'STATE',state:this.view()});return;}
+   // Room chat is ephemeral: authenticated sender and current match, never client-supplied identity.
+   if(m?.type==='CHAT'||m?.type==='REACTION'){
+    if(m.matchId!==this.room.matchId||!this.room.matchId||!/^[-\w]{8,80}$/.test(m.id||''))throw Error('STALE_MATCH');
+    const relay={type:m.type,id:m.id,matchId:this.room.matchId,player:a.player};
+    if(m.type==='CHAT'){if(typeof m.text!=='string'||!m.text.trim()||m.text.length>240)throw Error('INVALID_MESSAGE');relay.text=m.text.replace(/[\u0000-\u001f\u007f]/g,' ').trim();}
+    else {if(!['👏','😄','🎉','🤝'].includes(m.emoji))throw Error('INVALID_MESSAGE');relay.emoji=m.emoji;}
+    for(const other of this.ctx.getWebSockets()){const b=other.deserializeAttachment();if(b?.player&&b.player!==a.player&&this.room.players[b.player]?.connectionId===b.id)this.send(other,relay);}
+    this.send(ws,{type:'ACK',id:m.id});return;
+   }
    const r=command(this.room,a.player,m,{now,coin:crypto.getRandomValues(new Uint8Array(1))[0]%2+1,matchId:crypto.randomUUID(),connected:this.presence()});
    if(!r.duplicate)await this.persist(r.state);
    this.send(ws,{type:'ACK',id:m.id,duplicate:r.duplicate,version:r.receipt.version,seq:r.receipt.seq});this.broadcast(r.event);

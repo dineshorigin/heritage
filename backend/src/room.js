@@ -35,13 +35,15 @@ export function assertCount(s){if(s.phase==='lobby')return;const total=s.pits.re
 export function command(original,player,m,{now=Date.now(),coin=1,matchId='test-match',connected=[false,true,true]}={}){
  if(![1,2].includes(player)||!original.players[player])fail('UNAUTHORIZED');
  if(!m||typeof m!=='object'||!/^[-\w]{8,80}$/.test(m.id||''))fail('INVALID_REQUEST_ID');
- const fingerprint=JSON.stringify([m.type,m.matchId??null,m.seq??null,m.pit??null,m.ready??null,m.settings??null,m.round??null]);
+ const fingerprint=JSON.stringify([m.type,m.matchId??null,m.seq??null,m.pit??null,m.ready??null,m.settings??null,m.round??null,m.name??null]);
  const old=original.receipts.find(r=>r.player===player&&r.id===m.id);
  if(old){if(old.fingerprint!==fingerprint)fail('REQUEST_ID_REUSED');return {state:original,duplicate:true,receipt:old};}
  const s=structuredClone(original);if(s.pause&&now>=s.pause.until)s.pause=null;
  if(['MOVE','DONE','NEXT_ROUND','PAUSE','RESUME','REMATCH'].includes(m.type)&&m.matchId!==s.matchId)fail('STALE_MATCH');
  let event=null;
  switch(m.type){
+ case 'NAME':
+  if(s.phase!=='lobby')fail('NOT_IN_LOBBY');s.players[player].name=safeName(m.name);s.players[player].ready=false;break;
  case 'READY':
   if(s.phase!=='lobby')fail('NOT_IN_LOBBY');if(typeof m.ready!=='boolean')fail('INVALID_READY');s.players[player].ready=m.ready;break;
  case 'SETTINGS':
