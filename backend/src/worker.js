@@ -1,5 +1,5 @@
 import {DurableObject} from 'cloudflare:workers';
-import {newRoom,command,snapshot,TTL,PROTOCOL,safeName} from './room.js';
+import {newRoom,command,snapshot,TTL,PROTOCOL,safeName,relayMessage} from './room.js';
 const json=(body,status=200,headers={})=>Response.json(body,{status,headers:{'Cache-Control':'no-store',...headers}});
 const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))).map(n=>n.toString(16).padStart(2,'0')).join('');
 const token=()=>crypto.randomUUID()+crypto.randomUUID();
@@ -8,7 +8,7 @@ function originAllowed(request,env){const origin=request.headers.get('Origin');r
 export default {
  async fetch(request,env){
   const url=new URL(request.url);
-  if(url.pathname==='/health')return json({ok:true,protocol:PROTOCOL,stage:'backend-test'});
+  if(url.pathname==='/health')return json({ok:true,protocol:PROTOCOL,release:'3.27.0',stage:'backend-test'});
   if(!url.pathname.startsWith('/api/'))return env.ASSETS.fetch(request);
   if(!originAllowed(request,env))return json({error:'ORIGIN_NOT_ALLOWED'},403);
   const cors={'Access-Control-Allow-Origin':request.headers.get('Origin'),'Vary':'Origin'};
@@ -65,7 +65,7 @@ export class GameRoom extends DurableObject {
    const a=ws.deserializeAttachment();if(!a)return;
    if(typeof message!=='string'||message.length>4096){ws.close(1009,'Message too large');return;}
    const now=Date.now();if(now-a.window>10000){a.window=now;a.count=0;}if(++a.count>40){ws.close(4008,'Rate limited');return;}ws.serializeAttachment(a);
-   const m=JSON.parse(message);
+   const m=JSON.parse(message);if(!m||typeof m!=='object'||Array.isArray(m))throw Error('INVALID_COMMAND');
    if(!a.player){
     if(now-a.createdAt>10000||m?.type!=='AUTH'||m.protocol!==PROTOCOL||typeof m.token!=='string'||m.token.length>200){ws.close(4003,'Authenticate first');return;}
     const digest=await hash(m.token),p=[1,2].find(i=>this.room.players[i]?.tokenHash===digest);if(!p){ws.close(4003,'Invalid token');return;}
@@ -77,11 +77,9 @@ export class GameRoom extends DurableObject {
    if(m?.type==='SYNC'){this.send(ws,{type:'STATE',state:this.view()});return;}
    // Room chat is ephemeral: authenticated sender and current match, never client-supplied identity.
    if(m?.type==='CHAT'||m?.type==='REACTION'){
-    if(m.matchId!==this.room.matchId||!this.room.matchId||!/^[-\w]{8,80}$/.test(m.id||''))throw Error('STALE_MATCH');
-    const relay={type:m.type,id:m.id,matchId:this.room.matchId,player:a.player};
-    if(m.type==='CHAT'){if(typeof m.text!=='string'||!m.text.trim()||m.text.length>240)throw Error('INVALID_MESSAGE');relay.text=m.text.replace(/[\u0000-\u001f\u007f]/g,' ').trim();}
-    else {if(!['👏','😄','🎉','🤝'].includes(m.emoji))throw Error('INVALID_MESSAGE');relay.emoji=m.emoji;}
-    for(const other of this.ctx.getWebSockets()){const b=other.deserializeAttachment();if(b?.player&&b.player!==a.player&&this.room.players[b.player]?.connectionId===b.id)this.send(other,relay);}
+    const result=relayMessage(m,{matchId:this.room.matchId,player:a.player,now,lastAt:a.relayAt,receipts:a.relayReceipts});
+    a.relayAt=result.lastAt;a.relayReceipts=result.receipts;ws.serializeAttachment(a);
+    if(!result.duplicate)for(const other of this.ctx.getWebSockets()){const b=other.deserializeAttachment();if(b?.player&&b.player!==a.player&&this.room.players[b.player]?.connectionId===b.id)this.send(other,result.packet);}
     this.send(ws,{type:'ACK',id:m.id});return;
    }
    const r=command(this.room,a.player,m,{now,coin:crypto.getRandomValues(new Uint8Array(1))[0]%2+1,matchId:crypto.randomUUID(),connected:this.presence()});

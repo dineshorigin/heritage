@@ -10,11 +10,24 @@ export function settings(value={}){
  return {seeds:value.seeds??5,format:value.format??'single',pasu:value.pasu??'on',pace:value.pace??'natural',turnSeconds:0};
 }
 export const safeName=n=>typeof n==='string'&&n.trim()?n.trim().replace(/[\u0000-\u001f\u007f]/g,'').slice(0,18):'Player';
+export function resultReason(s){return s.phase==='over'||s.phase==='playback'&&s.afterPlayback==='over'?(s.draw?'repeated-position':s.banks[1]===s.banks[2]?'equal-score':'higher-score'):'';}
+// Ephemeral relay protection lives in the authenticated socket attachment, not chat storage.
+export function relayMessage(m,{matchId,player,now,lastAt=0,receipts=[]}){
+ if(!matchId||m.matchId!==matchId||!/^[-\w]{8,80}$/.test(m.id||''))fail('STALE_MATCH');
+ if(!['CHAT','REACTION'].includes(m.type))fail('INVALID_MESSAGE');
+ let value;
+ if(m.type==='CHAT'){if(typeof m.text!=='string'||!m.text.trim()||m.text.length>240)fail('INVALID_MESSAGE');value=m.text.replace(/[\u0000-\u001f\u007f]/g,' ').trim();if(!value)fail('INVALID_MESSAGE');}
+ else {if(!['👏','😄','🎉','🤝'].includes(m.emoji))fail('INVALID_MESSAGE');value=m.emoji;}
+ const old=receipts.find(r=>r.id===m.id);
+ if(old)return {duplicate:true,receipts,lastAt};
+ if(lastAt&&now-lastAt<700)fail('MESSAGE_TOO_FAST');
+ return {duplicate:false,lastAt:now,receipts:[...receipts,{id:m.id}].slice(-24),packet:{type:m.type,id:m.id,matchId,player,[m.type==='CHAT'?'text':'emoji']:value}};
+}
 export function newRoom(code,name,tokenHash,now=Date.now(),config={}){
  return {protocol:PROTOCOL,code,version:0,createdAt:now,updatedAt:now,settings:settings(config),players:[null,{name:safeName(name),tokenHash,ready:false,connectionId:''},null],phase:'lobby',matchId:null,seq:0,round:0,turn:1,pits:Array(14).fill(0),banks:[0,0,0],locked:Array(14).fill(false),done:[false,false,false],used:[0,0,0],pause:null,allocations:[],receipts:[],winner:0,draw:false};
 }
 export function snapshot(s,presence=[false,false,false]){
- return {protocol:PROTOCOL,code:s.code,version:s.version,phase:s.phase,settings:s.settings,players:s.players.map((p,i)=>p?{name:p.name,ready:p.ready,connected:presence[i]}:null),matchId:s.matchId,seq:s.seq,round:s.round,turn:s.turn,pits:s.pits,banks:s.banks,locked:s.locked,done:s.done,pause:s.pause,used:s.used,winner:s.winner,draw:s.draw,lastMove:s.lastMove?{seq:s.lastMove.seq,mover:s.lastMove.mover,pit:s.lastMove.pit}:null};
+ return {protocol:PROTOCOL,code:s.code,version:s.version,phase:s.phase,settings:s.settings,players:s.players.map((p,i)=>p?{name:p.name,ready:p.ready,connected:presence[i]}:null),matchId:s.matchId,seq:s.seq,round:s.round,turn:s.turn,pits:s.pits,banks:s.banks,locked:s.locked,done:s.done,pause:s.pause,used:s.used,winner:s.winner,draw:s.draw,endReason:resultReason(s),expiresAt:s.updatedAt+TTL,lastMove:s.lastMove?{seq:s.lastMove.seq,mover:s.lastMove.mover,pit:s.lastMove.pit}:null};
 }
 function reset(s,matchId,coin){
  s.matchId=matchId;s.seq=0;s.round=1;s.turn=coin;s.pits=Array(14).fill(s.settings.seeds);s.banks=[0,0,0];s.locked=Array(14).fill(false);s.done=[false,false,false];s.used=[0,0,0];s.pause=null;s.allocations=[];s.winner=0;s.draw=false;s.receipts=[];s.phase='turn';s.lastMove=null;s.toss={winner:coin,face:coin===1?'heads':'tails'};s.players[1].ready=s.players[2].ready=false;
