@@ -1,18 +1,19 @@
-import {installTestingUI,APP_VERSION} from './testing.js?v=3.27.0';
-import {matchOutcome,createDiagnostics,installQualityUI} from './quality.js?v=3.27.0';
-import {createCloudRoom,createLobbyLaunch,playbackAction,validCode} from './cloud-room.js?v=3.27.0';
-import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.27.0';
-import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.27.0';
-import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.27.0';
-import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.27.0';
-import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.27.0';
-import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.27.0';
-import {createFeatures} from './features.js?v=3.27.0';
-import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.27.0';
-import {ballisticFlight} from './physics.js?v=3.27.0';
-import { installLanguage, getLanguage, translate } from './locale.js?v=3.27.0';
-import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.27.0';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.27.0';
+import {installTestingUI,APP_VERSION} from './testing.js?v=3.28.0';
+import {matchOutcome,createDiagnostics,installQualityUI} from './quality.js?v=3.28.0';
+import {installVisualUI} from './visual.js?v=3.28.0';
+import {createCloudRoom,createLobbyLaunch,playbackAction,validCode} from './cloud-room.js?v=3.28.0';
+import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.28.0';
+import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.28.0';
+import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.28.0';
+import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.28.0';
+import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.28.0';
+import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.28.0';
+import {createFeatures} from './features.js?v=3.28.0';
+import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.28.0';
+import {ballisticFlight} from './physics.js?v=3.28.0';
+import { installLanguage, getLanguage, translate } from './locale.js?v=3.28.0';
+import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.28.0';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.28.0';
 
 (() => {
   'use strict';
@@ -34,7 +35,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   function reliabilityControls(){document.body.classList.toggle('light-effects',lightEffects());$('performance-btn').textContent=translate('Effects')+': '+translate({auto:'Auto',light:'Light',full:'Full'}[performanceMode]);$('capture-tips-btn').textContent=translate(captureTips?'Capture tips on':'Capture tips off');$('capture-tips-btn').setAttribute('aria-pressed',String(captureTips));}
   let lastTurnNotice=null;
   let fireworks=null;
-  let features=null,wizard=null,testing=null,quality=null,explainAI=false;
+  let features=null,wizard=null,testing=null,quality=null,visual=null,explainAI=false;
   const diagnostics=createDiagnostics(globalThis.localStorage);
   let selfName='Player 1',passName='Player 2';
   const turnClock=createTurnClock();let clockView=null,clockTick=-1,clockHandled='',clockSentAt=0,remoteClock=null;
@@ -590,6 +591,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     if(state.started)render();
   }
   function updateOnlineControls() {
+    visual?.update();
     if($('cloud-room-note'))$('cloud-room-note').textContent=getLanguage()==='ta'?'இந்த அறைச் சோதனையில் நேர வரம்பும் நகர்வை மீட்டலும் இல்லை. தொடங்கும் வீரர் குலுக்கல் மூலம் தேர்வு செய்யப்படுவார்.':'Room test: untimed, with no Undo. A random toss chooses the starting player.';
     if($('room-retry-btn'))$('room-retry-btn').textContent=getLanguage()==='ta'?'மீண்டும் இணை':'Retry connection';
     const start=$('start-btn');
@@ -1620,6 +1622,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     }
   }
   function render() {
+    visual?.update();
     updateRoomConnectionNotice();
     for(let i=0;i<N;i++) paintPit(i);
     const turnVisible=state.started&&!state.busy&&!state.over&&!state.paused&&!onlineState.remotePaused&&!state.awaitingToss&&(!options.online||(onlineState.connected&&!peerStale&&!onlineState.awaitingSync&&!onlineState.undoPending));
@@ -2906,7 +2909,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     installRecovery();
     setInterval(()=>{pauseTick();if(state.started&&!state.over&&!state.roundPending)updateTurnClock();},250);
     installNativeLifecycle();
-    installLanguage(lang=>{testing?.refresh();quality?.refresh();wizard?.refresh();features?.refresh();document.querySelectorAll('#final-scores .result-player > span').forEach((el,i)=>el.textContent=displayName(i+1));if(state.over&&!state.roundPending){const outcome=matchOutcome({scores:state.banks,names,forcedDraw:tournament.forcedDraw,language:lang});$('winner-text').textContent=outcome.title;$('result-message').textContent=outcome.explanation;}tutorialSetLanguage(lang);refreshResumePanel();if(isModalOpen('stats-modal'))renderStats();if(isModalOpen('round-modal'))showRoundSummary();render();});
+    installLanguage(lang=>{testing?.refresh();quality?.refresh();visual?.refresh();wizard?.refresh();features?.refresh();document.querySelectorAll('#final-scores .result-player > span').forEach((el,i)=>el.textContent=displayName(i+1));if(state.over&&!state.roundPending){const outcome=matchOutcome({scores:state.banks,names,forcedDraw:tournament.forcedDraw,language:lang});$('winner-text').textContent=outcome.title;$('result-message').textContent=outcome.explanation;}tutorialSetLanguage(lang);refreshResumePanel();if(isModalOpen('stats-modal'))renderStats();if(isModalOpen('round-modal'))showRoundSummary();render();});
     // Treat a direct room link as a guest, not a new host room.
     const incomingRoom=new URLSearchParams(window.location.search).get('room');
     if(incomingRoom&&/^[A-Z2-9]{8}$/i.test(incomingRoom)){
@@ -3105,6 +3108,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     }
     testing=installTestingUI({language:getLanguage,names:()=>names,mode:()=>options.online?'Connect':options.ai?'Computer':'Pass N Play',copy:copyTextSafe,diagnostics:()=>diagnostics.report(),openChat:()=>features.openChat(),chatSound:uiClick,orientationChanged:()=>{invalidateLayout();render();}});
     quality=installQualityUI({language:getLanguage,diagnostics,toast,tutorial:tutorialOpen,active:()=>state.started&&!state.over,retry:()=>{if(options.online)reconnectRoom(true,true);},connection:()=>({enabled:options.online,online:navigator.onLine!==false,connected:onlineState.connected,transport:cloud.status,phase:cloud.view?.phase,mineDone:cloud.view?.done?.[onlineState.myPlayerIndex],opponentDone:cloud.view?.done?.[other(onlineState.myPlayerIndex)],expiresAt:cloud.view?.expiresAt})});
+    visual=installVisualUI({language:getLanguage,state:()=>({started:state.started,over:state.over,roundPending:state.roundPending,paused:state.paused,awaitingToss:state.awaitingToss,busy:state.busy,thinking:options.ai&&state.turn===2&&state.busy&&!state.activeMove,online:options.online,connected:onlineState.connected,awaitingSync:onlineState.awaitingSync,awaitingPlayback:onlineState.awaitingPlayback,ai:options.ai,turn:state.turn,player:onlineState.myPlayerIndex,name:displayName(state.turn)}),lobby:()=>({players:cloud.view?.players||[],self:onlineState.myPlayerIndex,online:cloud.online,names}),settings:()=>({seeds:options.seedsPerPit,format:options.format,pasu:options.pasu,seconds:options.turnSeconds}),result:()=>({scores:state.banks.slice(),names:{...names},forcedDraw:tournament.forcedDraw,language:getLanguage(),url:getShareableGameUrl(''),version:APP_VERSION,mat:options.mat})});
     fitBoard(true);
     window.PallanguzhiTest={version:APP_VERSION,simulateMove,settleIfFinished,validMoves,owner,skipCurrentMove,undoMove,showHint,recommendMove,getSnapshot:()=>({pits:state.pits.slice(),banks:state.banks.slice(),turn:state.turn,over:state.over,busy:state.busy,epoch:state.epoch,handVisible:$('player-hand').classList.contains('visible'),activeMove:Boolean(state.activeMove),pace:options.pace,difficulty:options.difficulty,history:state.history.length,hintPit:state.hintPit,handFacing:$('player-hand').dataset.facing}),startGame,chooseAI,
       getClock:()=>({...clockView,turnSeconds:options.turnSeconds}),
