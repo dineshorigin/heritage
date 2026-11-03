@@ -973,3 +973,19 @@ body .play-arena .pit.reason-pulse{border:2px dashed #8cd2d5!important;box-shado
 .portrait-blocked #game-frame,.portrait-blocked .overlay:not(#feedback-modal):not(#landscape-gate){visibility:hidden!important;pointer-events:none}.portrait-blocked #chat-notification{display:none!important}
 #feedback-modal{z-index:1100}#feedback-modal label{display:block;font-size:13px;font-weight:750;margin:12px 0 5px}#feedback-modal input,#feedback-modal select,#feedback-modal textarea{display:block;width:100%;border:1px solid #8ba28c;border-radius:9px;padding:10px;background:#0d2422;color:#fff1d2;font:inherit;font-size:14px}#feedback-modal textarea{resize:vertical;min-height:100px;max-height:42dvh}#feedback-modal p{font-size:13px;line-height:1.5}#feedback-modal .feedback-address{overflow-wrap:anywhere;font-weight:750;color:#f5ce7b}#feedback-status{min-height:1.5em}#feedback-modal .build-version{text-align:center;margin-top:12px}
 body[data-ui-theme="light"] #feedback-modal input,body[data-ui-theme="light"] #feedback-modal textarea,body[data-ui-theme="light"] #feedback-modal select{background:#fffaf0;color:#2d3e33}body[data-ui-theme="light"] #feedback-modal .feedback-address{color:#68480d}body[data-ui-theme="light"] #chat-notification{background:#fff5dc;color:#253c32}body[data-ui-theme="light"] #chat-notification button{background:#e4ead7;color:#233e31}
+
+/* Testing release: keep every dialog reachable on short landscape screens. */
+.overlay{overflow-y:auto;overscroll-behavior:contain}
+.overlay>.modal-card,.overlay>.home-card{max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));min-height:0;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
+.quality-tools{display:flex;gap:8px;flex-wrap:wrap;width:100%}
+#room-network-detail,#room-lifetime{font-size:13px;line-height:1.5;overflow-wrap:anywhere;margin:8px 0}
+#room-lifetime{opacity:.85;font-size:12px}
+.first-game-tip{padding:12px;border:1px solid #baa471;border-radius:12px;margin:12px 0;font-size:14px;line-height:1.5}
+.first-game-tip[hidden]{display:none!important}.first-game-tip button{margin:4px}
+#session-retry{min-height:36px;border-radius:7px;margin:5px;padding:7px 12px;background:#e9d19c;color:#15392c;border:1px solid #bd9e55;font-weight:750}
+#session-retry[hidden]{display:none!important}
+#feedback-modal .feedback-technical{display:flex;gap:9px;align-items:flex-start;font-weight:400;line-height:1.5}
+#feedback-modal #feedback-technical{width:20px;height:20px;flex:0 0 20px;margin:0;accent-color:#d4ba76}
+body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid #f7cf67;outline-offset:3px}
+@media(max-height:420px){#tools-panel{max-height:70dvh!important}.overlay{padding:8px}.overlay>.modal-card,.overlay>.home-card{max-height:calc(100dvh - 16px)}.first-game-tip{padding:9px}#chat-notification{max-height:55dvh}}
