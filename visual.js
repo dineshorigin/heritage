@@ -1,5 +1,5 @@
 // Presentation helpers use game state only; they never decide moves or scores.
-import {matchOutcome} from './quality.js?v=3.28.0';
+import {matchOutcome} from './quality.js?v=3.29.0';
 export function matchStatus(g){
  const ta=g.language==='ta',t=(en,tamil)=>ta?tamil:en;
  if(!g.started)return {kind:'idle',title:t('Ready to play','விளையாடத் தயார்')};
@@ -20,7 +20,7 @@ export function lobbyCards({players=[],self=1,online=false,language='en',names={
  const ta=language==='ta',t=(en,tamil)=>ta?tamil:en;
  return [1,2].map(player=>{const p=players[player];return {player,name:p?.name||names[player]||t(player===self?'You':'Your friend',player===self?'நீங்கள்':'உங்கள் நண்பர்'),state:!p?'empty':!online||!p.connected?'offline':p.ready?'ready':'connected',label:!p?t('Waiting to join','இணைவதற்குக் காத்திருக்கிறது'):!online||!p.connected?t('Reconnecting','மீண்டும் இணைப்பு'):p.ready?t('Ready','தயார்'):t('Connected · not ready','இணைப்பு · இன்னும் தயாரில்லை'),role:player===self?t('You','நீங்கள்'):t('Friend','நண்பர்')};});
 }
-export function shareModel({scores,names,forcedDraw,language='en',url='',version='3.28.0',mat='emerald'}={}){
+export function shareModel({scores,names,forcedDraw,language='en',url='',version='3.29.0',mat='emerald'}={}){
  const result=matchOutcome({scores,names,forcedDraw,language}),safeNames=[1,2].map(p=>String(names[p]||'Player').replace(/[\u0000-\u001f\u007f]/g,'').slice(0,36));
  let link='';try{const u=new URL(url);if(['https:','http:'].includes(u.protocol))link=u.origin+u.pathname;}catch{}
  return {title:result.title,reason:result.reason,draw:result.draw,names:safeNames,scores:[scores[1],scores[2]],language,url:link,version,mat};

@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 
-<title>Pallanguzhi • Heritage Edition (v3.28.0 • Reference Board Edition)</title>
+<title>Pallanguzhi • Heritage Edition (v3.29.0 • Reference Board Edition)</title>
 <!-- Connect mode uses the Cloudflare room server. -->
-<link rel="preload" as="image" href="royal-board.webp?v=3.28.0">
-<link rel="preload" as="image" href="reference-board.webp?v=3.28.0">
-<link rel="icon" type="image/png" href="icon-192.png?v=3.28.0"><link rel="apple-touch-icon" href="icon-192.png?v=3.28.0">
+<link rel="preload" as="image" href="royal-board.webp?v=3.29.0">
+<link rel="preload" as="image" href="reference-board.webp?v=3.29.0">
+<link rel="icon" type="image/png" href="icon-192.png?v=3.29.0"><link rel="apple-touch-icon" href="icon-192.png?v=3.29.0">
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#173e35">
-<link rel="stylesheet" href="game.css?v=3.28.0">
-<script id="peerjs-loader" defer src="native-bridge.js?v=3.28.0"></script>
+<link rel="stylesheet" href="game.css?v=3.29.0">
+<script id="peerjs-loader" defer src="native-bridge.js?v=3.29.0"></script>
 </head>
 <body>
 <!-- Board artwork is reconstructed from the supplied photograph; cups are interactive overlays. -->
 
 <main id="game-frame" aria-label="Pallanguzhi game">
   <header class="top-strip">
-    <div class="brand"><img class="brand-icon" src="icon-192.png?v=3.28.0" alt="" width="34" height="34"><span class="brand-title">Pallanguzhi</span><small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
+    <div class="brand"><img class="brand-icon" src="icon-192.png?v=3.29.0" alt="" width="34" height="34"><span class="brand-title">Pallanguzhi</span><small id="round-brand-sub">HERITAGE · READY TO PLAY</small></div>
     <div class="header-tools"><button type="button" class="action-btn" id="language-btn" data-no-i18n data-language-toggle aria-label="Switch language">Language</button><button type="button" class="action-btn" id="pause-btn">Ⅱ Pause</button><button type="button" class="stats-trigger" id="stats-btn" aria-label="Open match statistics and achievements">📊 Stats</button></div>
     <div class="players-scoreboard">
       <div class="player-pod" id="p2-pod"><span class="player-name" id="p2-label" data-no-i18n>Azhagi (AI)</span><span class="score-badge" id="p2-score">0</span><span class="owner-indicator" id="ind-2" aria-live="polite"></span></div>
@@ -68,7 +68,7 @@
     <button type="button" class="action-btn tools-toggle" id="tools-toggle" aria-expanded="false" aria-controls="tools-panel">☰ Tools</button>
     <div class="actions" id="tools-panel" role="group" aria-label="Match tools" hidden><p class="tools-live-note">Settings do not use pauses. Timed games keep counting.</p>
       <button type="button" class="action-btn" id="performance-btn">Effects: Auto</button><button type="button" class="action-btn" id="capture-tips-btn" aria-pressed="true">Capture tips on</button>
-      <button type="button" class="action-btn" data-feedback>Send feedback</button><small class="build-version" data-no-i18n>v3.28.0</small><button type="button" class="action-btn" id="features-btn">Play &amp; learn</button>
+      <button type="button" class="action-btn" data-feedback>Send feedback</button><small class="build-version" data-no-i18n>v3.29.0</small><button type="button" class="action-btn" id="features-btn">Play &amp; learn</button>
       <button type="button" class="action-btn assist-btn" id="hint-btn" aria-pressed="false" disabled title="Highlight a suggested cup">💡 Hint</button>
       <button type="button" class="action-btn assist-btn" id="undo-btn" disabled title="Undo your last move (and the AI reply, if any)">↶ Undo</button>
       <button type="button" class="action-btn" id="speed-btn" aria-pressed="false">🎞 Pace: Natural</button>
@@ -90,7 +90,7 @@
 <div class="overlay hidden" id="capture-detail-modal" role="dialog" aria-modal="true" aria-label="Move explanation"><div class="modal-card"><h2>Why those seeds were collected</h2><p id="capture-detail-copy"></p><button type="button" class="primary-btn" id="close-capture-detail">Back to game</button></div></div>
 <div class="overlay hidden" id="practice-end-modal" role="dialog" aria-modal="true" aria-label="Practice complete"><div class="modal-card"><h2>Practice complete!</h2><p id="practice-summary">Four turns each. Ready for a full match?</p><button type="button" class="primary-btn" id="practice-full-btn">Play a full match</button><button type="button" class="secondary-btn" id="practice-again-btn">Practise again</button><button type="button" class="secondary-btn" id="practice-home-btn">Home</button></div></div>
 <div class="player-hand" id="player-hand" aria-hidden="true" data-facing="bottom">
- <svg viewBox="0 0 116 165" xmlns="http://www.w3.org/2000/svg">
+ <div class="hand-gesture" id="hand-gesture"><div class="hand-figure"><svg viewBox="0 0 116 165" xmlns="http://www.w3.org/2000/svg">
   <defs>
    <linearGradient id="hand-skin" x1="0" x2="1" y1=".15" y2="1"><stop offset="0" stop-color="#ffddb5"/><stop offset=".44" stop-color="#e3a878"/><stop offset="1" stop-color="#ac6944"/></linearGradient>
    <linearGradient id="hand-finger-shade" x1="0" x2="1"><stop offset="0" stop-color="#ae6b49"/><stop offset=".3" stop-color="#fbd0a3"/><stop offset=".69" stop-color="#e1a477"/><stop offset="1" stop-color="#a96543"/></linearGradient>
@@ -99,16 +99,16 @@
   <path class="hand-sleeve" d="M36 135 Q60 132 83 137 L91 168 L25 168Z" stroke="#21452c" stroke-width="2"/>
   <path class="hand-cuff" d="M35 133 Q60 136 84 133 L85 141 Q59 146 32 140Z" stroke="#996d4c" stroke-width="1"/>
   <path d="M36 105 L38 147 Q59 154 80 146 L81 104Z" fill="url(#hand-skin)" stroke="#9e6548" stroke-width="1.5"/>
-  <g class="hand-finger finger-1"><path d="M20 91 L20 47 Q20 35 30 35 Q40 35 40 47 L41 93Z" fill="url(#hand-finger-shade)" stroke="#ab7355" stroke-width="1.2"/><ellipse cx="30" cy="43" rx="5.7" ry="4.1" fill="#ffe0c0" opacity=".5"/></g>
-  <g class="hand-finger finger-2"><path d="M39 90 L39 26 Q39 14 50 14 Q60 14 60 27 L60 93Z" fill="url(#hand-finger-shade)" stroke="#a96d4d" stroke-width="1.2"/><ellipse cx="50" cy="23" rx="6" ry="4" fill="#ffe8c9" opacity=".55"/></g>
-  <g class="hand-finger finger-3"><path d="M58 91 L58 31 Q58 21 68 21 Q77 21 77 33 L78 94Z" fill="url(#hand-finger-shade)" stroke="#a76e50" stroke-width="1.2"/><ellipse cx="68" cy="29" rx="5.5" ry="3.7" fill="#ffe2c3" opacity=".55"/></g>
-  <g class="hand-finger finger-4"><path d="M77 91 L77 47 Q77 37 86 37 Q95 37 95 47 L95 97Z" fill="url(#hand-finger-shade)" stroke="#a46b4e" stroke-width="1.2"/><ellipse cx="86" cy="44" rx="5" ry="3" fill="#ffe7ce" opacity=".48"/></g>
+  <g class="hand-finger finger-1"><path d="M20 91 L20 47 Q20 35 30 35 Q40 35 40 47 L41 93Z" fill="url(#hand-finger-shade)" stroke="#ab7355" stroke-width="1.2"/><path class="hand-nail" d="M25 45 L25 41 Q30 37 35 41 L35 45 Q30 48 25 45Z" fill="#f8d6bb" stroke="#c39073" stroke-width=".7"/><path d="M24 66 Q30 68 36 66 M25 73 Q30 75 35 73" fill="none" stroke="#a3694c" opacity=".3" stroke-width=".9"/></g>
+  <g class="hand-finger finger-2"><path d="M39 90 L39 26 Q39 14 50 14 Q60 14 60 27 L60 93Z" fill="url(#hand-finger-shade)" stroke="#a96d4d" stroke-width="1.2"/><path class="hand-nail" d="M45 25 L45 21 Q50 17 55 21 L55 25 Q50 28 45 25Z" fill="#f8d6bb" stroke="#c39073" stroke-width=".7"/><path d="M44 46 Q50 48 56 46 M45 53 Q50 55 55 53" fill="none" stroke="#a3694c" opacity=".3" stroke-width=".9"/></g>
+  <g class="hand-finger finger-3"><path d="M58 91 L58 31 Q58 21 68 21 Q77 21 77 33 L78 94Z" fill="url(#hand-finger-shade)" stroke="#a76e50" stroke-width="1.2"/><path class="hand-nail" d="M63 31 L63 27 Q68 23 73 27 L73 31 Q68 34 63 31Z" fill="#f8d6bb" stroke="#c39073" stroke-width=".7"/><path d="M62 52 Q68 54 74 52 M63 59 Q68 61 73 59" fill="none" stroke="#a3694c" opacity=".3" stroke-width=".9"/></g>
+  <g class="hand-finger finger-4"><path d="M77 91 L77 47 Q77 37 86 37 Q95 37 95 47 L95 97Z" fill="url(#hand-finger-shade)" stroke="#a46b4e" stroke-width="1.2"/><path class="hand-nail" d="M81 46 L81 42 Q86 38 91 42 L91 46 Q86 49 81 46Z" fill="#f8d6bb" stroke="#c39073" stroke-width=".7"/><path d="M80 67 Q86 69 92 67 M81 74 Q86 76 91 74" fill="none" stroke="#a3694c" opacity=".3" stroke-width=".9"/></g>
   <path d="M20 77 Q27 64 48 68 L82 71 Q95 76 94 99 Q92 127 74 136 Q52 144 34 131 Q17 115 20 77Z" fill="url(#hand-palm-shade)" stroke="#a36848" stroke-width="1.6"/>
-  <path d="M34 85 Q45 75 56 80" fill="none" stroke="#ffedc9" opacity=".5" stroke-width="2"/>
+  <path d="M29 108 Q42 89 62 93 M35 117 Q48 106 68 110 M49 126 Q58 118 76 119" fill="none" stroke="#a06a4c" opacity=".23" stroke-width="1.1"/><path d="M34 85 Q45 75 56 80" fill="none" stroke="#ffedc9" opacity=".5" stroke-width="2"/>
   <path d="M66 121 Q77 118 81 109" fill="none" stroke="#9d6348" opacity=".28" stroke-width="2"/>
   <g class="hand-thumb"><path d="M24 89 Q10 80 6 92 Q3 103 17 119 Q27 130 39 117 L47 109 Q39 96 24 89Z" fill="url(#hand-finger-shade)" stroke="#9d6041" stroke-width="1.5"/><path d="M11 98 Q15 95 20 101" fill="none" stroke="#ffe6c5" stroke-width="2" opacity=".6"/></g>
   <path d="M36 138 Q58 144 79 138" fill="none" stroke="#ffe4bc" opacity=".5" stroke-width="1.4"/>
- </svg>
+ </svg><div class="hand-held-seeds" id="hand-held-seeds"></div></div></div>
  <span class="hand-seed-count" id="hand-visual-count"></span>
 </div>
 <div id="room-pause-banner" role="status" aria-live="polite" hidden><span id="room-pause-text"></span><button type="button" class="action-btn" id="room-pause-resume">Resume</button></div>
@@ -173,8 +173,8 @@
 
 <div class="overlay" id="setup-modal" role="dialog" aria-modal="true" aria-label="Set up game">
 <div class="modal-card home-card lobby-home">
-<div class="home-top-actions"><button type="button" class="action-btn" id="setup-back" aria-label="Previous step" title="Previous step" hidden>‹</button><span id="setup-progress">Step 1 of 2</span><small class="build-version" data-no-i18n>v3.28.0</small><details class="home-preferences"><summary aria-label="Settings" title="Settings">⚙</summary><div><button type="button" class="action-btn" data-feedback>Send feedback</button><button type="button" class="action-btn" id="appearance-setup-btn">Dark mode</button><button type="button" class="action-btn" id="language-setup-btn" data-no-i18n data-language-toggle>Language</button></div></details></div>
-<div class="home-eyebrow">HERITAGE · STRATEGY · TRADITION</div><h1 class="home-game-title"><img class="brand-icon" src="icon-192.png?v=3.28.0" alt="" width="60" height="60"><span>Pallanguzhi</span></h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
+<div class="home-top-actions"><button type="button" class="action-btn" id="setup-back" aria-label="Previous step" title="Previous step" hidden>‹</button><span id="setup-progress">Step 1 of 2</span><small class="build-version" data-no-i18n>v3.29.0</small><details class="home-preferences"><summary aria-label="Settings" title="Settings">⚙</summary><div><button type="button" class="action-btn" data-feedback>Send feedback</button><button type="button" class="action-btn" id="appearance-setup-btn">Dark mode</button><button type="button" class="action-btn" id="language-setup-btn" data-no-i18n data-language-toggle>Language</button></div></details></div>
+<div class="home-eyebrow">HERITAGE · STRATEGY · TRADITION</div><h1 class="home-game-title"><img class="brand-icon" src="icon-192.png?v=3.29.0" alt="" width="60" height="60"><span>Pallanguzhi</span></h1><p class="sub home-tagline">A handful of seeds. A world of strategy.</p>
 <section data-setup-step="1">    <section class="resume-panel" id="resume-panel" hidden aria-label="Continue saved match">
       <div class="resume-heading">💾 Continue your match?</div>
       <div class="resume-summary" id="resume-summary"></div>
@@ -308,7 +308,7 @@
     <button type="button" class="secondary-btn" id="change-btn">⌂ Home &amp; match settings</button>
     <button type="button" class="secondary-btn" id="result-wa-btn" style="background:#135d38; border-color:#22c55e; color:#bbf7d0;">📲 Share Result on WhatsApp</button>
     <button type="button" class="secondary-btn" id="result-stats-btn">📊 Match history & achievements</button>
-    <button type="button" class="secondary-btn" data-feedback>Send feedback</button><small class="build-version" data-no-i18n>v3.28.0</small><button type="button" class="secondary-btn" id="undo-end-btn" hidden>↶ Undo last move</button>
+    <button type="button" class="secondary-btn" data-feedback>Send feedback</button><small class="build-version" data-no-i18n>v3.29.0</small><button type="button" class="secondary-btn" id="undo-end-btn" hidden>↶ Undo last move</button>
   </div>
 </div>
 
@@ -356,7 +356,7 @@
   </div>
 </div>
 
-<script type="module" src="app.js?v=3.28.0"></script>
+<script type="module" src="app.js?v=3.29.0"></script>
 </body>
 </html>
 
