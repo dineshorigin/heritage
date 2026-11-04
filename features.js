@@ -1,4 +1,4 @@
-import {simulateMove} from './rules.js?v=3.29.0';
+import {simulateMove} from './rules.js?v=3.29.1';
 export const FEATURE_KEY='pallanguzhi.features.v1';
 export function cleanChat(packet,{matchId,player,now=Date.now(),last=0,seen=new Set()}={}){
  if(!packet||packet.type!=='CHAT'||packet.matchId!==matchId||packet.player!==player||typeof packet.id!=='string'||packet.id.length>80||seen.has(packet.id)||now-last<700||typeof packet.text!=='string')return null;

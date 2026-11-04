@@ -1046,3 +1046,8 @@ body[data-ui-theme="light"].ui-polished .match-status-copy>strong{color:#254b3a}
 @media(orientation:portrait) and (max-width:700px){.player-hand[data-facing="bottom"] .hand-figure{transform:rotate(90deg)}.player-hand[data-facing="top"] .hand-figure{transform:rotate(-90deg)}}
 body.reduce-motion .player-hand .hand-finger,body.reduce-motion .player-hand .hand-thumb{transition:none!important}
 @media(prefers-reduced-motion:reduce){.player-hand{display:none!important}.player-hand .hand-finger,.player-hand .hand-thumb{transition:none!important}}
+
+/* v3.29.1: readable live status, explanations and results on the light surface. */
+body[data-ui-theme="light"] #winner-text{color:#20543a}
+body[data-ui-theme="light"] #capture-guide,body[data-ui-theme="light"] #capture-detail-copy,body[data-ui-theme="light"] #result-message{color:#324b3e}
+body[data-ui-theme="light"] .match-status-bar[data-kind="connection"] .match-status-copy>strong{color:#873914}

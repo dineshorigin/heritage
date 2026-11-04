@@ -1,20 +1,20 @@
-import {installTestingUI,APP_VERSION} from './testing.js?v=3.29.0';
-import {matchOutcome,createDiagnostics,installQualityUI} from './quality.js?v=3.29.0';
-import {installVisualUI} from './visual.js?v=3.29.0';
-import {poseHand,handGeometry,handTravel,handGesture,heldSeedLayout} from './hand.js?v=3.29.0';
-import {createCloudRoom,createLobbyLaunch,playbackAction,validCode} from './cloud-room.js?v=3.29.0';
-import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.29.0';
-import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.29.0';
-import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.29.0';
-import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.29.0';
-import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.29.0';
-import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.29.0';
-import {createFeatures} from './features.js?v=3.29.0';
-import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.29.0';
-import {ballisticFlight} from './physics.js?v=3.29.0';
-import { installLanguage, getLanguage, translate } from './locale.js?v=3.29.0';
-import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.29.0';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.29.0';
+import {installTestingUI,APP_VERSION} from './testing.js?v=3.29.1';
+import {matchOutcome,createDiagnostics,installQualityUI} from './quality.js?v=3.29.1';
+import {installVisualUI} from './visual.js?v=3.29.1';
+import {poseHand,handGeometry,handTravel,handGesture,heldSeedLayout} from './hand.js?v=3.29.1';
+import {createCloudRoom,createLobbyLaunch,playbackAction,validCode} from './cloud-room.js?v=3.29.1';
+import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.29.1';
+import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.29.1';
+import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.29.1';
+import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.29.1';
+import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.29.1';
+import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.29.1';
+import {createFeatures} from './features.js?v=3.29.1';
+import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.29.1';
+import {ballisticFlight} from './physics.js?v=3.29.1';
+import { installLanguage, getLanguage, translate } from './locale.js?v=3.29.1';
+import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.29.1';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.29.1';
 
 (() => {
   'use strict';
@@ -490,7 +490,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('volume-input').value=Math.round(options.volume*100);
     $('volume-display').textContent=Math.round(options.volume*100)+'%';
     for(const kind of ['seed','ui']){$(kind+'-volume-input').value=Math.round(options[kind+'Volume']*100);$(kind+'-volume-display').textContent=Math.round(options[kind+'Volume']*100)+'%';}
-    options.theme='bright';document.body.className='';document.body.dataset.uiTheme=options.uiTheme;document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.content=options.uiTheme==='light'?'#eae3d4':'#0b171b');
+    options.theme='bright';document.body.classList.remove('dark','chettinad','granite','sandalwood');document.body.dataset.uiTheme=options.uiTheme;document.querySelectorAll('meta[name="theme-color"]').forEach(m=>m.content=options.uiTheme==='light'?'#eae3d4':'#0b171b');
     for(const id of ['theme-btn','appearance-setup-btn'])$(id).setAttribute('aria-pressed',String(options.uiTheme==='dark'));
     document.body.classList.toggle('table-facing',!options.ai&&!options.online);
     document.body.dataset.mat=validMat(options.mat);
@@ -1656,12 +1656,19 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('turn-guide').textContent=turnGuidance({started:state.started,over:state.over,busy:state.busy,paused:state.paused||onlineState.remotePaused,awaitingToss:state.awaitingToss,roundPending:state.roundPending,turn:state.turn,name:names[state.turn],ai:options.ai,online:options.online,connected:onlineState.connected&&!peerStale,myPlayer:onlineState.myPlayerIndex,awaitingPlayback:onlineState.awaitingPlayback,awaitingSync:onlineState.awaitingSync,undoPending:onlineState.undoPending,portrait:matchMedia('(orientation:portrait) and (max-width:700px)').matches});
   }
 
-  function clearCaptureFeedback(){lastCapture=null;lastDetail='';$('capture-guide').textContent='';$('capture-detail-btn').hidden=true;document.querySelector('.play-guide').classList.remove('has-reason');}
+  function clearCaptureFeedback(){clearCaptureEffects();lastCapture=null;lastDetail='';$('capture-guide').textContent='';$('capture-detail-copy').textContent='';$('capture-detail-modal').classList.add('hidden');$('capture-detail-btn').hidden=true;document.querySelector('.play-guide').classList.remove('has-reason');}
   function openExplanation(text){$('capture-detail-copy').textContent=text;$('capture-detail-modal').classList.remove('hidden');$('close-capture-detail').focus({preventScroll:true});}
   function setCaptureFeedback(event){
     lastCapture={...event};lastDetail=captureExplanation(event,state.kasiePits,{1:displayName(1),2:displayName(2)},getLanguage()==='ta');
-    $('capture-guide').textContent=captureTips?lastDetail:captureGuidance(names[event.player],event.count,event.kind==='pasu');$('capture-detail-btn').hidden=false;document.querySelector('.play-guide').classList.add('has-reason');$('capture-detail-btn').textContent=translate('Why?');
+    $('capture-guide').textContent=captureTips?lastDetail:getLanguage()==='ta'?`${displayName(event.player)} ${event.count} விதைகளைச் சேகரித்தார்${event.kind==='pasu'?' · பசு':''}.`:captureGuidance(names[event.player],event.count,event.kind==='pasu');$('capture-detail-btn').hidden=false;document.querySelector('.play-guide').classList.add('has-reason');$('capture-detail-btn').textContent=translate('Why?');
 
+  }
+  function refreshCaptureFeedback(){
+    if(lastCapture)setCaptureFeedback(lastCapture);
+    if(isModalOpen('capture-detail-modal')){
+      const text=lastCapture?lastDetail:[1,2].map(player=>kasieExplanation(displayName(player),7-state.kasiePits.filter((v,i)=>v&&owner(i)===player).length,getLanguage()==='ta')).join(' ');
+      $('capture-detail-copy').textContent=text;
+    }
   }
   function startPractice(){
     if(!practice)practiceOptions={...options};practice=true;practiceGuidance=true;practiceLastHint='';
@@ -1822,7 +1829,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     },ms));
   }
 
-  function clearCaptureFeedback(){
+  function clearCaptureEffects(){
     for(const timer of feedbackTimers)clearTimeout(timer);
     feedbackTimers.clear();
     document.querySelectorAll('.gain-float').forEach(el=>el.remove());
@@ -1855,7 +1862,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     feedbackTimers.add(timer);
   }
   function closeAnimations() {
-    clearCaptureFeedback();
+    clearCaptureEffects();
     for(const anim of activeAnims){try{anim.cancel();}catch{}}
     activeAnims.clear();
     for(const timer of pitTimers.values())clearTimeout(timer);
@@ -2912,7 +2919,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     installRecovery();
     setInterval(()=>{pauseTick();if(state.started&&!state.over&&!state.roundPending)updateTurnClock();},250);
     installNativeLifecycle();
-    installLanguage(lang=>{testing?.refresh();quality?.refresh();visual?.refresh();wizard?.refresh();features?.refresh();document.querySelectorAll('#final-scores .result-player > span').forEach((el,i)=>el.textContent=displayName(i+1));if(state.over&&!state.roundPending){const outcome=matchOutcome({scores:state.banks,names,forcedDraw:tournament.forcedDraw,language:lang});$('winner-text').textContent=outcome.title;$('result-message').textContent=outcome.explanation;}tutorialSetLanguage(lang);refreshResumePanel();if(isModalOpen('stats-modal'))renderStats();if(isModalOpen('round-modal'))showRoundSummary();render();});
+    installLanguage(lang=>{testing?.refresh();quality?.refresh();visual?.refresh();wizard?.refresh();features?.refresh();refreshCaptureFeedback();document.querySelectorAll('#final-scores .result-player > span').forEach((el,i)=>el.textContent=displayName(i+1));if(state.over&&!state.roundPending){const outcome=matchOutcome({scores:state.banks,names,forcedDraw:tournament.forcedDraw,language:lang});$('winner-text').textContent=outcome.title;$('result-message').textContent=outcome.explanation;}tutorialSetLanguage(lang);refreshResumePanel();if(isModalOpen('stats-modal'))renderStats();if(isModalOpen('round-modal'))showRoundSummary();render();});
     // Treat a direct room link as a guest, not a new host room.
     const incomingRoom=new URLSearchParams(window.location.search).get('room');
     if(incomingRoom&&/^[A-Z2-9]{8}$/i.test(incomingRoom)){
