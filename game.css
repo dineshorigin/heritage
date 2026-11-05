@@ -1051,3 +1051,10 @@ body.reduce-motion .player-hand .hand-finger,body.reduce-motion .player-hand .ha
 body[data-ui-theme="light"] #winner-text{color:#20543a}
 body[data-ui-theme="light"] #capture-guide,body[data-ui-theme="light"] #capture-detail-copy,body[data-ui-theme="light"] #result-message{color:#324b3e}
 body[data-ui-theme="light"] .match-status-bar[data-kind="connection"] .match-status-copy>strong{color:#873914}
+
+/* Seat identity is stable across local, AI and online matches; dots also distinguish without colour. */
+.player-hand[data-player="1"] .hand-sleeve{fill:#204d79;stroke:#123252}
+.player-hand[data-player="1"] .hand-band{fill:#2684e8;stroke:#103b70}
+.player-hand[data-player="2"] .hand-sleeve{fill:#87451e;stroke:#552b14}
+.player-hand[data-player="2"] .hand-band{fill:#f58b29;stroke:#773b10}
+.player-hand[data-player="1"] .hand-band-two,.player-hand[data-player="2"] .hand-band-one{display:none}

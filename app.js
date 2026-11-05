@@ -1,20 +1,20 @@
-import {installTestingUI,APP_VERSION} from './testing.js?v=3.29.1';
-import {matchOutcome,createDiagnostics,installQualityUI} from './quality.js?v=3.29.1';
-import {installVisualUI} from './visual.js?v=3.29.1';
-import {poseHand,handGeometry,handTravel,handGesture,heldSeedLayout} from './hand.js?v=3.29.1';
-import {createCloudRoom,createLobbyLaunch,playbackAction,validCode} from './cloud-room.js?v=3.29.1';
-import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.29.1';
-import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.29.1';
-import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.29.1';
-import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.29.1';
-import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.29.1';
-import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.29.1';
-import {createFeatures} from './features.js?v=3.29.1';
-import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.29.1';
-import {ballisticFlight} from './physics.js?v=3.29.1';
-import { installLanguage, getLanguage, translate } from './locale.js?v=3.29.1';
-import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.29.1';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.29.1';
+import {installTestingUI,APP_VERSION} from './testing.js?v=3.29.2';
+import {matchOutcome,createDiagnostics,installQualityUI} from './quality.js?v=3.29.2';
+import {installVisualUI} from './visual.js?v=3.29.2';
+import {poseHand,handGeometry,handTravel,handGesture,heldSeedLayout} from './hand.js?v=3.29.2';
+import {createCloudRoom,createLobbyLaunch,playbackAction,validCode} from './cloud-room.js?v=3.29.2';
+import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.29.2';
+import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.29.2';
+import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.29.2';
+import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.29.2';
+import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.29.2';
+import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.29.2';
+import {createFeatures} from './features.js?v=3.29.2';
+import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.29.2';
+import {ballisticFlight} from './physics.js?v=3.29.2';
+import { installLanguage, getLanguage, translate } from './locale.js?v=3.29.2';
+import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.29.2';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.29.2';
 
 (() => {
   'use strict';
@@ -1782,6 +1782,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     const epoch=state.epoch;if(!await waitForPlay(epoch))return;
     const el=$('player-hand');
     const point=handPoint(pitPos,player);
+    el.dataset.player=String(player===2?2:1);
     el.dataset.facing=player===1?'bottom':'top';
     el.classList.toggle('ai',player===2);
     const position = p => `translate3d(calc(${p.x}px - 50%),calc(${p.y}px - 50%),0) rotate(${p.angle||0}deg) scale(${p.scale||1})`;

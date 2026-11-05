@@ -1,4 +1,4 @@
-export const APP_VERSION='3.29.1';
+export const APP_VERSION='3.29.2';
 export const FEEDBACK_EMAIL='dineshbabuj1127@gmail.com';
 const clean=(v,n=1200)=>String(v||'').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g,'').trim().slice(0,n);
 export function feedbackDraft({message,category='Problem',device='',mode='Home',language='en',userAgent='',technicalDetails=''}={}){
