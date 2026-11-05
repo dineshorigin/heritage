@@ -1058,3 +1058,11 @@ body[data-ui-theme="light"] .match-status-bar[data-kind="connection"] .match-sta
 .player-hand[data-player="2"] .hand-sleeve{fill:#87451e;stroke:#552b14}
 .player-hand[data-player="2"] .hand-band{fill:#f58b29;stroke:#773b10}
 .player-hand[data-player="1"] .hand-band-two,.player-hand[data-player="2"] .hand-band-one{display:none}
+
+
+/* The thumb and index release first. The curled fingers keep the other seeds. */
+.player-hand[data-pose="release"] .hand-thumb,
+.player-hand[data-pose="release"] .finger-1{transition-duration:72ms}
+.player-hand[data-pose="grip"] .finger-3{transition-delay:8ms}
+.player-hand[data-pose="grip"] .finger-4{transition-delay:14ms}
+body.light-effects .player-hand .hand-finger{transition-delay:0s}

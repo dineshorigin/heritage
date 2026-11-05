@@ -21,13 +21,43 @@ export function handGeometry(point,player=1,{width=70,height=width*165/116,portr
  return {center:{x:release.x-delta.x,y:release.y-delta.y},release};
 }
 export function handTravel(from,to,{player=1,portrait=false,pace=1,reduced=false,light=false}={}){
- const start=from||to,distance=Math.hypot(to.x-start.x,to.y-start.y),duration=reduced||distance<2?0:Math.round(Math.min(280,160+distance*.18)*pace);
- const lift=light?0:Math.min(12,Math.max(3,distance*.045)),sign=player===1?1:-1,lean=light?0:Math.max(-6,Math.min(6,(portrait?to.y-start.y:to.x-start.x)*.025))*sign;
- const at=t=>({x:start.x+(to.x-start.x)*t+(portrait?-sign*lift*Math.sin(Math.PI*t):0),y:start.y+(to.y-start.y)*t+(portrait?0:-sign*lift*Math.sin(Math.PI*t))});
- return {duration,frames:[{...start,angle:0,scale:1,offset:0},{...at(.35),angle:lean,scale:light?1:1.025,offset:.35},{...at(.75),angle:lean*.5,scale:light?1:1.01,offset:.75},{...to,angle:0,scale:1,offset:1}]};
+ const start = from || to;
+ const dx = to.x - start.x;
+ const dy = to.y - start.y;
+ const distance = Math.hypot(dx, dy);
+ const duration = reduced || distance < 2 ? 0 : Math.round(Math.min(270, 104 + distance * .44) * pace);
+ const side = player === 1 ? 1 : -1;
+ const lift = light ? 0 : Math.min(12, distance * .065);
+ const lean = light ? 0 : Math.max(-8, Math.min(8, (portrait ? dy : dx) * .04)) * side;
+ const frames = [0, .32, .7, 1].map(offset => {
+   const arc = offset === 1 ? 0 : Math.sin(Math.PI * offset);
+   return {
+     x: start.x + dx * offset - (portrait ? side * lift * arc : 0),
+     y: start.y + dy * offset - (portrait ? 0 : side * lift * arc),
+     angle: lean * arc,
+     scale: 1 + .018 * arc * (light ? 0 : 1),
+     offset
+   };
+ });
+ return {duration, frames};
 }
 export function handGesture(kind,player=1,{portrait=false,pace=1,reduced=false,light=false}={}){
- const sign=player===1?1:-1,dip=kind==='release'?3:6;
- return {duration:reduced||light?0:Math.round((kind==='release'?95:145)*pace),frames:[{transform:'translate(0px,0px) scale(1)',offset:0},{transform:`translate(${portrait?sign*dip:0}px,${portrait?0:-sign*dip}px) scale(.97)`,offset:.42},{transform:'translate(0px,0px) scale(1)',offset:1}]};
+ const side = player === 1 ? 1 : -1;
+ const releasing = kind === 'release';
+ const dip = releasing ? 2 : 5;
+ const transform = (depth, angle, scale) => {
+   const x = portrait ? side * depth : 0;
+   const y = portrait ? 0 : -side * depth;
+   return 'translate(' + x + 'px,' + y + 'px) rotate(' + angle * side + 'deg) scale(' + scale + ')';
+ };
+ return {
+   duration: reduced || light ? 0 : Math.round((releasing ? 86 : 136) * pace),
+   frames: [
+     {transform: transform(0, 0, 1), offset: 0},
+     {transform: transform(dip, releasing ? -2 : 2, .98), offset: releasing ? .27 : .44},
+     {transform: transform(releasing ? 0 : -2, releasing ? 0 : -1, 1), offset: .76},
+     {transform: transform(0, 0, 1), offset: 1}
+   ]
+ };
 }
 export function heldSeedLayout(count){return Array.from({length:Math.min(4,Math.max(0,Math.floor(count)))},(_,i)=>({x:39+(i%2)*12,y:91+Math.floor(i/2)*10,angle:-24+i*19}));}

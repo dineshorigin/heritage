@@ -1,20 +1,20 @@
-import {installTestingUI,APP_VERSION} from './testing.js?v=3.29.2';
-import {matchOutcome,createDiagnostics,installQualityUI} from './quality.js?v=3.29.2';
-import {installVisualUI} from './visual.js?v=3.29.2';
-import {poseHand,handGeometry,handTravel,handGesture,heldSeedLayout} from './hand.js?v=3.29.2';
-import {createCloudRoom,createLobbyLaunch,playbackAction,validCode} from './cloud-room.js?v=3.29.2';
-import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.29.2';
-import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.29.2';
-import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.29.2';
-import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.29.2';
-import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.29.2';
-import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.29.2';
-import {createFeatures} from './features.js?v=3.29.2';
-import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.29.2';
-import {ballisticFlight} from './physics.js?v=3.29.2';
-import { installLanguage, getLanguage, translate } from './locale.js?v=3.29.2';
-import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.29.2';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.29.2';
+import {installTestingUI,APP_VERSION} from './testing.js?v=3.29.3';
+import {matchOutcome,createDiagnostics,installQualityUI} from './quality.js?v=3.29.3';
+import {installVisualUI} from './visual.js?v=3.29.3';
+import {poseHand,handGeometry,handTravel,handGesture,heldSeedLayout} from './hand.js?v=3.29.3';
+import {createCloudRoom,createLobbyLaunch,playbackAction,validCode} from './cloud-room.js?v=3.29.3';
+import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.29.3';
+import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.29.3';
+import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.29.3';
+import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.29.3';
+import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.29.3';
+import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.29.3';
+import {createFeatures} from './features.js?v=3.29.3';
+import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.29.3';
+import {ballisticFlight} from './physics.js?v=3.29.3';
+import { installLanguage, getLanguage, translate } from './locale.js?v=3.29.3';
+import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.29.3';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.29.3';
 
 (() => {
   'use strict';
@@ -1787,19 +1787,23 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     el.classList.toggle('ai',player===2);
     const position = p => `translate3d(calc(${p.x}px - 50%),calc(${p.y}px - 50%),0) rotate(${p.angle||0}deg) scale(${p.scale||1})`;
     const target=position(point);
-    const previous=lastHandPos;
+    const entering = !el.classList.contains('visible');
+    const reduced = reducedMotion();
+    const light = lightEffects();
+    const portrait = portraitBoard();
+    const side = player === 1 ? 1 : -1;
+    const reach = Math.round(handMetrics().width * 0.55);
+    const previous = entering && !light && !reduced && el.animate
+      ? {x: point.x - (portrait ? side * reach : 0), y: point.y + (portrait ? 0 : side * reach)}
+      : lastHandPos;
     handPose(pose);
-    if(!el.classList.contains('visible')){
-      el.style.transform=target;
-      lastHandPos=point;
+    if (entering) {
+      el.style.transform = position(previous || point);
       el.classList.add('visible');
-      if(!reducedMotion())await wait(Math.round(35*paceMultiplier()));
-      return;
     }
-    const distance=previous?Math.hypot(point.x-previous.x,point.y-previous.y):0;
-    if(distance<2)return;
-    lastHandPos=point;
-    const plan=handTravel(previous,point,{player,portrait:portraitBoard(),pace:paceMultiplier(),reduced:reducedMotion(),light:lightEffects()}),duration=plan.duration;
+    lastHandPos = point;
+    const plan = handTravel(previous, point, {player, portrait, pace: paceMultiplier(), reduced, light});
+    const duration = plan.duration;
     if(!duration){el.style.transform=target;return;}
     if(typeof el.animate!=='function'){
       el.style.transform=target;
@@ -1807,7 +1811,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       return;
     }
     const anim=el.animate(plan.frames.map(p=>({transform:position(p),offset:p.offset})),{
-      duration,easing:'cubic-bezier(.36,.07,.25,.98)',fill:'both'
+      duration,easing:'cubic-bezier(.32,.05,.22,1)',fill:'both'
     });
     activeAnims.add(anim);
     try{
