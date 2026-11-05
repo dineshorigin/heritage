@@ -3,9 +3,26 @@
   "main": "src/worker.js",
   "compatibility_date": "2026-10-01",
   "workers_dev": true,
-  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true },
-  "durable_objects": { "bindings": [{ "name": "ROOMS", "class_name": "GameRoom" }] },
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "GameRoom" }]
+  },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameRoom"] }],
-  "vars": { "COIN_ENTRY_FEES_ENABLED": "false", "ALLOWED_ORIGINS": "https://dineshorigin.github.io", "CREATION_ENABLED": "true" },
+  "vars": {
+    "COIN_ENTRY_FEES_ENABLED": "false",
+    "ALLOWED_ORIGINS": "https://dineshorigin.github.io",
+    "CREATION_ENABLED": "true"
+  },
+  "d1_databases": [
+    {
+      "binding": "COINS",
+      "database_name": "pallanguzhi-coins",
+      "database_id": "43a2bbc8-bfc1-4ac7-bc79-e4a9a15acf8a"
+    }
+  ],
   "observability": { "enabled": false }
 }
