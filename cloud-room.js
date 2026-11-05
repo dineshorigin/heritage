@@ -21,7 +21,7 @@ export function createLobbyLaunch(send){
   request(view,player,connected){if(!connected||view?.phase!=='lobby')return false;wanted=true;receive(view,player,connected);return true;},
   inspect:()=>({wanted,readyPending,startPending})};
 }
-export function createCloudRoom({onState,onConnection,onError,onPacket,onStatus,storage=globalThis.localStorage,Socket=globalThis.WebSocket,request=globalThis.fetch,server=ROOM_SERVER,apiTimeout=12000,connectTimeout=10000,retryBase=1000,maxRetries=2}={}){
+export function createCloudRoom({onState,onConnection,onError,onPacket,onStatus,roomExtras,storage=globalThis.localStorage,Socket=globalThis.WebSocket,request=globalThis.fetch,server=ROOM_SERVER,apiTimeout=12000,connectTimeout=10000,retryBase=1000,maxRetries=2}={}){
  const key='pallanguzhi.cloudflare.seat.v1';let seat=null,view=null,socket=null,generation=0,operation=0,retry=null,heartbeat=null,deadline=null,manual=true,opening=false,lastHeard=0,attempt=0,apiAbort=null;
  let status={phase:'idle',attempt:0,retryAt:0,error:''},resync=null;
  const report=(phase,message,error='',retryAt=0)=>{status={phase,attempt,retryAt,error};if(message)onStatus?.(message);};
@@ -62,8 +62,8 @@ export function createCloudRoom({onState,onConnection,onError,onPacket,onStatus,
  }
  function send(type,extra={}){if(socket?.readyState!==1||opening||pending.size>=24)return false;const id=crypto.randomUUID(),m={type,id,matchId:view?.matchId,seq:view?.seq,round:view?.round,...extra};pending.set(id,m);try{socket.send(JSON.stringify(m));return true;}catch{pending.delete(id);socket.close();return false;}}
  return {get status(){return {...status,pending:pending.size};},get seat(){return seat;},get view(){return view;},get online(){return socket?.readyState===1&&!opening;},get opening(){return opening;},
-  async create(name,settings){close();attempt=0;const op=operation;report('creating','Creating room…');const v=await api('/api/rooms',{name,settings});if(op!==operation)return null;remember(v);view=null;connect();return seat;},
-  async join(code,name){if(!validCode(code))throw Error('Enter the 8-character room code.');close();attempt=0;const op=operation;if(seat?.code===code){connect();return seat;}report('joining','Joining room…');const v=await api('/api/rooms/'+code+'/join',{name});if(op!==operation)return null;remember(v);view=null;connect();return seat;},
+  async create(name,settings){close();attempt=0;const op=operation;report('creating','Creating room…');const extra=roomExtras?await roomExtras(server):{};if(op!==operation)return null;const v=await api('/api/rooms',{name,settings,...extra});if(op!==operation)return null;remember(v);view=null;connect();return seat;},
+  async join(code,name){if(!validCode(code))throw Error('Enter the 8-character room code.');close();attempt=0;const op=operation;if(seat?.code===code){connect();return seat;}report('joining','Joining room…');const extra=roomExtras?await roomExtras(server,code):{};if(op!==operation)return null;const v=await api('/api/rooms/'+code+'/join',{name,...extra});if(op!==operation)return null;remember(v);view=null;connect();return seat;},
   reconnect({force=false}={}){if(force){close();}attempt=0;return connect();},close,send,
   sync(){if(socket?.readyState===1&&!opening){report('synchronizing');try{socket.send(JSON.stringify({type:'SYNC'}));clearTimeout(resync);resync=setTimeout(()=>{this.reconnect({force:true});},connectTimeout);}catch{this.reconnect({force:true});}}},
   forget(){close();seat=null;view=null;try{storage.removeItem(key);}catch{}}

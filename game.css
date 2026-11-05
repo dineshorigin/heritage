@@ -1066,3 +1066,10 @@ body[data-ui-theme="light"] .match-status-bar[data-kind="connection"] .match-sta
 .player-hand[data-pose="grip"] .finger-3{transition-delay:8ms}
 .player-hand[data-pose="grip"] .finger-4{transition-delay:14ms}
 body.light-effects .player-hand .hand-finger{transition-delay:0s}
+
+.heritage-coins{margin:.5rem 0;text-align:left}
+.heritage-coins summary{cursor:pointer}
+.heritage-coins input{display:block;width:100%;max-width:24rem;margin:.3rem 0}
+.coin-actions{display:flex;flex-wrap:wrap;gap:.4rem}
+body[data-coin-wristband="gold"] .player-hand .hand-band{stroke:#ffd56c;stroke-width:3}
+body[data-coin-seeds="jade"] .seed-cowrie{filter:sepia(.8) saturate(1.65) hue-rotate(78deg)}

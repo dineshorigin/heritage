@@ -1,20 +1,21 @@
-import {installTestingUI,APP_VERSION} from './testing.js?v=3.29.3';
-import {matchOutcome,createDiagnostics,installQualityUI} from './quality.js?v=3.29.3';
-import {installVisualUI} from './visual.js?v=3.29.3';
-import {poseHand,handGeometry,handTravel,handGesture,heldSeedLayout} from './hand.js?v=3.29.3';
-import {createCloudRoom,createLobbyLaunch,playbackAction,validCode} from './cloud-room.js?v=3.29.3';
-import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.29.3';
-import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.29.3';
-import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.29.3';
-import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.29.3';
-import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.29.3';
-import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.29.3';
-import {createFeatures} from './features.js?v=3.29.3';
-import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.29.3';
-import {ballisticFlight} from './physics.js?v=3.29.3';
-import { installLanguage, getLanguage, translate } from './locale.js?v=3.29.3';
-import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.29.3';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.29.3';
+import {installCoinWallet,walletForRoom,coinMessage} from './coin-wallet.js?v=3.30.0';
+import {installTestingUI,APP_VERSION} from './testing.js?v=3.30.0';
+import {matchOutcome,createDiagnostics,installQualityUI} from './quality.js?v=3.30.0';
+import {installVisualUI} from './visual.js?v=3.30.0';
+import {poseHand,handGeometry,handTravel,handGesture,heldSeedLayout} from './hand.js?v=3.30.0';
+import {createCloudRoom,createLobbyLaunch,playbackAction,validCode,ROOM_SERVER} from './cloud-room.js?v=3.30.0';
+import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.30.0';
+import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.30.0';
+import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.30.0';
+import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.30.0';
+import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.30.0';
+import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.30.0';
+import {createFeatures} from './features.js?v=3.30.0';
+import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.30.0';
+import {ballisticFlight} from './physics.js?v=3.30.0';
+import { installLanguage, getLanguage, translate } from './locale.js?v=3.30.0';
+import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.30.0';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.30.0';
 
 (() => {
   'use strict';
@@ -129,12 +130,15 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   let cloudNext=null,cloudAnimating=false,cloudCreating=false,cloudJoining=false,cloudPauseCallback=null;
   const cloudLaunch=createLobbyLaunch((type,extra)=>cloud.send(type,extra));
   function roomMessage(message,error=false){const badge=$('online-status-badge');const captions={'Creating room…':'அறையை உருவாக்குகிறோம்…','Joining room…':'அறையில் இணைகிறோம்…','Connecting to room…':'அறையுடன் இணைக்கிறோம்…','Connection interrupted. Retrying…':'இணைப்பு துண்டிக்கப்பட்டது. மீண்டும் முயல்கிறோம்…','Waiting for both players to connect.':'இரு வீரர்களும் இணைவதற்காகக் காத்திருக்கிறோம்.','Could not connect. Check your internet and tap Retry.':'இணைக்க முடியவில்லை. இணையத்தைச் சரிபார்த்து மீண்டும் முயலவும்.'};badge.textContent=getLanguage()==='ta'?(captions[message]||translate(message)):translate(message);badge.className='online-badge '+(error||!onlineState.connected?'waiting':'connected');if($('room-retry-btn'))$('room-retry-btn').hidden=!error;}
+  let lastCoinMatch=null;
+  const refreshCoinWallet=installCoinWallet(ROOM_SERVER);
   const cloud=createCloudRoom({
+    roomExtras:walletForRoom,
     onConnection:connected=>{if(!options.online)return;diagnostics.add(connected?'connected':'disconnected');if(!connected){cloudLaunch.disconnected();onlineState.connected=false;onlineState.awaitingSync=state.started;updateOnlineControls();if(state.started)render();}},
     onStatus:message=>{if(options.online)roomMessage(message);},
-    onError:message=>{if(!options.online)return;diagnostics.add('room-error',message);cloudLaunch.reset();onlineState.awaitingSync=false;const friendly=({MESSAGE_TOO_FAST:'Please wait a moment before sending another message.',BOTH_PLAYERS_MUST_BE_READY:'Both players need to be ready. Please try Start again.',ROOM_CREATION_DISABLED:'Room creation is temporarily disabled.',ROOM_FULL_OR_STARTED:'This room is full or already started. Use a new room code.',ROOM_EXPIRED_OR_NOT_FOUND:'Room expired or not found. Ask for a new code.',NOT_IN_LOBBY:'This match has already started. Reconnect to continue.'})[message]||message;roomMessage(friendly,true);toast(friendly,3000);updateOnlineControls();if(cloudPauseCallback){cloudPauseCallback({accepted:false});cloudPauseCallback=null;}if(state.started)render();},
+    onError:message=>{if(!options.online)return;diagnostics.add('room-error',message);cloudLaunch.reset();onlineState.awaitingSync=false;const friendly=coinMessage(message)||({MESSAGE_TOO_FAST:'Please wait a moment before sending another message.',BOTH_PLAYERS_MUST_BE_READY:'Both players need to be ready. Please try Start again.',ROOM_CREATION_DISABLED:'Room creation is temporarily disabled.',ROOM_FULL_OR_STARTED:'This room is full or already started. Use a new room code.',ROOM_EXPIRED_OR_NOT_FOUND:'Room expired or not found. Ask for a new code.',NOT_IN_LOBBY:'This match has already started. Reconnect to continue.'})[message]||message;roomMessage(friendly,true);toast(friendly,3000);updateOnlineControls();if(cloudPauseCallback){cloudPauseCallback({accepted:false});cloudPauseCallback=null;}if(state.started)render();},
     onPacket:packet=>{if(!options.online||packet.matchId!==state.matchId)return;if(packet.type==='CHAT')features?.receive(packet);else if(packet.type==='REACTION'&&!features?.muted())showEmoteReaction(packet.emoji,packet.player);},
-    onState:applyCloudState
+    onState:(next,meta)=>{applyCloudState(next,meta);if(next.phase==='over'&&next.matchId!==lastCoinMatch){lastCoinMatch=next.matchId;refreshCoinWallet();}}
   });
   function cloudSettings(){return {seeds:options.seedsPerPit,format:options.format,pasu:options.pasu,pace:options.pace,turnSeconds:0};}
   function cloudPause(next){
@@ -192,14 +196,14 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     if(onlineState.roomCode&&cloud.seat?.code===onlineState.roomCode){if(!cloud.online&&!cloud.opening)cloud.reconnect();return;}
     cloudCreating=true;options.turnSeconds=0;onlineStatus('Creating Cloudflare room…',false);
     try{const seat=await cloud.create(selfName,cloudSettings());if(!seat)return;if(!options.online){cloud.close();return;}onlineState.roomCode=seat.code;$('online-room-code').textContent=seat.code;}
-    catch(e){if(e.name!=='AbortError'){onlineStatus(e.message,false);roomMessage(e.message,true);toast(e.message,2500);}}finally{cloudCreating=false;updateOnlineControls();}
+    catch(e){if(e.name!=='AbortError'){const message=coinMessage(e.message)||e.message;onlineStatus(message,false);roomMessage(message,true);toast(message,2500);}}finally{cloudCreating=false;updateOnlineControls();}
   }
   async function cloudJoin(code){
     if(cloudJoining||cloud.opening)return;
     const clean=String(code||'').trim().toUpperCase();if(!validCode(clean)){toast('Enter the 8-character room code.',2000);return;}
     resetOnlineConnection({keepRoom:true});onlineState.isHost=false;onlineState.myPlayerIndex=2;onlineState.roomCode=clean;options.turnSeconds=0;
     cloudJoining=true;updateOnlineControls();
-    try{await cloud.join(clean,selfName);}catch(e){if(e.name!=='AbortError'){onlineStatus(e.message,false);roomMessage(e.message,true);toast(e.message,2500);}}finally{cloudJoining=false;updateOnlineControls();}
+    try{await cloud.join(clean,selfName);}catch(e){if(e.name!=='AbortError'){const message=coinMessage(e.message)||e.message;onlineStatus(message,false);roomMessage(message,true);toast(message,2500);}}finally{cloudJoining=false;updateOnlineControls();}
   }
   function requestCloudStart(){
     if(!cloudLaunch.request(cloud.view,onlineState.myPlayerIndex,onlineState.connected&&cloud.online)){roomMessage('Waiting for both players to connect.',true);return;}
