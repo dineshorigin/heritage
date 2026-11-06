@@ -1,4 +1,5 @@
 const storageKey = 'pallanguzhi.coin-wallet.v1';
+const pendingKey = storageKey + '.pending';
 const keyPattern = /^[a-f0-9]{64}$/;
 const messages = {
   COIN_SETTLEMENT_PENDING: 'Coins are still being saved. Try Rematch again shortly.',
@@ -16,6 +17,13 @@ function savedKey() {
   catch { return ''; }
 }
 
+function newKey() {
+  const key = Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
+  localStorage.setItem(pendingKey, key);
+  localStorage.setItem(storageKey, key);
+  return key;
+}
+
 async function post(server, payload, signal) {
   const response = await fetch(server + '/api/coins', {
     method: 'POST',
@@ -29,13 +37,18 @@ async function post(server, payload, signal) {
 }
 
 export async function walletForRoom(server, roomCode) {
-  const walletKey = savedKey();
-  if (!walletKey) return {};
+  let walletKey;
   try {
     const response = await fetch(server + '/api/coins/config', {signal: AbortSignal.timeout(4000)});
     if (!response.ok) return {};
     const config = await response.json();
     if (!config.enabled) return {};
+    walletKey = savedKey() || newKey();
+    if (localStorage.getItem(pendingKey) === walletKey) {
+      await post(server, {action: 'create', walletKey}, AbortSignal.timeout(4000));
+      if (localStorage.getItem(pendingKey) === walletKey) localStorage.removeItem(pendingKey);
+    }
+    if (savedKey() !== walletKey) return {};
     if (!config.entryFee) return {walletKey};
     if (!roomCode) {
       const paidRoom = window.confirm('Create a room that costs ' + config.entryFee + ' coins per player per match, including rematches? Choose Cancel for free entry.');
@@ -76,6 +89,7 @@ export function installCoinWallet(server) {
     }
     if (action === 'lock') {
       localStorage.removeItem(storageKey);
+      localStorage.removeItem(pendingKey);
       recovery.value = '';
       recovery.type = 'password';
       delete document.body.dataset.coinWristband;
@@ -86,18 +100,19 @@ export function installCoinWallet(server) {
     }
     if (action === 'restore') walletKey = recovery.value.trim().toLowerCase();
     if (action === 'create' && !walletKey) {
-      walletKey = Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
-      localStorage.setItem(storageKey, walletKey);
+      walletKey = newKey();
     }
     if (!keyPattern.test(walletKey)) {
-      status.textContent = action === 'restore' ? 'Enter the 64-character recovery key.' : 'Create or restore a wallet to earn coins.';
+      status.textContent = action === 'restore' ? 'Enter the 64-character recovery key.' : 'Your coin balance starts automatically when you create or join an online room.';
       updateButtons(false);
       return;
     }
     busy = true;
     actions.forEach(button => { button.disabled = true; });
     try {
-      const data = await post(server, {action, walletKey, item}, AbortSignal.timeout(8000));
+      const walletAction = action === 'view' && localStorage.getItem(pendingKey) === walletKey ? 'create' : action;
+      const data = await post(server, {action: walletAction, walletKey, item}, AbortSignal.timeout(8000));
+      if (localStorage.getItem(pendingKey) === walletKey) localStorage.removeItem(pendingKey);
       localStorage.setItem(storageKey, walletKey);
       recovery.value = '';
       recovery.type = 'password';
@@ -126,7 +141,7 @@ export function installCoinWallet(server) {
     for (const button of actions) {
       const action = button.dataset.action;
       button.disabled = action === 'buy' ? !active || button.dataset.unlocked === 'true'
-        : ['show', 'lock'].includes(action) && !savedKey();
+        : action === 'create' ? active : ['show', 'lock'].includes(action) && !savedKey();
     }
   }
   panel.addEventListener('click', event => {
