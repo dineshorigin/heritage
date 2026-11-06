@@ -67,10 +67,24 @@ export async function walletForRoom(server, roomCode) {
   }
 }
 
+export async function confirmedCoinReward(server, matchId) {
+  const walletKey = savedKey();
+  if (!walletKey) return {status: 'no-wallet'};
+  const data = await post(server, {action: 'view', walletKey, matchId}, AbortSignal.timeout(6000));
+  if (savedKey() !== walletKey) return {status: 'no-wallet'};
+  const {reward} = data;
+  if (!reward || ![5, 10].includes(reward.amount) || !Number.isSafeInteger(reward.balance)) {
+    return {status: 'pending'};
+  }
+  return {status: 'confirmed', amount: reward.amount, balance: reward.balance};
+}
+
 export function installCoinWallet(server) {
   const panel = document.getElementById('heritage-coins');
   const status = panel.querySelector('[role="status"]');
   const recovery = panel.querySelector('input');
+  const balance = panel.querySelector('#coin-balance');
+  const management = panel.querySelector('#coin-management');
   const actions = Array.from(panel.querySelectorAll('button'));
   let busy = false;
   let refreshPending = false;
@@ -94,6 +108,7 @@ export function installCoinWallet(server) {
       recovery.type = 'password';
       delete document.body.dataset.coinWristband;
       delete document.body.dataset.coinSeeds;
+      balance.textContent = '0';
       status.textContent = 'Wallet closed on this device.';
       updateButtons(false);
       return;
@@ -116,6 +131,7 @@ export function installCoinWallet(server) {
       localStorage.setItem(storageKey, walletKey);
       recovery.value = '';
       recovery.type = 'password';
+      balance.textContent = String(data.balance);
       status.textContent = data.balance + ' coins · ' + (data.entryFee ? 'Optional paid rooms cost ' + data.entryFee + ' coins per player' : 'Online entry is free');
       document.body.dataset.coinWristband = data.unlocked.includes('wristband') ? 'gold' : '';
       document.body.dataset.coinSeeds = data.unlocked.includes('seeds') ? 'jade' : '';
@@ -150,9 +166,13 @@ export function installCoinWallet(server) {
       status.textContent = 'Wallet storage is unavailable on this device.';
     });
   });
+  management.addEventListener('toggle', () => {
+    if (!management.open) { recovery.value = ''; recovery.type = 'password'; }
+  });
   panel.addEventListener('toggle', () => {
     if (panel.open) void load();
     else {
+      management.open = false;
       recovery.value = '';
       recovery.type = 'password';
     }

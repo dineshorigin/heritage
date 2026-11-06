@@ -1,21 +1,21 @@
-import {installCoinWallet,walletForRoom,coinMessage} from './coin-wallet.js?v=3.30.1';
-import {installTestingUI,APP_VERSION} from './testing.js?v=3.30.1';
-import {matchOutcome,createDiagnostics,installQualityUI} from './quality.js?v=3.30.1';
-import {installVisualUI} from './visual.js?v=3.30.1';
-import {poseHand,handGeometry,handTravel,handGesture,heldSeedLayout} from './hand.js?v=3.30.1';
-import {createCloudRoom,createLobbyLaunch,playbackAction,validCode,ROOM_SERVER} from './cloud-room.js?v=3.30.1';
-import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.30.1';
-import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.30.1';
-import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.30.1';
-import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.30.1';
-import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.30.1';
-import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.30.1';
-import {createFeatures} from './features.js?v=3.30.1';
-import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.30.1';
-import {ballisticFlight} from './physics.js?v=3.30.1';
-import { installLanguage, getLanguage, translate } from './locale.js?v=3.30.1';
-import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.30.1';
-import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.30.1';
+import {installCoinWallet,walletForRoom,coinMessage,confirmedCoinReward} from './coin-wallet.js?v=3.30.2';
+import {installTestingUI,APP_VERSION} from './testing.js?v=3.30.2';
+import {matchOutcome,createDiagnostics,installQualityUI} from './quality.js?v=3.30.2';
+import {installVisualUI} from './visual.js?v=3.30.2';
+import {poseHand,handGeometry,handTravel,handGesture,heldSeedLayout} from './hand.js?v=3.30.2';
+import {createCloudRoom,createLobbyLaunch,playbackAction,validCode,ROOM_SERVER} from './cloud-room.js?v=3.30.2';
+import {lightweight,connectionView,recoveryNotice,pitDescription,installDialogAccess} from './reliability.js?v=3.30.2';
+import {createPlaybackBarrier,boardDigest,PLAYBACK_PROTOCOL,validRoomPace} from './playback.js?v=3.30.2';
+import {PRIMARY_MATS,comfortSettings,captureExplanation,kasieExplanation,practiceComplete} from './comfort.js?v=3.30.2';
+import {createPauseBudget,validPauseState,coinOutcome,PAUSE_LIMIT} from './session.js?v=3.30.2';
+import {createTurnClock,validClockSeconds,validRemoteClock} from './clock.js?v=3.30.2';
+import {setupWizard,menuArt,modeIdentity,lobbySignature,canStartRoom,acceptReady} from './menu.js?v=3.30.2';
+import {createFeatures} from './features.js?v=3.30.2';
+import {validMat,materialProfile,createFireworks} from './presentation.js?v=3.30.2';
+import {ballisticFlight} from './physics.js?v=3.30.2';
+import { installLanguage, getLanguage, translate } from './locale.js?v=3.30.2';
+import { turnGuidance, captureGuidance, boardSize, boardViewport, referenceCup, shellPosition, rematchView, canStartRematch, playerTurnLabel, shouldNotifyTurn, pickupPattern } from './guidance.js?v=3.30.2';
+import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3.30.2';
 
 (() => {
   'use strict';
@@ -130,7 +130,6 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
   let cloudNext=null,cloudAnimating=false,cloudCreating=false,cloudJoining=false,cloudPauseCallback=null;
   const cloudLaunch=createLobbyLaunch((type,extra)=>cloud.send(type,extra));
   function roomMessage(message,error=false){const badge=$('online-status-badge');const captions={'Creating room…':'அறையை உருவாக்குகிறோம்…','Joining room…':'அறையில் இணைகிறோம்…','Connecting to room…':'அறையுடன் இணைக்கிறோம்…','Connection interrupted. Retrying…':'இணைப்பு துண்டிக்கப்பட்டது. மீண்டும் முயல்கிறோம்…','Waiting for both players to connect.':'இரு வீரர்களும் இணைவதற்காகக் காத்திருக்கிறோம்.','Could not connect. Check your internet and tap Retry.':'இணைக்க முடியவில்லை. இணையத்தைச் சரிபார்த்து மீண்டும் முயலவும்.'};badge.textContent=getLanguage()==='ta'?(captions[message]||translate(message)):translate(message);badge.className='online-badge '+(error||!onlineState.connected?'waiting':'connected');if($('room-retry-btn'))$('room-retry-btn').hidden=!error;}
-  let lastCoinMatch=null;
   const refreshCoinWallet=installCoinWallet(ROOM_SERVER);
   const cloud=createCloudRoom({
     roomExtras:walletForRoom,
@@ -138,7 +137,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     onStatus:message=>{if(options.online)roomMessage(message);},
     onError:message=>{if(!options.online)return;diagnostics.add('room-error',message);cloudLaunch.reset();onlineState.awaitingSync=false;const friendly=coinMessage(message)||({MESSAGE_TOO_FAST:'Please wait a moment before sending another message.',BOTH_PLAYERS_MUST_BE_READY:'Both players need to be ready. Please try Start again.',ROOM_CREATION_DISABLED:'Room creation is temporarily disabled.',ROOM_FULL_OR_STARTED:'This room is full or already started. Use a new room code.',ROOM_EXPIRED_OR_NOT_FOUND:'Room expired or not found. Ask for a new code.',NOT_IN_LOBBY:'This match has already started. Reconnect to continue.'})[message]||message;roomMessage(friendly,true);toast(friendly,3000);updateOnlineControls();if(cloudPauseCallback){cloudPauseCallback({accepted:false});cloudPauseCallback=null;}if(state.started)render();},
     onPacket:packet=>{if(!options.online||packet.matchId!==state.matchId)return;if(packet.type==='CHAT')features?.receive(packet);else if(packet.type==='REACTION'&&!features?.muted())showEmoteReaction(packet.emoji,packet.player);},
-    onState:(next,meta)=>{applyCloudState(next,meta);if(next.phase==='over'&&next.matchId!==lastCoinMatch){lastCoinMatch=next.matchId;refreshCoinWallet();}}
+    onState:applyCloudState
   });
   function cloudSettings(){return {seeds:options.seedsPerPit,format:options.format,pasu:options.pasu,pace:options.pace,turnSeconds:0};}
   function cloudPause(next){
@@ -148,6 +147,35 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     if(paused&&!was)haltPlay();else if(!paused&&was)continuePlay();
     if(cloudPauseCallback){const callback=cloudPauseCallback;cloudPauseCallback=null;callback({accepted:paused,created:paused});}
   }
+  async function checkResultCoins(){
+    const panel=$('result-coins'), message=$('result-coins-status'), retry=$('result-coins-retry');
+    panel.hidden=true;
+    retry.hidden=true;
+    if(!options.online||!state.over||cloud.view?.phase!=='over'||cloud.view.matchId!==state.matchId)return;
+    const matchId=state.matchId;
+    const current=()=>options.online&&state.over&&state.matchId===matchId;
+    const ta=getLanguage()==='ta';
+    panel.hidden=false;
+    message.textContent=ta?'நாணய வெகுமதியைச் சரிபார்க்கிறோம்…':'Checking coin reward…';
+    try{
+      const result=await confirmedCoinReward(ROOM_SERVER,matchId);
+      if(!current())return;
+      if(result.status==='no-wallet'){panel.hidden=true;return;}
+      if(result.status==='confirmed'){
+        message.textContent=ta
+          ? '+'+result.amount+' பாரம்பரிய நாணயங்கள் · இருப்பு: '+result.balance
+          : '+'+result.amount+' Heritage Coins · Balance: '+result.balance;
+        refreshCoinWallet();
+        return;
+      }
+      message.textContent=ta?'நாணய வெகுமதி இன்னும் உறுதியாகவில்லை.':'Coin reward not confirmed yet.';
+    }catch{
+      if(!current())return;
+      message.textContent=ta?'நாணய வெகுமதியைச் சரிபார்க்க முடியவில்லை.':'Could not check the coin reward.';
+    }
+    retry.hidden=false;
+  }
+
   function applyCloudState(next,meta={}){
     if(!options.online)return;
     const seat=cloud.seat;if(!seat)return;
@@ -2644,6 +2672,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     $('result-heading').textContent=tied?'Draw!':'Congratulations!';
     $('result-subtitle').textContent=tied?'A MATCH WELL PLAYED':'HERITAGE CHAMPION';
     $('result-message').textContent=outcome.explanation;
+    void checkResultCoins();
     $('final-scores').replaceChildren();
     for(const p of [1,2]){
       const box=document.createElement('div');box.className='result-player';
@@ -2932,7 +2961,8 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     // Treat a direct room link as a guest, not a new host room.
     const incomingRoom=new URLSearchParams(window.location.search).get('room');
     if(incomingRoom&&/^[A-Z2-9]{8}$/i.test(incomingRoom)){
-      options.online=true;options.ai=false;onlineState.isHost=false;onlineState.myPlayerIndex=2;wizard?.goto(2);
+      options.online=true;options.ai=false;onlineState.isHost=false;onlineState.myPlayerIndex=2;
+      $('join-room-input').value=incomingRoom.toUpperCase();wizard?.goto(2);
     }
     syncSetupModalUI();
     const peerLoader=$('peerjs-loader');
@@ -2941,14 +2971,6 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
       if(onlineState.isHost&&!onlineState.peer)initOnlineHost();
       if(!onlineState.isHost&&!onlineState.peer&&onlineState.roomCode)joinOnlineRoom(onlineState.roomCode);
     });
-
-    // Check URL parameters for direct room join: e.g. index.html?room=7K9X2
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomParam = urlParams.get('room');
-    if(roomParam&&/^[A-Z2-9]{8}$/i.test(roomParam)){
-      $('join-room-input').value = roomParam.trim().toUpperCase();
-      setTimeout(() => joinOnlineRoom(roomParam), 400);
-    }
 
     // Connect Pause/Quit Dialog Controls
     $('quit-resume-btn').addEventListener('click', closeQuitModal);
@@ -2959,6 +2981,7 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     });
 
     $('stats-btn').addEventListener('click',openStats);
+    $('result-coins-retry').addEventListener('click',()=>void checkResultCoins());
     $('result-stats-btn').addEventListener('click',()=>{openStats();});
     $('close-stats-btn').addEventListener('click',closeStats);
     $('reset-stats-btn').addEventListener('click',resetStats);
@@ -2986,11 +3009,17 @@ import { simulateMove as simulateRules, settleLockedSeeds } from './rules.js?v=3
     });
 
     $('copy-room-btn').addEventListener('click', async () => {
-      const code = ensureRoomCode();
-      const shareUrl = getShareableGameUrl(code);
-      const payload = getLanguage()==='ta'?(shareUrl?`${shareUrl} (அறைக் குறியீடு: ${code})`:`பல்லாங்குழி அறைக் குறியீடு: ${code}`):(shareUrl ? `${shareUrl} (Room Code: ${code})` : `Pallanguzhi Room Code: ${code}`);
-      const ok = await copyTextSafe(payload);
-      toast(ok ? '📋 Room invite copied to clipboard!' : `Room Code: ${code}`, 1800);
+      const code=ensureRoomCode();
+      if(!validCode(code))return;
+      const url=getShareableGameUrl(code);
+      const ta=getLanguage()==='ta';
+      const title=ta?'என்னுடன் பல்லாங்குழி ஆடுங்கள்!':'Play Pallanguzhi with me!';
+      if(url&&typeof navigator.share==='function'){
+        try{await navigator.share({title,url});return;}
+        catch(error){if(error.name==='AbortError')return;}
+      }
+      const ok=await copyTextSafe(url||code);
+      toast(ok?(ta?'அழைப்பு நகலெடுக்கப்பட்டது!':'Room invite copied!'):'Room code: '+code,1800);
     });
 
     $('wa-share-btn').addEventListener('click', () => {

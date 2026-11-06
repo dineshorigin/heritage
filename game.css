@@ -1073,3 +1073,9 @@ body.light-effects .player-hand .hand-finger{transition-delay:0s}
 .coin-actions{display:flex;flex-wrap:wrap;gap:.4rem}
 body[data-coin-wristband="gold"] .player-hand .hand-band{stroke:#ffd56c;stroke-width:3}
 body[data-coin-seeds="jade"] .seed-cowrie{filter:sepia(.8) saturate(1.65) hue-rotate(78deg)}
+
+#heritage-coins > summary{width:fit-content;min-height:36px;padding:.35rem .65rem;border:1px solid currentColor;border-radius:999px;font-weight:750;list-style:none}
+#heritage-coins > summary::-webkit-details-marker{display:none}
+#coin-management{margin:.5rem 0}
+#coin-management > summary{padding:.35rem 0}
+#result-coins{margin:.5rem auto;padding:.35rem .7rem;border:1px solid currentColor;border-radius:.65rem}
