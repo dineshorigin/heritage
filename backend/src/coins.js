@@ -31,6 +31,15 @@ export async function walletApi(env, body) {
   }
   const wallet = await env.COINS.prepare('SELECT balance FROM wallets WHERE id = ?').bind(id).first();
   if (!wallet) throw Error('WALLET_NOT_FOUND');
+  if (body.action === 'view' && body.matchId !== undefined) {
+    if (typeof body.matchId !== 'string' || !/^[a-f0-9-]{32,36}$/i.test(body.matchId)) {
+      throw Error('INVALID_MATCH_ID');
+    }
+    const receipt = await env.COINS.prepare(
+      'SELECT r.amount, w.balance FROM match_rewards r JOIN wallets w ON w.id = r.wallet_id WHERE r.match_id = ? AND r.wallet_id = ?'
+    ).bind(body.matchId, id).first();
+    return {reward: receipt ? {amount: receipt.amount, balance: receipt.balance} : null};
+  }
   const {results} = await env.COINS.prepare('SELECT item FROM unlocks WHERE wallet_id = ?').bind(id).all();
   return {balance: wallet.balance, unlocked: results.map(row => row.item), prices, entryFee: entryFee(env)};
 }
