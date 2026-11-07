@@ -14,7 +14,7 @@
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameRoom"] }],
   "vars": {
     "COIN_ENTRY_FEES_ENABLED": "false",
-    "ALLOWED_ORIGINS": "https://dineshorigin.github.io",
+    "ALLOWED_ORIGINS": "https://dineshorigin.github.io,https://localhost",
     "CREATION_ENABLED": "true"
   },
   "d1_databases": [
